@@ -1,0 +1,189 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.app.Activity;
+import android.util.Log;
+import android.view.ViewGroup;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.model.FriendInfo;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.HashMap;
+
+
+//==============================================================================================================================
+public class Global
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void showAdsIfNeeded(final Activity activity)
+    {
+        if (++chatEntersCount < GlobalConstant.CHAT_ENTERS_PER_AD)
+            return;
+
+        chatEntersCount = 0;
+
+        InAppAds.resetCallbacks(new AdsProvider.Callbacks()
+        {
+            @Override
+            public void onAdClosed()
+            {
+                InAppAds.resetCallbacks(null);
+            }
+
+            @Override
+            public void onAdError()
+            {
+                Log.e("Ads", "Error occurred");
+            }
+        });
+
+        InAppAds.showAd(activity);
+    }
+
+
+
+	public static void initAdmob(ViewGroup container)
+	{
+
+		AdView    adView    = (AdView) container.findViewById(R.id.adView);
+
+
+		AdRequest adRequest = new AdRequest.Builder().build();
+		adView.loadAd(adRequest);
+	}
+
+
+
+
+	public static String	fbtoken	= "";
+	public static String	user_id	= "";
+
+	public String getUser_id()
+	{
+		return user_id;
+	}
+
+	public void setUser_id(String user_id)
+	{
+		Global.user_id = user_id;
+	}
+
+	public String getFbtoken()
+	{
+		return fbtoken;
+	}
+
+	public void setFbtoken(String fbtoken)
+	{
+		Global.fbtoken = fbtoken;
+	}
+
+	// --------------------------FriendInfoArrayList-----------------------------------
+	public ArrayList<FriendInfo>	friend_info_list	= new ArrayList<FriendInfo>();
+
+	public ArrayList<FriendInfo> getFriend_info_list()
+	{
+		return friend_info_list;
+	}
+
+	public void setFriend_info_list(ArrayList<FriendInfo> friend_info_list)
+	{
+		this.friend_info_list = friend_info_list;
+	}
+
+	// --------------------HashMap-----------------------------------
+	public static HashMap<Integer , String>	hashMap_ids	= new HashMap<Integer , String>();
+
+	public HashMap<Integer , String> getHashMap()
+	{
+		return hashMap_ids;
+	}
+
+	public void setHashMap(HashMap<Integer , String> hashMap)
+	{
+		this.hashMap_ids = hashMap;
+	}
+
+	public void clearhashMAp()
+	{
+		this.hashMap_ids.clear();
+
+	}
+
+	// group mates
+	public static HashMap<Integer , String>	hashMap_idsGroupmates	= new HashMap<Integer , String>();
+
+	public HashMap<Integer , String> getHashMapGroupmates()
+	{
+		return hashMap_idsGroupmates;
+	}
+
+	public void setHashMapGroupmates(HashMap<Integer , String> hashMap)
+	{
+		this.hashMap_idsGroupmates = hashMap;
+	}
+
+	public void clearhashMApGroupmates()
+	{
+		this.hashMap_idsGroupmates.clear();
+
+	}
+
+	// group mates end
+
+	// around me
+	public static HashMap<Integer , String>	hashMap_idsaroundme	= new HashMap<Integer , String>();
+
+	public HashMap<Integer , String> getHashMaparoundme()
+	{
+		return hashMap_idsaroundme;
+	}
+
+	public void setHashMaparoundme(HashMap<Integer , String> hashMap)
+	{
+		this.hashMap_idsaroundme = hashMap;
+	}
+
+	public void clearhashMAparoundme()
+	{
+		this.hashMap_idsaroundme.clear();
+
+	}
+
+	// around me end
+
+	// --------------------HashMap phone no.-----------------------------------
+
+	public static HashMap<Integer , String>	hashMap_ids_ph	= new HashMap<Integer , String>();
+
+	public HashMap<Integer , String> getHashMap_ph()
+	{
+		return hashMap_ids_ph;
+	}
+
+	public void setHashMap_ph(HashMap<Integer , String> hashMap)
+	{
+		this.hashMap_ids_ph = hashMap;
+	}
+
+	public void clearhashMAp_ph()
+	{
+		this.hashMap_ids_ph.clear();
+
+	}
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static String lati     = "0";
+    public static String longi    = "0";
+    public static String timeZone = "";
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static int chatEntersCount = 0;
+}

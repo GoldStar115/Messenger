@@ -1,0 +1,805 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.Dialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.app.adapter.ShowSocialFriends;
+import com.app.adapter.WorldGroupAdapter;
+import com.app.model.FriendInfo;
+import com.app.model.GroupInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+
+public class AroundmeActivity extends ActivityInTab
+{
+	// GoogleMap mMap;
+
+	ActionBarCommon			actionBarCommon;
+
+	// ArrayList<AroundmeGroups> list_of_nearbygroup = new
+	// ArrayList<AroundmeGroups>();
+	ArrayList<GroupInfo>	list_of_nearbygroup	= new ArrayList<GroupInfo>();
+
+	ArrayList<FriendInfo>	list_of_nearbyUSERS	= new ArrayList<FriendInfo>();
+
+	SharedPreferences		preferences;
+
+	int						distance			= 0;
+
+	Global					global;
+
+	String					groupID				= "";
+
+	ListView				listVAroundme, ListviewAroundUsers;
+
+	WorldGroupAdapter		nearby_adapter;
+
+	Button					btnAroundUsers, btnAroundmegroups;
+
+	View					viewAroundmegroups, viewAroundUsers;
+
+	String					myFBid				= "";
+
+	GlobalUtills			globalUtills;
+
+	// Button btnHistory;
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		// TODO Auto-generated method stub
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.map_activity);
+
+		global = new Global();
+
+		actionBarCommon = (ActionBarCommon) findViewById(R.id.action_bar);
+
+		actionBarCommon.setActionText("Around Me");
+
+		listVAroundme = (ListView) findViewById(R.id.listVAroundgroup);
+		ListviewAroundUsers = (ListView) findViewById(R.id.listVAroundMembers);
+
+		btnAroundUsers = (Button) findViewById(R.id.btnAroundmefriends);
+
+		btnAroundmegroups = (Button) findViewById(R.id.btnAroundmeGroups);
+
+		viewAroundmegroups = (View) findViewById(R.id.viewbtnAroundmeGroups);
+		viewAroundUsers = (View) findViewById(R.id.viewbtnAroundmefriends);
+
+		// btnHistory=(Button)findViewById(R.id.btnHistory);
+
+		SharedPreferences sharedPref = getSharedPreferences("fbID", MODE_PRIVATE);
+		myFBid = sharedPref.getString("fb", "");
+
+		listVAroundme.setOnItemClickListener(new OnItemClickListener()
+		{
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+			{
+
+				if( globalUtills.haveNetworkConnection(AroundmeActivity.this) )
+				{
+					Gotochat(position);
+				}
+				else
+				{
+					GlobalUtills.showToast("No network connection..!", AroundmeActivity.this);
+				}
+
+			}
+
+		});
+
+		ListviewAroundUsers.setOnItemClickListener(new OnItemClickListener()
+		{
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+			{
+
+				Intent gotoChatting = new Intent(AroundmeActivity.this, Chat_OneToOne.class);
+				gotoChatting.putExtra("name", list_of_nearbyUSERS.get(position).getName() + "");
+				gotoChatting.putExtra("fbID", list_of_nearbyUSERS.get(position).getId() + "");
+				gotoChatting.putExtra("ph", list_of_nearbyUSERS.get(position).getMobile_no() + "");
+
+				// gotoChatting.putExtra("user_id", UsrID + "");
+
+				startActivity(gotoChatting);
+			}
+		});
+
+		btnAroundUsers.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( ListviewAroundUsers.getVisibility() == View.VISIBLE )
+				{
+
+				}
+				else
+				{
+					listVAroundme.setVisibility(View.GONE);
+					ListviewAroundUsers.setVisibility(View.VISIBLE);
+					// btnHistory.setVisibility(View.VISIBLE);
+
+					if( globalUtills.haveNetworkConnection(AroundmeActivity.this) )
+					{
+						new GetnearbyUsers().execute();
+					}
+					else
+					{
+
+						if( list_of_nearbyUSERS.size() > 0 )
+						{
+							ShowSocialFriends socialusers = new ShowSocialFriends(AroundmeActivity.this, list_of_nearbyUSERS, false, false);
+							ListviewAroundUsers.setAdapter(socialusers);
+						}
+						GlobalUtills.showToast("No network connection..!", AroundmeActivity.this);
+					}
+
+				}
+
+			}
+		});
+
+		btnAroundmegroups.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				if( listVAroundme.getVisibility() == View.VISIBLE )
+				{
+
+				}
+				else
+				{
+
+					listVAroundme.setVisibility(View.VISIBLE);
+					ListviewAroundUsers.setVisibility(View.GONE);
+
+					// btnHistory.setVisibility(View.GONE);
+
+					if( globalUtills.haveNetworkConnection(AroundmeActivity.this) )
+					{
+						new GetnearbyGroups().execute();
+					}
+					else
+					{
+
+						if( list_of_nearbygroup.size() > 0 )
+						{
+							nearby_adapter = new WorldGroupAdapter(AroundmeActivity.this, list_of_nearbygroup);
+
+							listVAroundme.setAdapter(nearby_adapter);
+						}
+						GlobalUtills.showToast("No network connection..!", AroundmeActivity.this);
+					}
+				}
+
+			}
+		});
+
+		// btnHistory.setOnClickListener(new OnClickListener() {
+		//
+		// @Override
+		// public void onClick(View v) {
+		//
+		// new Getchat_history(AroundmeActivity.this,
+		// global.getUser_id()).execute();
+		//
+		// }
+		// });
+
+	}
+
+	@Override
+	protected void onResume()
+	{
+		super.onResume();
+
+		global = new Global();
+
+		globalUtills = new GlobalUtills();
+
+		preferences = getSharedPreferences("CountryPreferences", Context.MODE_PRIVATE);
+
+		if( preferences.contains("km") )
+		{
+			distance = preferences.getInt("km", 100);
+		}
+		else
+		{
+			distance = 100;
+		}
+
+		if( listVAroundme.getVisibility() == View.VISIBLE )
+		{
+			// btnHistory.setVisibility(View.GONE);
+
+			if( list_of_nearbygroup.size() > 0 )
+			{
+				btnAroundmegroups.setTextColor(getResources().getColor(R.color.pinkNew));
+				btnAroundUsers.setTextColor(Color.parseColor("#000000"));
+				viewAroundUsers.setVisibility(View.INVISIBLE);
+				viewAroundmegroups.setVisibility(View.VISIBLE);
+			}
+			else
+			{
+				new GetnearbyGroups().execute();
+			}
+			
+
+		}
+		else
+		{
+			if( list_of_nearbyUSERS.size() > 0 )
+			{
+				btnAroundmegroups.setTextColor(Color.parseColor("#000000"));
+				btnAroundUsers.setTextColor(getResources().getColor(R.color.pinkNew));
+				viewAroundUsers.setVisibility(View.VISIBLE);
+				viewAroundmegroups.setVisibility(View.INVISIBLE);
+			}
+//			else
+//			{
+//				new GetnearbyUsers().execute();
+//			}
+			new GetnearbyUsers().execute();
+		}
+
+	}
+
+	// private void setUpMap(LatLng markerLoc, int position) {
+	// String typeG="Public";
+	// if(list_of_nearbygroup.get(position)
+	// .getGroupType().equals("P"))
+	// {
+	// typeG="Public";
+	// }
+	// else
+	// {
+	// typeG="Private";
+	// }
+	//
+	//
+	//
+	//
+	// Marker markr = mMap.addMarker(new MarkerOptions()
+	// .position(markerLoc)
+	// .draggable(false)
+	// .title(list_of_nearbygroup.get(position).getGroupName())
+	// .snippet(
+	// "Group Type:"+typeG)
+	// .icon(BitmapDescriptorFactory
+	// .defaultMarker(BitmapDescriptorFactory.HUE_ROSE)));
+	// markr.showInfoWindow();
+	// Log.e("Marker " + position, "" + markr);
+	// mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(markerLoc, 4.0f));
+	// }
+
+	@Override
+	public void onBackPressed()
+	{
+		// TODO Auto-generated method stub
+		super.onBackPressed();
+	}
+
+	// ASYNC CLASS TO get nearby groups
+	public class GetnearbyGroups extends AsyncTask<String , Void , String>
+	{
+
+		String						response	= "";
+
+		TransparentProgressDialog	pd;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+			// if (!list_of_nearbygroup.isEmpty()) {
+			// list_of_nearbygroup.clear();
+			// }
+
+			btnAroundmegroups.setTextColor(getResources().getColor(R.color.pinkNew));
+			btnAroundUsers.setTextColor(Color.parseColor("#000000"));
+			viewAroundUsers.setVisibility(View.INVISIBLE);
+			viewAroundmegroups.setVisibility(View.VISIBLE);
+
+			pd = new TransparentProgressDialog(AroundmeActivity.this, R.drawable.loading_spinner_icon);
+			if( list_of_nearbygroup.isEmpty() )
+			{
+				pd.show();
+			}
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=user_around_me&radius=50&latitude=0&longitude=0
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "user_around_me"));
+			param.add(new BasicNameValuePair("radius", distance + ""));
+
+			param.add(new BasicNameValuePair("latitude", com.app.util.GlobalConstant.lati + ""));
+			param.add(new BasicNameValuePair("longitude", com.app.util.GlobalConstant.longi + ""));
+			param.add(new BasicNameValuePair("user_id", global.getUser_id() + ""));
+
+			Log.e("Param if exist: ", "> " + param);
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+			if( jsonString.equals("Error! Try Again") )
+			{
+				return jsonString;
+			}
+			else
+			{
+				try
+				{
+
+					JSONObject jobjOuter = new JSONObject(jsonString);
+					response = jobjOuter.getString("Message");
+					if( response.equalsIgnoreCase("Success") )
+					{
+						String msgsArrayString = jobjOuter.getString("groupInfo");
+						JSONArray jsonArrMsgs = new JSONArray(msgsArrayString + "");
+
+						list_of_nearbygroup.clear();
+
+						for( int g = 0; g < jsonArrMsgs.length(); g++ )
+						{
+							GroupInfo groupInfo = new GroupInfo();
+
+							JSONObject array_object = jsonArrMsgs.getJSONObject(g);
+							String group_id = array_object.getString("groupId");
+							groupInfo.setgroupId(group_id);
+
+							String groupName = array_object.getString("groupName");
+							groupInfo.setgroupName(groupName);
+
+							String groupImage = array_object.getString("groupImage");
+							groupInfo.setgroupImage(groupImage);
+
+							String groupTotalMembers = array_object.getString("groupTotalMembers");
+							groupInfo.setgroupTotalMembers(groupTotalMembers);
+
+							String groupType = array_object.getString("groupType");
+							groupInfo.setGroupType(groupType);
+
+							String groupPassword = array_object.getString("groupPassword");
+							groupInfo.setGroupPassword(groupPassword);
+
+							groupInfo.setGroupTotalmsgs(array_object.getString("groupMessageCount"));
+							groupInfo.setGroupTotalnew(array_object.getString("groupLastMessageCount"));
+							groupInfo.setUserStatus(array_object.getString("user_status"));
+
+							list_of_nearbygroup.add(groupInfo);
+						}
+
+					}
+
+				}
+				catch(JSONException e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				return response;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			if( pd.isShowing() )
+			{
+				pd.dismiss();
+			}
+
+			if( result.equals("Error! Try Again") )
+			{
+				GlobalUtills.showToast("No network connection..!", AroundmeActivity.this);
+			}
+			else
+			{
+
+				if( list_of_nearbygroup.size() > 0 )
+				{
+
+					nearby_adapter = new WorldGroupAdapter(AroundmeActivity.this, list_of_nearbygroup);
+
+					listVAroundme.setAdapter(nearby_adapter);
+
+				}
+				else
+				{
+					GlobalUtills.showToast("No near by Groups found ..!", AroundmeActivity.this);
+				}
+
+			}
+		}
+	}
+
+	// end around me groups
+
+	// ASYNC CLASS TO get nearby groups
+	public class GetnearbyUsers extends AsyncTask<String , Void , String>
+	{
+
+		String						response	= "";
+
+		TransparentProgressDialog	pd;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+			// if (!list_of_nearbyUSERS.isEmpty()) {
+			// list_of_nearbyUSERS.clear();
+			// }
+
+			btnAroundmegroups.setTextColor(Color.parseColor("#000000"));
+			btnAroundUsers.setTextColor(getResources().getColor(R.color.pinkNew));
+			viewAroundUsers.setVisibility(View.VISIBLE);
+			viewAroundmegroups.setVisibility(View.INVISIBLE);
+
+			pd = new TransparentProgressDialog(AroundmeActivity.this, R.drawable.loading_spinner_icon,true);
+//			if( list_of_nearbyUSERS.isEmpty() )
+//			{
+				pd.show();
+//			}
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// messenger.amebasoftware.com/webservice/get_posts/?mtype=uaround_me&post_type=post&userId=235&longitude=76.779418&latitude=30.733315&radius=100
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "uaround_me"));
+			param.add(new BasicNameValuePair("radius", distance + ""));
+
+			param.add(new BasicNameValuePair("latitude", com.app.util.GlobalConstant.lati + ""));
+			param.add(new BasicNameValuePair("longitude", com.app.util.GlobalConstant.longi + ""));
+			param.add(new BasicNameValuePair("userId", global.getUser_id() + ""));
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+			if( jsonString.equals("Error! Try Again") )
+			{
+				return jsonString;
+			}
+			else
+			{
+				try
+				{
+
+					JSONObject jobjOuter = new JSONObject(jsonString);
+					response = jobjOuter.getString("Message");
+					if( response.equalsIgnoreCase("Success") )
+					{
+						String msgsArrayString = jobjOuter.getString("userInfo");
+						JSONArray jsonArrMsgs = new JSONArray(msgsArrayString + "");
+						list_of_nearbyUSERS.clear();
+						for( int g = 0; g < jsonArrMsgs.length(); g++ )
+						{
+
+							FriendInfo nearByUsers = new FriendInfo();
+
+							JSONObject array_object = jsonArrMsgs.getJSONObject(g);
+
+							// "userId": "246",
+							// "username": "Arsh",
+							// "userimage": "",
+							// "facebook_id": "819492234780138",
+							// "user_telephone": "+917696277482",
+							// "longitude": "76.735641",
+							// "latitude": "30.752338"
+
+							nearByUsers.setId(array_object.getString("facebook_id") + "");
+							nearByUsers.setImage(array_object.getString("userimage") + "");
+							nearByUsers.setName(array_object.getString("username") + "");
+							// nearByUsers.setUnread_count(array_object.getString("unread_count"));
+							nearByUsers.setMobile_no(array_object.getString("user_telephone") + "");
+							nearByUsers.setUnread_count(array_object.getString("distance") + "");
+
+							if( nearByUsers.getId().equalsIgnoreCase(myFBid) )
+							{
+
+							}
+							else
+							{
+
+								list_of_nearbyUSERS.add(nearByUsers);
+							}
+
+						}
+
+					}
+
+				}
+				catch(JSONException e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				return response;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			
+
+			if( result.equals("Error! Try Again") )
+			{
+				GlobalUtills.showToast("No network connection..!", AroundmeActivity.this);
+			}
+			else
+			{
+
+				if( list_of_nearbyUSERS.size() > 0 )
+				{
+
+					// Collections.sort(list_of_nearbyUSERS,
+					// new Comparator<FriendInfo>() {
+					// @Override
+					// public int compare(FriendInfo text1, FriendInfo text2) {
+					// return text1.getName().compareToIgnoreCase(
+					// text2.getName());
+					// }
+					// });
+
+					ShowSocialFriends socialusers = new ShowSocialFriends(AroundmeActivity.this, list_of_nearbyUSERS, false, false);
+					ListviewAroundUsers.setAdapter(socialusers);
+
+				}
+				else
+				{
+					GlobalUtills.showToast("No near by Users found ..!", AroundmeActivity.this);
+				}
+
+			}
+			
+			
+			
+			if( pd.isShowing() )
+			{
+				new CountDownTimer(2000,4000)
+				{
+					
+					@Override
+					public void onTick(long arg0)
+					{
+						// TODO Auto-generated method stub
+						
+					}
+					
+					@Override
+					public void onFinish()
+					{
+						// TODO Auto-generated method stub
+						pd.dismiss();
+					}
+				}.start();
+				
+			}
+			
+			
+			
+			
+		}
+
+	}
+
+	// end around me userws
+
+	public void Gotochat(final int position)
+	{
+
+		if( (list_of_nearbygroup.get(position).getGroupType()).equalsIgnoreCase("PV") && (list_of_nearbygroup.get(position).getUserStatus()).equalsIgnoreCase("N") )
+		{
+
+			openLogoutAlert(position);
+
+		}
+		else
+		{
+			if( list_of_nearbygroup.get(position).getUserStatus().equalsIgnoreCase("Y") )
+			{
+				GlobalUtills.joinORadd_group = true;
+			}
+			else
+			{
+				GlobalUtills.joinORadd_group = false;
+			}
+
+			if( (list_of_nearbygroup.get(position).getUserStatus()).equalsIgnoreCase("N") )
+			{
+				GlobalUtills.mygroups_savelocal = false;
+			}
+
+			Intent gotoChatting = new Intent(AroundmeActivity.this, Group_Chat.class);
+			gotoChatting.putExtra("groupID", list_of_nearbygroup.get(position).getgroupId());
+			gotoChatting.putExtra("groupName", list_of_nearbygroup.get(position).getgroupName());
+			gotoChatting.putExtra("groupImage", list_of_nearbygroup.get(position).getgroupImage() + "");
+			startActivity(gotoChatting);
+		}
+
+	}
+
+	class Join_worldGroup_Aroundme extends AsyncTask<String , String , String>
+	{
+		TransparentProgressDialog	dialog;
+		String						response_JoinWorldGroup;
+		String						messaString;
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+			String GroupID = params[0];
+			ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE, "join_group"));
+			param.add(new BasicNameValuePair(GlobalConstant.Join_User_id, global.getUser_id()));
+			param.add(new BasicNameValuePair(GlobalConstant.Group_id, GroupID));
+
+			try
+			{
+				WebServiceHandler web = new WebServiceHandler();
+
+				response_JoinWorldGroup = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+				Log.e("Response of Join Group", "" + response_JoinWorldGroup.toString());
+
+			}
+			catch(Exception exception)
+
+			{
+				exception.printStackTrace();
+				System.out.println("Exception calling");
+			}
+
+			return response_JoinWorldGroup;
+
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+			dialog = new TransparentProgressDialog(AroundmeActivity.this, R.drawable.loading_spinner_icon);
+
+			dialog.show();
+
+		}
+
+		protected void onPostExecute(String result)
+		{
+
+			dialog.dismiss();
+
+			try
+			{
+				JSONObject jsonObject = new JSONObject(result);
+				messaString = jsonObject.getString("Message");
+
+				if( messaString.equalsIgnoreCase("Success") )
+				{
+
+					globalUtills.DialogOK(AroundmeActivity.this, "Join request sent", "If members of this group will accept your request,then you will become member of this group.");
+
+				}
+				else
+				{
+					Toast.makeText(AroundmeActivity.this, messaString, 200).show();
+				}
+
+			}
+			catch(Exception e)
+			{
+				System.out.println(e.getMessage());
+			}
+
+			super.onPostExecute(result);
+		}
+	}
+
+	// join group
+
+	// dialog
+	void openLogoutAlert(final int position)
+	{
+		final Dialog dialog = globalUtills.prepararDialog(AroundmeActivity.this, R.layout.dialog_three_options);
+
+		TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+		title.setText("Join Group");
+
+		TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+		subheading.setText("You are not a member of this closed group..!");
+
+		Button btn_Chat = (Button) dialog.findViewById(R.id.btnChat);
+		Button btn_call = (Button) dialog.findViewById(R.id.btncall);
+		Button btn_groups = (Button) dialog.findViewById(R.id.btngroups);
+		ImageButton btn_close = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+		btn_close.setVisibility(View.GONE);
+		btn_groups.setVisibility(View.GONE);
+		btn_call.setText("Join");
+		btn_Chat.setText("Cancel");
+
+		btn_Chat.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+
+				dialog.dismiss();
+
+			}
+		});
+		btn_call.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				new Join_worldGroup_Aroundme().execute(list_of_nearbygroup.get(position).getgroupId());
+
+				dialog.dismiss();
+
+			}
+		});
+
+		dialog.show();
+
+	}
+	// end dialog
+
+}

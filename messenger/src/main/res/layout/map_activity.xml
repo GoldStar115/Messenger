@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/FrameLayout1"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff" >
+
+    <com.app.messenger.ActionBarCommon
+        android:id="@+id/action_bar"
+        android:layout_width="fill_parent"
+        android:layout_height="45dp" >
+    </com.app.messenger.ActionBarCommon>
+    
+    
+    
+    
+    
+    
+    
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="45dp"
+        android:background="@color/light_grey"
+        android:orientation="horizontal" >
+        
+        
+        
+        
+          <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:background="@color/light_grey"
+            android:orientation="vertical" >
+
+            <Button
+                android:id="@+id/btnAroundmefriends"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:background="@android:color/transparent"
+                android:textColor="@color/pinkNew"
+                android:textSize="18sp"
+                android:text="Users" />
+
+            <View
+                android:id="@+id/viewbtnAroundmefriends"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="@color/pinkNew" 
+                 />
+        </LinearLayout>
+        
+           <View
+            android:id="@+id/divider_view2"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:background="@color/white" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:orientation="vertical" >
+
+            <Button
+                android:id="@+id/btnAroundmeGroups"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:background="@android:color/transparent"
+                
+                 android:textSize="18sp"
+                android:text="Groups" />
+
+            <View
+                android:id="@+id/viewbtnAroundmeGroups"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="@color/pinkNew"
+                 android:visibility="invisible"/>
+        </LinearLayout>
+
+        <View
+            android:id="@+id/divider_viewAroundmeGroups"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:background="#fff" />
+
+      
+    </LinearLayout>
+
+   <!--  <Button
+        android:id="@+id/btnHistory"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+         android:layout_marginTop="92dp"
+        android:text="History" /> -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="90dp"
+        android:orientation="vertical">
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+       >
+
+    <ListView
+        android:id="@+id/listVAroundgroup"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:divider="@android:color/white" 
+
+         android:visibility="gone">
+    </ListView>
+
+    <ListView
+        android:id="@+id/listVAroundMembers"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:divider="@android:color/white"
+        >
+    </ListView>
+
+
+
+    </RelativeLayout>
+
+
+
+
+        <com.google.android.gms.ads.AdView
+            xmlns:ads="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/adView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            ads:adSize="SMART_BANNER"
+            ads:adUnitId="@string/adIDWorldGroup"
+            android:gravity="center" >
+        </com.google.android.gms.ads.AdView>
+
+
+
+
+
+
+    </LinearLayout>
+
+
+</FrameLayout>

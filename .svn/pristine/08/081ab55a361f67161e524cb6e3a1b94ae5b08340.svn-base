@@ -1,0 +1,662 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.adapter.ShowSocialFriends;
+import com.app.adapter.WorldGroupAdapter;
+import com.app.model.FriendInfo;
+import com.app.model.GroupInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+
+//==============================================================================================================================
+public class HangoutFragment extends Fragment
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    class GetGroupsHangout extends AsyncTask<String, Void, String>
+    {
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPreExecute()
+        {
+            progressDialog_ = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+
+            if (worldGroup_.isEmpty())
+                progressDialog_.show();
+
+            super.onPreExecute();
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected String doInBackground(String... params)
+        {
+            String jsonString = "";
+
+            try
+            {
+                List<NameValuePair> param = new ArrayList<NameValuePair>();
+
+                param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+                param.add(new BasicNameValuePair(GlobalConstant.U_TYPE,         "hangout_part_two"));
+                param.add(new BasicNameValuePair(GlobalConstant.GROUP_USERS_ID, allFriendsID_ + ""));
+                param.add(new BasicNameValuePair(GlobalConstant.USER_ID,        global_.getUser_id()+ ""));
+
+                jsonString = (new WebServiceHandler()).makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+                Log.i("jsonString----->", jsonString);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+
+            return jsonString;
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        // TODO: c/p?
+        @Override
+        protected void onPostExecute(String result)
+        {
+            super.onPostExecute(result);
+
+            try
+            {
+                if (result.equals(GlobalConstant.ERROR_CODE_STRING))
+                {
+                    if (progressDialog_.isShowing())
+                        progressDialog_.dismiss();
+
+                    GlobalUtills.showToast(GlobalConstant.ERROR_NO_NETWORK_CONNECTION, getActivity());
+                }
+                else
+                {
+                    JSONObject jsonObject = new JSONObject(result);
+
+                    message_ = jsonObject.getString(GlobalConstant.MESSAGE);
+
+                    if (message_.equals(GlobalConstant.SUCCESS))
+                    {
+                        if (progressDialog_.isShowing())
+                            progressDialog_.dismiss();
+
+                        worldGroup_.clear();
+
+                        JSONArray arrayGroupInfo = jsonObject.getJSONArray("groupInfo");
+
+                        if (arrayGroupInfo.length() > 0)
+                        {
+                            for (int i = 0; i < arrayGroupInfo.length(); ++i)
+                            {
+                                GroupInfo  groupInfo = new GroupInfo();
+                                JSONObject object    = arrayGroupInfo.getJSONObject(i);
+                                String     groupID   = object.getString("groupId");
+
+                                groupInfo.setgroupId(groupID);
+
+                                String groupName = object.getString("groupName");
+
+                                groupInfo.setgroupName(groupName);
+
+                                String groupImage = object.getString("groupImage");
+
+                                groupInfo.setgroupImage(groupImage);
+
+                                String groupTotalMembers = object.getString("groupTotalMembers");
+
+                                groupInfo.setgroupTotalMembers(groupTotalMembers);
+
+                                String groupType = object.getString("groupType");
+
+                                groupInfo.setGroupType(groupType);
+
+                                String groupPassword = object.getString("groupPassword");
+
+                                groupInfo.setGroupPassword (groupPassword);
+                                groupInfo.setGroupTotalmsgs(object.getString("groupMessageCount"));
+                                groupInfo.setGroupTotalnew (object.getString("groupLastMessageCount"));
+                                groupInfo.setUserStatus    (object.getString("user_status"));
+
+                                worldGroup_.add(groupInfo);
+                            }
+
+                            worldAdapter_ = new WorldGroupAdapter(getActivity(), worldGroup_);
+
+                            listViewGroupsHangout_.setAdapter(worldAdapter_);
+                            listViewGroupsHangout_.setOnItemClickListener(new OnItemClickListener()
+                            {
+                                @Override
+                                public void onItemClick(AdapterView<?> parent, View view, final int position, long id)
+                                {
+                                    if ((worldGroup_.get(position).getGroupType()).equalsIgnoreCase("PV") &&
+                                        (worldGroup_.get(position).getUserStatus()).equalsIgnoreCase("N"))
+                                        openLogoutAlert(position);
+
+                                    else
+                                    {
+                                        GlobalUtills.joinORadd_group =
+                                            worldGroup_.get(position).getUserStatus().equalsIgnoreCase("Y");
+
+                                        Intent gotoChatting = new Intent(getActivity(), GroupChat.class);
+
+                                        gotoChatting.putExtra("groupID",    worldGroup_.get(position).getgroupId());
+                                        gotoChatting.putExtra("groupName",  worldGroup_.get(position).getgroupName());
+                                        gotoChatting.putExtra("groupImage", worldGroup_.get(position).getgroupImage() + "");
+
+                                        getActivity().startActivity(gotoChatting);
+                                    }
+                                }
+                            });
+                        }
+                        else
+                        {
+                            GlobalUtills.showToast("No Groups Found..!", getActivity());
+
+                            try
+                            {
+                                worldAdapter_ = new WorldGroupAdapter(getActivity(), worldGroup_);
+
+                                worldAdapter_.notifyDataSetChanged();
+
+                                listViewGroupsHangout_.setAdapter(worldAdapter_);
+                            }
+                            catch (Exception e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        GlobalUtills.showToast("No Groups Found..!", getActivity());
+
+                        if (progressDialog_.isShowing())
+                            progressDialog_.dismiss();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                if (progressDialog_.isShowing())
+                    progressDialog_.dismiss();
+
+                e.printStackTrace();
+            }
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        private TransparentProgressDialog progressDialog_;
+        private String                    message_        = "";
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    class JoinWorldGroupH extends AsyncTask<String, String, String>
+    {
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected String doInBackground(String... params)
+        {
+            try
+            {
+                String groupID = params[0];
+
+                ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+
+                param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE,    "post"));
+                param.add(new BasicNameValuePair(GlobalConstant.U_TYPE,       "join_group"));
+                param.add(new BasicNameValuePair(GlobalConstant.JOIN_USER_ID, global_.getUser_id()));
+                param.add(new BasicNameValuePair(GlobalConstant.GROUP_ID,     groupID));
+
+                try
+                {
+                    responseJoinWorldGroup_ = (new WebServiceHandler()).makeServiceCall(GlobalConstant.URL,
+                                                                                        WebServiceHandler.GET, param);
+
+                    Log.e("Response of Join Group", "" + responseJoinWorldGroup_.toString());
+                }
+                catch (Exception exception)
+                {
+                    exception.printStackTrace();
+
+                    System.out.println("Exception calling");
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+
+            return responseJoinWorldGroup_;
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+
+            dialog_ = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+
+            dialog_.show();
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        protected void onPostExecute(String result)
+        {
+            try
+            {
+                dialog_.dismiss();
+
+                JSONObject jsonObject = new JSONObject(result);
+
+                messageString_ = jsonObject.getString(GlobalConstant.MESSAGE);
+
+                if (messageString_.equalsIgnoreCase(GlobalConstant.SUCCESS))
+                    globalUtills_.DialogOK(getActivity(), "Join Request Sent", "If members of this group will accept your request,then you will become member of this group.");
+
+                else
+                    Toast.makeText(getActivity(), messageString_, Toast.LENGTH_LONG).show();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+
+            super.onPostExecute(result);
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        private TransparentProgressDialog dialog_;
+        private String                    responseJoinWorldGroup_;
+        private String                    messageString_;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+    {
+        super.onCreateView(inflater, container, savedInstanceState);
+
+        container        = (ViewGroup) inflater.inflate(R.layout.hangout_activity, container, false);
+        actionBarCommon_ = new ActionBarCommon(getActivity(), null);
+
+        Global.initAdmob(container);
+
+
+        gettingValues(container);
+
+        actionBarCommon_.setActionText("HangOuts");
+
+        global_       = new Global();
+        globalUtills_ = new GlobalUtills();
+
+        listViewWorldGroup_.setOnItemClickListener(new OnItemClickListener()
+        {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+            {
+                friendID_ = "";
+                friendID_ = allFriendHangoutList_.get(position).getId();
+
+                System.out.println(friendID_ + "friend's id");
+
+                Intent gotoHangoutGroups = new Intent(getActivity(), HangoutFriendGroup.class);
+
+                gotoHangoutGroups.putExtra("FrndID", friendID_ + "");
+
+                getActivity().startActivity(gotoHangoutGroups);
+            }
+        });
+
+        buttonFb_.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                buttonFb_.setTextColor(getResources().getColor(R.color.pinkNew));
+                buttonFbGroups_.setTextColor(GlobalConstant.COLOR_BLACK);
+
+                listViewGroupsHangout_.setVisibility(View.GONE);
+                listViewWorldGroup_.setVisibility(View.VISIBLE);
+                viewFbFriends_.setVisibility(View.VISIBLE);
+                viewFbGroupMember_.setVisibility(View.INVISIBLE);
+
+                Collections.sort(allFriendHangoutList_, new Comparator<FriendInfo>()
+                {
+                    @Override
+                    public int compare(FriendInfo text1, FriendInfo text2)
+                    {
+                        return text1.getName().compareToIgnoreCase(text2.getName());
+                    }
+                });
+
+                friendAdapter_ = new ShowSocialFriends(getActivity(), allFriendHangoutList_,false,false);
+
+                listViewWorldGroup_.setAdapter(friendAdapter_);
+            }
+        });
+
+        buttonFbGroups_.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                buttonFbGroups_.setTextColor(getResources().getColor(R.color.pinkNew));
+                buttonFb_.setTextColor(GlobalConstant.COLOR_BLACK);
+
+                viewFbFriends_.setVisibility(View.INVISIBLE);
+                viewFbGroupMember_.setVisibility(View.VISIBLE);
+                listViewWorldGroup_.setVisibility(View.GONE);
+                listViewGroupsHangout_.setVisibility(View.VISIBLE);
+
+                allFriendsID_ = "";
+
+                for (int gFb = 0; gFb < allFriendHangoutList_.size(); ++gFb)
+                {
+                    if (allFriendsID_.equals(""))
+                        allFriendsID_ = allFriendHangoutList_.get(gFb).getId();
+                    else
+                        allFriendsID_ = allFriendsID_ + "," + allFriendHangoutList_.get(gFb).getId();
+                }
+
+                new GetGroupsHangout().execute();
+            }
+        });
+
+        if (allFriendHangoutList_.size() > 0)
+            allFriendHangoutList_.clear();
+
+        allFriendsID_ = "";
+
+        if (allFriendHangoutList_.size() <= 0)
+            setFriendInfoJson();
+
+        for (int gFb = 0; gFb < allFriendHangoutList_.size(); ++gFb)
+        {
+            if (allFriendsID_.equals(""))
+                allFriendsID_ = allFriendHangoutList_.get(gFb).getId();
+
+            else
+                allFriendsID_ = allFriendsID_ + "," + allFriendHangoutList_.get(gFb).getId();
+        }
+
+        buttonFbGroups_.setTextColor(getResources().getColor(R.color.pinkNew));
+        buttonFb_.setTextColor(GlobalConstant.COLOR_BLACK);
+
+        viewFbFriends_.setVisibility(View.INVISIBLE);
+        viewFbGroupMember_.setVisibility(View.VISIBLE);
+        listViewWorldGroup_.setVisibility(View.GONE);
+        listViewGroupsHangout_.setVisibility(View.VISIBLE);
+
+        if (globalUtills_.haveNetworkConnection(getActivity()))
+            new GetGroupsHangout().execute();
+
+        return container;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    // TODO: c/p
+    public void enterPasswordDialog(final int position)
+    {
+        AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
+
+        alert.setTitle  ("Closed Group");
+        alert.setMessage("Enter Password to access this Group");
+
+        final EditText input = new EditText(getActivity());
+
+        input.setHint                ("Please enter password..");
+        input.setInputType           (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        input.setTransformationMethod(PasswordTransformationMethod.getInstance());
+
+        int maxLength = 15;
+
+        InputFilter[] fArray = new InputFilter[1];
+
+        fArray[0] = new InputFilter.LengthFilter(maxLength);
+
+        input.setFilters(fArray);
+
+        alert.setView          (input);
+        alert.setPositiveButton("OK", new DialogInterface.OnClickListener()
+        {
+            public void onClick(DialogInterface dialog, int whichButton)
+            {
+                String             psd = input.getText().toString().trim();
+                InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+                imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+
+                if (psd.equals(worldGroup_.get(position).getGroupPassword()))
+                {
+                    GlobalUtills.joinORadd_group = false;
+
+                    Intent gotoChatting = new Intent(getActivity(), GroupChat.class);
+
+                    gotoChatting.putExtra("groupID",    worldGroup_.get(position).getgroupId());
+                    gotoChatting.putExtra("groupName",  worldGroup_.get(position).getgroupName());
+                    gotoChatting.putExtra("groupImage", worldGroup_.get(position).getgroupImage() + "");
+
+                    getActivity().startActivity(gotoChatting);
+                }
+                else
+                    globalUtills_.DialogOK(getActivity(), "Warning..!","Wrong password..! Please try again..");
+            }
+        });
+
+        alert.setNegativeButton("CANCEL", new DialogInterface.OnClickListener()
+        {
+            public void onClick(DialogInterface dialog, int whichButton)
+            {
+                InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+                imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+
+                dialog.cancel();
+            }
+        });
+
+        AlertDialog alertDialog = alert.create();
+
+        alertDialog.show();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public void setFriendInfoJson()
+    {
+        try
+        {
+            ArrayList<HashMap<String, String>> friendListArraY = new ArrayList<HashMap<String, String>>();
+            SharedPreferences                  sharedPref      = getActivity().getSharedPreferences("FacebookFrnd",
+                                                                                                    Context.MODE_PRIVATE);
+            String                             friendList      = sharedPref.getString("FriendList", "");
+            JSONArray                          jsonArray       = new JSONArray();
+            JSONArray                          jArr            = new JSONArray(friendList);
+
+            for (int i = 0; i < jArr.length(); ++i)
+            {
+                JSONObject obj           = jArr.getJSONObject(i);
+                JSONObject picture       = obj.getJSONObject("picture");
+                JSONObject jsonObjectURL = picture.getJSONObject("data");
+                String     id            = obj.getString("id");
+                FriendInfo friendInfo    = new FriendInfo();
+                String     imageURL      = jsonObjectURL.getString("url");
+
+                Log.e("Friend ID", id);
+
+                friendInfo.setId(id);
+
+                String name = obj.getString("name");
+
+                friendInfo.setImage(imageURL);
+
+                HashMap<String, String> map = new HashMap<String, String>();
+
+                map.put("id", id);
+
+                friendListArraY.add(map);
+
+                JSONObject pnObj = new JSONObject();
+
+                pnObj.put("userid", id);
+
+
+
+                jsonArray.put(pnObj);
+
+                friendInfo.setName        (name);
+                friendInfo.setUnread_count("");
+
+                allFriendHangoutList_.add(friendInfo);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private void gettingValues(ViewGroup container)
+    {
+        listViewWorldGroup_    = (ListView)        container.findViewById(R.id.list_my_hangOut);
+        actionBarCommon_       = (ActionBarCommon) container.findViewById(R.id.action_bar);
+        listViewGroupsHangout_ = (ListView)        container.findViewById(R.id.list_Groups_hangOut);
+        buttonFb_              = (Button)          container.findViewById(R.id.btnFBfriendsHangout);
+        buttonFbGroups_        = (Button)          container.findViewById(R.id.btnFbGroupHangout);
+        viewFbFriends_         = (View)            container.findViewById(R.id.viewbtnFBfrndsHangout);
+        viewFbGroupMember_     = (View)            container.findViewById(R.id.viewbtnFBgroupHangout);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    // TODO: c/p
+    private void openLogoutAlert(final int positionJ)
+    {
+        final Dialog dialog = globalUtills_.prepararDialog(getActivity(), R.layout.dialog_three_options);
+
+        TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+
+        title.setText("Closed Group");
+
+        TextView subHeading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+
+        subHeading.setText("Its a closed group..!");
+
+        Button buttonChat       = (Button)      dialog.findViewById(R.id.btnChat);
+        Button buttonCall       = (Button)      dialog.findViewById(R.id.btncall);
+        Button buttonGroups     = (Button)      dialog.findViewById(R.id.btngroups);
+        ImageButton buttonClose = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+        buttonClose.setVisibility(View.GONE);
+
+        buttonGroups.setText("Join");
+        buttonCall.setText("Enter Password");
+        buttonChat.setText("Cancel");
+
+        buttonChat.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                dialog.dismiss();
+            }
+        });
+
+        buttonCall.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                enterPasswordDialog(positionJ);
+                dialog.dismiss();
+            }
+        });
+
+        buttonGroups.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                new JoinWorldGroupH().execute(worldGroup_.get(positionJ).getgroupId());
+
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------    private static String friendID_ = "";
+    private static String allFriendsID_ = "";
+    private static String friendID_     = "";
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private ActionBarCommon                    actionBarCommon_;
+    private ListView                           listViewWorldGroup_;
+    private ListView                           listViewGroupsHangout_;
+    private Button                             buttonFb_;
+    private Button                             buttonFbGroups_;
+    private View                               viewFbFriends_;
+    private View                               viewFbGroupMember_;
+    private ArrayList<FriendInfo>              allFriendHangoutList_ = new ArrayList<FriendInfo>();
+    private Global                             global_;
+    private ShowSocialFriends                  friendAdapter_;
+    private ArrayList<GroupInfo>               worldGroup_           = new ArrayList<GroupInfo>();
+    private WorldGroupAdapter                  worldAdapter_;
+    private GlobalUtills                       globalUtills_;
+}

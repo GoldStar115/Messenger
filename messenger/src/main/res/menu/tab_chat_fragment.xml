@@ -1,0 +1,8 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.app.messenger.Tab_chat_fragment" >
+
+    <item android:id="@+id/remove_chat" android:title="Remove User"></item>
+
+</menu>

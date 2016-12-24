@@ -1,0 +1,2880 @@
+package com.app.messenger;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpVersion;
+import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.CoreProtocolPNames;
+import org.apache.http.params.HttpParams;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.ActionBar.LayoutParams;
+import android.app.Activity;
+import android.app.Dialog;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Typeface;
+import android.media.ExifInterface;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.support.v4.app.FragmentActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
+import android.view.View.OnTouchListener;
+import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.ToggleButton;
+
+import com.app.adapter.AddSocialFriendAdapter;
+import com.app.adapter.ShowSocialFriends;
+import com.app.messenger.R.color;
+import com.app.model.Chat_Single;
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.RoundedCornersGaganImageView;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+import com.facebook.widget.ProfilePictureView;
+import com.rockerhieu.emojicon.EmojiconEditText;
+import com.rockerhieu.emojicon.EmojiconGridFragment;
+import com.rockerhieu.emojicon.EmojiconTextView;
+import com.rockerhieu.emojicon.EmojiconsFragment;
+import com.rockerhieu.emojicon.emoji.Emojicon;
+
+public class Group_Chat extends FragmentActivity implements EmojiconGridFragment.OnEmojiconClickedListener, EmojiconsFragment.OnEmojiconBackspaceClickedListener
+{
+
+	ActionBarCommon				actionBarCommon;
+
+	ImageButton					btnSendChat;
+	EmojiconEditText			edMsg;
+	LinearLayout				layoutChat;
+	ScrollView					uiC_scroll;
+
+	static Global				global;
+
+	String						MsgToSend			= "", Visibility = "Y";
+
+	public static String		GroupID				= "", GroupName = "", groupImage = "";
+	String						uID					= "";
+
+	static boolean				RefreshChat_G		= false;
+
+	String						DateTemp			= "";
+
+	Toast						toast;
+
+	ProgressBar					progressBSendMsgGroup;
+
+	HashMap<Integer , String>	hashMap_getids		= new HashMap<Integer , String>();
+	HashMap<Integer , String>	hashMap_getids_ph	= new HashMap<Integer , String>();
+	String						phone_no[], appended_friend_ids = "", appended_phone_no = "";
+	boolean						check_keyboard		= true;
+	FrameLayout					layout_smily;
+	FrameLayout					frame_emoji;
+	ImageView					img_view_smily, img_view_keyboard, uiC_imgVtakePic;
+	ToggleButton				togglebtn;
+
+	ArrayList<String>			friend_id			= new ArrayList<String>();
+
+	String						imgbytes			= "", myFbID = "";
+	// String mobile_no = "";
+	// com.app.messenger.Facebook_ProfilePictureView_rounded DP;
+	List<Chat_Single>			chatData_list_group	= new ArrayList<Chat_Single>();
+
+	private GlobalUtills		globalUtills;
+
+	@Override
+	public void onBackPressed()
+	{
+		GlobalUtills.groupChat_noti = true;
+		GlobalUtills.GroupChat_Sender = "";
+		groupImage = "";
+
+		if( !check_keyboard )
+		{
+			check_keyboard = true;
+			img_view_smily.setVisibility(View.VISIBLE);
+			img_view_keyboard.setVisibility(View.INVISIBLE);
+
+			frame_emoji.setVisibility(View.GONE);
+		}
+		else
+		{
+			DateTemp = "";
+			RefreshChat_G = false;
+			super.onBackPressed();
+		}
+	}
+
+	@Override
+	protected void onResume()
+	{
+
+		try
+		{
+
+			globalUtills = new GlobalUtills();
+			// GlobalUtills.groupChat_noti=false;
+			if( GlobalUtills.YouTube_URL.length() > 2 )
+			{
+				// edMsg.setText(GlobalUtills.YouTube_URL);
+				// GlobalUtills.YouTube_URL = "";
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				{
+					new SendMsgAsync().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "");
+
+				}
+				else
+				{
+					new SendMsgAsync().execute("");
+				}
+			}
+
+			RefreshChat_G = true;
+			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+			{
+				new getunreadmsgsAsync(Group_Chat.this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+			}
+			else
+			{
+				new getunreadmsgsAsync(Group_Chat.this).execute();
+			}
+
+			hashMap_getids = global.getHashMap();
+			hashMap_getids_ph = global.getHashMap_ph();
+
+			if( hashMap_getids.size() > 0 || hashMap_getids_ph.size() > 0 )
+			{
+
+				if( hashMap_getids.size() > 0 )
+				{
+					friend_id = new ArrayList<String>();
+					Set<Integer> keys = hashMap_getids.keySet();
+					for( Integer key : keys )
+					{
+						Log.e("value of key", "" + key);
+						if( !friend_id.contains(hashMap_getids.get(key)) )
+						{
+							friend_id.add(hashMap_getids.get(key));
+						}
+
+					}
+
+					StringBuilder builder;
+
+					for( int i = 0; i < friend_id.size(); i++ )
+					{
+						builder = new StringBuilder();
+
+						if( i == friend_id.size() )
+						{
+							appended_friend_ids = appended_friend_ids + builder.append(friend_id.get(i));
+						}
+						else
+						{
+							appended_friend_ids = appended_friend_ids + builder.append(friend_id.get(i)).append(",");
+						}
+
+					}
+
+					appended_friend_ids = appended_friend_ids.substring(0, appended_friend_ids.length() - 1);
+
+				}
+
+				// for phone no
+
+				int g = 0;
+				if( hashMap_getids_ph.size() > 0 )
+				{
+					phone_no = new String[hashMap_getids_ph.size()];
+					Set<Integer> keys = hashMap_getids_ph.keySet();
+					for( Integer key : keys )
+					{
+						Log.e("value of key", "" + key);
+						phone_no[g] = hashMap_getids_ph.get(key);
+						g++;
+					}
+					Log.e("friend ids", phone_no.toString());
+					StringBuilder builder;
+
+					for( int i = 0; i < phone_no.length; i++ )
+					{
+						builder = new StringBuilder();
+
+						if( i == phone_no.length )
+						{
+							appended_phone_no = appended_phone_no + builder.append(phone_no[i].replaceAll(" ", "").trim());
+						}
+						else
+						{
+							appended_phone_no = appended_phone_no + builder.append(phone_no[i].replaceAll(" ", "").trim()).append(",");
+						}
+						Log.e("appended_phone_no string", "" + appended_phone_no);
+					}
+
+					// appended_phone_no=appended_phone_no.replaceAll(" ", "");
+				}
+
+				DialogShowfrnd();
+				// global.clearhashMAp();
+				// global.clearhashMAp_ph();
+				//
+				// new AsyncAddmembers().execute();
+			}
+
+			NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			notifManager.cancel(1);
+
+			SharedPreferences sharedPref = getSharedPreferences("login", Context.MODE_PRIVATE);
+			global.setUser_id(sharedPref.getString("UserID", ""));
+
+			actionBarCommon.setActionText(GroupName + "");
+
+		}
+		catch(Exception e)
+		{
+
+		}
+		catch(Error e)
+		{
+			// TODO: handle exception
+		}
+		super.onResume();
+	}
+
+	@Override
+	protected void onPause()
+	{
+		// GlobalUtills.groupChat_noti=true;
+		RefreshChat_G = false;
+		super.onPause();
+	}
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+		setContentView(R.layout.group__chat);
+
+		// GlobalUtills.groupChat_noti=false;
+		uiC_scroll = ((ScrollView) findViewById(R.id.uiC_scrllView));
+		layoutChat = (LinearLayout) findViewById(R.id.layoutChat);
+		btnSendChat = (ImageButton) findViewById(R.id.btnSentChat);
+		edMsg = (EmojiconEditText) findViewById(R.id.edMsg);
+		progressBSendMsgGroup = (ProgressBar) findViewById(R.id.uiC_progressBSendMsgGroup);
+		layout_smily = (FrameLayout) findViewById(R.id.linear_layout_smily_group);
+		frame_emoji = (FrameLayout) findViewById(R.id.emojiconsG);
+		img_view_smily = (ImageView) findViewById(R.id.img_view_smily_group);
+		img_view_keyboard = (ImageView) findViewById(R.id.img_view_keyboard_group);
+		uiC_imgVtakePic = (ImageView) findViewById(R.id.uiC_imgVtakePicG);
+		togglebtn = (ToggleButton) findViewById(R.id.toggleButtonVisibility);
+
+		togglebtn.setChecked(true);
+
+		RefreshChat_G = true;
+
+		Intent intentdata = getIntent();
+		GlobalUtills.YouTube_URL = "";
+		globalUtills = new GlobalUtills();
+		global = new Global();
+
+		uID = global.getUser_id();
+		GroupID = intentdata.getStringExtra("groupID");
+		GroupName = intentdata.getStringExtra("groupName");
+		groupImage = intentdata.getStringExtra("groupImage");
+
+		GlobalUtills.GroupChat_Sender = GroupID;
+
+		hashMap_getids = global.getHashMap();
+		SharedPreferences sharedPref = getSharedPreferences("fbID", Context.MODE_PRIVATE);
+		myFbID = sharedPref.getString("fb", "");
+		GlobalUtills.list_of_GroupMembers.clear();
+		System.out.println(GroupID + "<--group id");
+
+		actionBarCommon = new ActionBarCommon(Group_Chat.this, null);
+		actionBarCommon = (ActionBarCommon) findViewById(R.id.action_barC);
+
+		actionBarCommon.setActionText(GroupName + "");
+		actionBarCommon.left_image.setImageResource(R.drawable.icon_back_arrow);
+		actionBarCommon.layout_left.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				GlobalUtills.groupChat_noti = true;
+				GlobalUtills.GroupChat_Sender = "";
+
+				InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(edMsg.getWindowToken(), 0);
+				DateTemp = "";
+				RefreshChat_G = false;
+
+				finish();
+			}
+		});
+
+		actionBarCommon.layoutCenterclick(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				// Toast.makeText(getApplicationContext(), "Chamatkaarr",
+				// Toast.LENGTH_LONG).show();
+
+				if( GlobalUtills.list_of_GroupMembers.size() > 0 )
+				{
+					RefreshChat_G = false;
+
+					Intent gotoGChatting = new Intent(Group_Chat.this, Group_users_info.class);
+					gotoGChatting.putExtra("groupID", GroupID);
+					// gotoGChatting.putExtra("groupName", GroupName);
+					gotoGChatting.putExtra("uID", global.getUser_id());
+					// gotoGChatting.putExtra("groupImage",groupImage);
+
+					startActivity(gotoGChatting);
+				}
+
+			}
+		});
+
+		actionBarCommon.right_image.setImageResource(R.drawable.join_group);
+		actionBarCommon.layout_Right.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( globalUtills.haveNetworkConnection(Group_Chat.this) )
+				{
+
+					// GlobalUtills.showToast("add members", Group_Chat.this);
+
+					if( GlobalUtills.joinORadd_group )
+					{
+						Intent intent = new Intent(Group_Chat.this, FriendsTabBar.class);
+
+						hashMap_getids.clear();
+						global.setHashMap(hashMap_getids);
+						appended_friend_ids = "";
+						global.hashMap_idsGroupmates.clear();
+						phone_no = new String[0];
+						friend_id.clear();
+						hashMap_getids_ph.clear();
+						global.hashMap_ids_ph.clear();
+						global.hashMap_idsaroundme.clear();
+						appended_phone_no = "";
+
+						startActivity(intent);
+
+					}
+					else
+					{
+
+						final Dialog dialog = globalUtills.prepararDialog(Group_Chat.this, R.layout.dialog_three_options);
+
+						TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+						title.setText("Join Group");
+
+						TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+						subheading.setText("Send request to join this group ?");
+
+						Button btn_Chat = (Button) dialog.findViewById(R.id.btnChat);
+						Button btn_call = (Button) dialog.findViewById(R.id.btncall);
+						Button btn_groups = (Button) dialog.findViewById(R.id.btngroups);
+						ImageButton btn_close = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+						btn_groups.setVisibility(View.GONE);
+						btn_close.setVisibility(View.GONE);
+						btn_call.setText("Join");
+						btn_Chat.setText("Cancel");
+
+						btn_Chat.setOnClickListener(new OnClickListener()
+						{
+							@Override
+							public void onClick(View v)
+							{
+								dialog.dismiss();
+							}
+						});
+						btn_call.setOnClickListener(new OnClickListener()
+						{
+
+							@Override
+							public void onClick(View v)
+							{
+								new Join_worldGroup(true).execute(GroupID);
+								dialog.dismiss();
+							}
+						});
+
+						dialog.show();
+
+					}
+
+				}
+				else
+				{
+					GlobalUtills.showToast("No network connection..!", Group_Chat.this);
+				}
+
+			}
+		});
+
+		System.gc();
+		chatData_list_group.clear();
+		SharedPreferences sharedChatDataS = getSharedPreferences("Chat", Context.MODE_PRIVATE);
+		if( sharedChatDataS.contains(GroupID) && GlobalUtills.mygroups_savelocal )
+		{
+
+			String Dataaaa = sharedChatDataS.getString(GroupID, "");
+
+			if( Dataaaa.contains("user_telephone") )
+			{
+				JSON_to_list(Dataaaa);
+
+			}
+			else
+			{
+				sharedChatDataS.edit().remove(GroupID).apply();
+			}
+
+		}
+
+		if( globalUtills.haveNetworkConnection(Group_Chat.this) )
+		{
+			if( chatData_list_group.size() > 0 && GlobalUtills.mygroups_savelocal )
+			{
+				parseMSG_groupdata(chatData_list_group, true, false);
+
+				/*
+				 * if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+				 * new
+				 * getunreadmsgsAsync(Group_Chat.this).executeOnExecutor(AsyncTask
+				 * .THREAD_POOL_EXECUTOR);
+				 * 
+				 * } else { new getunreadmsgsAsync(Group_Chat.this).execute(); }
+				 */
+
+			}
+			else
+			{
+
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				{
+					new RECEIVEMsgAsync().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+				}
+				else
+				{
+					new RECEIVEMsgAsync().execute();
+				}
+			}
+
+		}
+		else
+		{
+
+			if( chatData_list_group.size() > 0 )
+			{
+
+				new showMsgDataAsyncngroup(chatData_list_group).execute();
+
+				// parseMSG_groupdata(chatData_list_group);
+				/*
+				 * if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+				 * new
+				 * getunreadmsgsAsync(Group_Chat.this).executeOnExecutor(AsyncTask
+				 * .THREAD_POOL_EXECUTOR);
+				 * 
+				 * } else { new getunreadmsgsAsync(Group_Chat.this).execute(); }
+				 */
+			}
+
+			// GlobalUtills
+			// .showToast("No internet connection..!", Group_Chat.this);
+		}
+
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+		{
+			new getGroups_users().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+		}
+		else
+		{
+			new getGroups_users().execute();
+		}
+
+		setEmojiconFragment(false);
+
+		btnSendChat.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( edMsg.getText().toString().trim().equals("") )
+				{
+
+					GlobalUtills.showToast("nothing to send ..!", Group_Chat.this);
+				}
+				else
+				{
+					MsgToSend = edMsg.getText().toString().trim();
+
+					if( globalUtills.haveNetworkConnection(Group_Chat.this) )
+					{
+
+						GlobalUtills.YouTube_URL = "";
+						GlobalUtills.YouTube_VIdeoID = "";
+
+						if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+						{
+							new SendMsgAsync().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, MsgToSend);
+
+						}
+						else
+						{
+							new SendMsgAsync().execute(MsgToSend);
+						}
+
+						if( !GlobalUtills.joinORadd_group )
+						{
+
+							if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+							{
+								new Join_worldGroup(false).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, GroupID);
+
+							}
+							else
+							{
+								new Join_worldGroup(false).execute(GroupID);
+							}
+
+							GlobalUtills.joinORadd_group = true;
+						}
+
+					}
+					else
+					{
+						// if (chatData_list_group.size() > 0) {
+						// parseMSG_groupdata(chatData_list_group);
+						// new getunreadmsgsAsync().execute();
+						// }
+
+						GlobalUtills.showToast("No internet connection..!", Group_Chat.this);
+					}
+
+				}
+
+			}
+		});
+
+		edMsg.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( !check_keyboard )
+				{
+					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+				}
+			}
+		});
+
+		layout_smily.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				// TODO Auto-generated method stub
+				if( check_keyboard )
+				{
+					check_keyboard = false;
+					img_view_smily.setVisibility(View.INVISIBLE);
+					img_view_keyboard.setVisibility(View.VISIBLE);
+					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+					frame_emoji.setVisibility(View.VISIBLE);
+				}
+				else
+				{
+					check_keyboard = true;
+					img_view_smily.setVisibility(View.VISIBLE);
+					img_view_keyboard.setVisibility(View.INVISIBLE);
+					InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+					imm.showSoftInput(edMsg, InputMethodManager.SHOW_IMPLICIT);
+					frame_emoji.setVisibility(View.GONE);
+				}
+
+			}
+		});
+
+		uiC_imgVtakePic.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				DialogoChoose();
+			}
+		});
+
+		edMsg.addTextChangedListener(new TextWatcher()
+		{
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count)
+			{
+
+				if( edMsg.getText().toString().length() > 0 )
+				{
+					uiC_imgVtakePic.setVisibility(View.GONE);
+					btnSendChat.setVisibility(View.VISIBLE);
+				}
+				else
+				{
+					uiC_imgVtakePic.setVisibility(View.VISIBLE);
+					btnSendChat.setVisibility(View.GONE);
+				}
+
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after)
+			{
+
+			}
+
+			@Override
+			public void afterTextChanged(Editable s)
+			{
+
+			}
+		});
+
+		togglebtn.setOnCheckedChangeListener(new OnCheckedChangeListener()
+		{
+
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+			{
+
+				if( isChecked )
+				{
+					Visibility = "Y";
+				}
+				else
+				{
+					Visibility = "N";
+				}
+
+			}
+		});
+
+		if( !Chat_OneToOne.ShareImage.isEmpty() )
+		{
+			decodeFile(Chat_OneToOne.ShareImage);
+
+			GlobalUtills.showToast("Sharing Image....", Group_Chat.this);
+		}
+
+	}
+
+	private void popup_UserDetails(final String Name, final String fbID, final String PHno_, final String UsrID)
+	{
+		final Dialog dialog = globalUtills.prepararDialog(Group_Chat.this, R.layout.user_details);
+
+		// if( GlobalUtills.list_of_GroupMembers.size() > 0 )
+		// {
+		// for( int i = 0; i < GlobalUtills.list_of_GroupMembers.size(); i++ )
+		// {
+		// if(
+		// GlobalUtills.list_of_GroupMembers.get(i).getId().equalsIgnoreCase(fbID)
+		// )
+		// {
+		// mobile_no = GlobalUtills.list_of_GroupMembers.get(i).getMobile_no();
+		// break;
+		// }
+		// }
+		// }
+
+		ProfilePictureView DPUser = (ProfilePictureView) dialog.findViewById(R.id.ImgVuserImgDP);
+		DPUser.setProfileId(fbID);
+
+		TextView text_save_type = (TextView) dialog.findViewById(R.id.txtV_userName);
+		text_save_type.setText(Name.toString());
+
+		final Button btn_Chat = (Button) dialog.findViewById(R.id.btnUserChat);
+		final Button btn_Cancel = (Button) dialog.findViewById(R.id.btnUserCancel);
+
+		final Animation an = AnimationUtils.loadAnimation(Group_Chat.this, R.anim.zoom_out);
+		an.setFillAfter(true);
+
+		btn_Cancel.setOnTouchListener(new OnTouchListener()
+		{
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event)
+			{
+				switch (event.getAction())
+				{
+				case MotionEvent.ACTION_DOWN:
+					// start your first zoom out Animation here
+
+					btn_Cancel.setAnimation(an);
+
+					btn_Cancel.startAnimation(an);
+					break;
+
+				case MotionEvent.ACTION_UP:
+					final Animation an2 = AnimationUtils.loadAnimation(Group_Chat.this, R.anim.zoom_out_two);
+					an2.setFillAfter(true);
+
+					an2.setAnimationListener(new AnimationListener()
+					{
+
+						@Override
+						public void onAnimationStart(Animation animation)
+						{
+
+						}
+
+						@Override
+						public void onAnimationRepeat(Animation animation)
+						{
+
+						}
+
+						@Override
+						public void onAnimationEnd(Animation animation)
+						{
+
+							dialog.dismiss();
+
+						}
+					});
+
+					btn_Cancel.setAnimation(an2);
+
+					btn_Cancel.startAnimation(an2);
+
+					break;
+				}
+				return false;
+			}
+		});
+
+		btn_Chat.setOnTouchListener(new OnTouchListener()
+		{
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event)
+			{
+				switch (event.getAction())
+				{
+				case MotionEvent.ACTION_DOWN:
+					// start your first zoom out Animation here
+
+					btn_Chat.setAnimation(an);
+
+					btn_Chat.startAnimation(an);
+					break;
+
+				case MotionEvent.ACTION_UP:
+					final Animation an2 = AnimationUtils.loadAnimation(Group_Chat.this, R.anim.zoom_out_two);
+					an2.setFillAfter(true);
+
+					an2.setAnimationListener(new AnimationListener()
+					{
+
+						@Override
+						public void onAnimationStart(Animation animation)
+						{
+							// TODO Auto-generated method stub
+
+						}
+
+						@Override
+						public void onAnimationRepeat(Animation animation)
+						{
+							// TODO Auto-generated method stub
+
+						}
+
+						@Override
+						public void onAnimationEnd(Animation animation)
+						{
+
+							Intent gotoChatting = new Intent(Group_Chat.this, Chat_OneToOne.class);
+							gotoChatting.putExtra("name", Name + "");
+							gotoChatting.putExtra("fbID", fbID + "");
+							gotoChatting.putExtra("ph", PHno_ + "");
+							gotoChatting.putExtra("user_id", UsrID + "");
+							startActivity(gotoChatting);
+							dialog.dismiss();
+
+						}
+					});
+
+					btn_Chat.setAnimation(an2);
+
+					btn_Chat.startAnimation(an2);
+
+					break;
+				}
+				return false;
+			}
+		});
+
+		dialog.show();
+
+	}
+
+	// ASYNC CLASS TO SEND MSGS
+	public class SendMsgAsync extends AsyncTask<String , Void , String>
+	{
+
+		String	response	= "";
+
+		String	visibilityyFBiD	= "", youtubeThumbnail = "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			if( !(GlobalUtills.YouTube_URL.equals("")) )
+			{
+
+				youtubeThumbnail = GlobalUtills.YouTube_URL.substring(8, GlobalUtills.YouTube_URL.length());
+
+				youtubeThumbnail = youtubeThumbnail + "," + GlobalUtills.YouTube_VIdeoID;
+
+				GlobalUtills.YouTube_URL = "";
+				GlobalUtills.YouTube_VIdeoID = "";
+				MsgToSend = "";
+			}
+
+			if( imgbytes.equals("") )
+			{
+
+				if( Visibility.equals("Y") )
+				{
+					visibilityyFBiD = myFbID;
+				}
+				else
+				{
+					visibilityyFBiD = "";
+				}
+
+				Calendar c = Calendar.getInstance();
+				SimpleDateFormat dfJOBJ = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				String formattedDateJOBJ = dfJOBJ.format(c.getTime());
+
+				Chat_Single cD = new Chat_Single(global.getUser_id(), MsgToSend, formattedDateJOBJ, "", "", "" + youtubeThumbnail, visibilityyFBiD, "");
+				List<Chat_Single> CDL = new ArrayList<Chat_Single>();
+				CDL.add(cD);
+
+				try
+				{
+
+					if( GlobalUtills.mygroups_savelocal )
+					{
+
+						if( Visibility.equals("Y") )
+						{
+							visibilityyFBiD = myFbID;
+						}
+						else
+						{
+							visibilityyFBiD = "";
+						}
+
+						SharedPreferences sharedChatDataS = getSharedPreferences("Chat", Context.MODE_PRIVATE);
+						JSONArray jsonOLD = new JSONArray(sharedChatDataS.getString(GroupID, ""));
+
+						JSONObject jG = new JSONObject();
+
+						jG.put("userId", "" + global.getUser_id());
+						jG.put("message", "" + MsgToSend);
+						jG.put("date", "" + formattedDateJOBJ);
+						jG.put("user_name", "G");
+						jG.put("image", "" + "");
+						jG.put("youtube", "" + youtubeThumbnail);
+						jG.put("facebook_id", visibilityyFBiD);
+						jG.put("user_telephone", "0000000000");
+						// String user_telephone =
+						// jobjinner.getString("user_telephone");
+						jsonOLD.put(jG);
+
+						Editor editSHared = sharedChatDataS.edit();
+						editSHared.putString(GroupID, jsonOLD.toString());
+						editSHared.apply();
+
+					}
+
+					parseMSG_groupdata(CDL, false, false);
+				}
+				catch(Exception e)
+				{
+					// TODO: handle exception
+				}
+			}
+			else
+			{
+				progressBSendMsgGroup.setVisibility(View.VISIBLE);
+				btnSendChat.setEnabled(false);
+				uiC_imgVtakePic.setEnabled(false);
+				edMsg.setEnabled(false);
+			}
+			edMsg.setText("");
+
+			super.onPreExecute();
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=mychat&gid=52&uid=1&msg=hi
+			// [2:47:06 PM] Suresh: now you send uid->userid,
+			// gid->groupId,msg->message
+
+			String msg = params[0];
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			if( imgbytes.equals("") )
+			{
+				param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+				param.add(new BasicNameValuePair("mtype", "mychat"));
+			}
+			param.add(new BasicNameValuePair("gid", GroupID + ""));
+			param.add(new BasicNameValuePair("uid", global.getUser_id() + ""));
+			param.add(new BasicNameValuePair("msg", msg + ""));
+			param.add(new BasicNameValuePair("image", imgbytes + ""));
+			param.add(new BasicNameValuePair("visibility", Visibility + ""));
+			param.add(new BasicNameValuePair("youtube", youtubeThumbnail));
+
+			String jsonString = "";
+			if( imgbytes.equals("") )
+			{
+				WebServiceHandler web = new WebServiceHandler();
+				jsonString = web.makeServiceCallSendchat(GlobalConstant.URL, WebServiceHandler.GET, param);
+			}
+			else
+			{
+				WebServiceHandler web = new WebServiceHandler();
+				jsonString = web.makeServiceCallSendchat(GlobalConstant.URLSendMSGGroup, WebServiceHandler.POST, param);
+			}
+
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			try
+			{
+
+				btnSendChat.setEnabled(true);
+				uiC_imgVtakePic.setEnabled(true);
+				edMsg.setEnabled(true);
+
+				progressBSendMsgGroup.setVisibility(View.GONE);
+
+				if( result.contains("Success") )
+				{
+
+					if( !imgbytes.equals("") )
+					{
+						try
+						{
+
+							Calendar c = Calendar.getInstance();
+							SimpleDateFormat dfJOBJ = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							String formattedDateJOBJ = dfJOBJ.format(c.getTime());
+
+							JSONObject jobjIMage = new JSONObject(result);
+							String imageURL = jobjIMage.getString("image");
+
+							if( GlobalUtills.mygroups_savelocal )
+							{
+
+								if( Visibility.equals("Y") )
+								{
+									visibilityyFBiD = myFbID;
+								}
+								else
+								{
+									visibilityyFBiD = "";
+								}
+
+								SharedPreferences sharedChatDataS = getSharedPreferences("Chat", Context.MODE_PRIVATE);
+								JSONArray jsonOLD = new JSONArray(sharedChatDataS.getString(GroupID, ""));
+
+								JSONObject jG = new JSONObject();
+
+								jG.put("userId", "" + global.getUser_id());
+								jG.put("message", "" + "");
+								jG.put("date", "" + formattedDateJOBJ);
+								jG.put("user_name", "G");
+								jG.put("image", "" + imageURL);
+								jG.put("youtube", "");
+								jG.put("facebook_id", visibilityyFBiD);
+								jsonOLD.put(jG);
+
+								Editor editSHared = sharedChatDataS.edit();
+								editSHared.putString(GroupID, jsonOLD.toString());
+								editSHared.apply();
+
+								if( imgbytes.equals("") )
+								{
+
+								}
+								else
+								{
+									Chat_Single cD = new Chat_Single(global.getUser_id(), "", formattedDateJOBJ, "", imageURL, "", visibilityyFBiD, "");
+									List<Chat_Single> CDL = new ArrayList<Chat_Single>();
+									CDL.add(cD);
+									parseMSG_groupdata(CDL, false, false);
+								}
+
+							}
+							else
+							{
+								if( imgbytes.equals("") )
+								{
+
+								}
+								else
+								{
+
+									if( Visibility.equals("Y") )
+									{
+										visibilityyFBiD = myFbID;
+									}
+									else
+									{
+										visibilityyFBiD = "";
+									}
+
+									Chat_Single cD = new Chat_Single(global.getUser_id(), "", formattedDateJOBJ, "", imageURL, "", visibilityyFBiD, "");
+									List<Chat_Single> CDL = new ArrayList<Chat_Single>();
+									CDL.add(cD);
+
+									parseMSG_groupdata(CDL, false, false);
+								}
+
+							}
+
+						}
+						catch(JSONException e)
+						{
+							SharedPreferences sharedChatDataS = getSharedPreferences("Chat", Context.MODE_PRIVATE);
+							Editor editSHared = sharedChatDataS.edit();
+							editSHared.remove(GroupID);
+							editSHared.apply();
+							e.printStackTrace();
+						}
+
+					}
+
+					imgbytes = "";
+
+				}
+
+				else
+				{
+					imgbytes = "";
+
+					GlobalUtills.showToast("Error", Group_Chat.this);
+					System.out.println(result + "result error");
+				}
+
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+				imgbytes = "";
+
+			}
+
+			super.onPostExecute(result);
+		}
+
+	}
+
+	//
+
+	// RECEIVE MSGS FIRST TIME
+	public class RECEIVEMsgAsync extends AsyncTask<String , Void , String>
+	{
+
+		String						response	= "";
+
+		TransparentProgressDialog	pd;
+		boolean						localdata	= false;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+			pd = new TransparentProgressDialog(Group_Chat.this, R.drawable.loading_spinner_icon);
+			if( chatData_list_group.size() > 0 && GlobalUtills.mygroups_savelocal )
+			{
+				// pd.dismiss();
+				localdata = true;
+			}
+			else
+			{
+				localdata = false;
+				pd.show();
+			}
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=getchat&uid=1&gid=52
+			String jsonString = "";
+			try
+			{
+
+				if( localdata )
+				{
+
+					runOnUiThread(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+
+							parseMSG_groupdata(chatData_list_group, true, false);
+
+						}
+					});
+
+				}
+				else
+				{
+
+					List<NameValuePair> param = new ArrayList<NameValuePair>();
+					param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+					param.add(new BasicNameValuePair("mtype", "getchat"));
+					param.add(new BasicNameValuePair("uid", global.getUser_id() + ""));
+					param.add(new BasicNameValuePair("gid", GroupID + ""));
+					param.add(new BasicNameValuePair("timezone", com.app.util.GlobalConstant.time_zone + ""));
+
+					WebServiceHandler web = new WebServiceHandler();
+					jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+				}
+			}
+			catch(Exception e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+
+				}
+				e.printStackTrace();
+			}
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			System.out.println(result + "result");
+
+			try
+			{
+
+				if( localdata )
+				{
+					if( pd.isShowing() )
+					{
+						pd.dismiss();
+
+					}
+
+				}
+
+				else
+				{
+
+					JSONObject jobjOuter = new JSONObject(result);
+					String responseMSG = jobjOuter.getString("Message");
+					if( responseMSG.equalsIgnoreCase("Success") )
+					{
+
+						// JSONArray jsonArrMsgs = new JSONArray(msgsArrayString
+						// + "");
+
+						// for (int i = 0; i < jsonArrMsgs.length(); i++) {
+
+						String msgsArrayString = jobjOuter.getString("msgInfo");
+
+						SharedPreferences sharedChatDataS = getSharedPreferences("Chat", Context.MODE_PRIVATE);
+						Editor editSHared = sharedChatDataS.edit();
+						editSHared.putString(GroupID, msgsArrayString);
+						editSHared.apply();
+
+						JSON_to_list(msgsArrayString);
+
+						parseMSG_groupdata(chatData_list_group, true, false);
+
+					}
+					else
+					{
+						System.out.println(result + "error");
+					}
+
+					pd.dismiss();
+
+				}
+
+			}
+			catch(JSONException e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+
+				e.printStackTrace();
+			}
+			catch(Exception e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+
+				e.printStackTrace();
+			}
+			catch(OutOfMemoryError e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+				e.printStackTrace();
+			}
+
+			super.onPostExecute(result);
+		}
+
+	}
+
+	//
+	public static String parseDateToddMMyyyy(String time)
+	{
+		// 2015-01-14 15:48:05
+		String inputPattern = "yyyy-MM-dd HH:mm:ss";
+		String outputPattern = "dd-MMMM";
+		SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
+		SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);
+
+		Date date = null;
+		String str = null;
+
+		try
+		{
+			date = inputFormat.parse(time);
+			str = outputFormat.format(date);
+		}
+		catch(ParseException e)
+		{
+			e.printStackTrace();
+		}
+		catch(java.text.ParseException e)
+		{
+
+			e.printStackTrace();
+		}
+		return str;
+	}
+
+	public void getunread_group(Context ccon)
+	{
+
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+		{
+			new getunreadmsgsAsync(Group_Chat.this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+		}
+		else
+		{
+			new getunreadmsgsAsync(Group_Chat.this).execute();
+		}
+
+	}
+
+	// ASYNC CLASS TO get unread msgs
+	public class getunreadmsgsAsync extends AsyncTask<String , Void , String>
+	{
+
+		String	response	= "";
+		Context	con;
+
+		public getunreadmsgsAsync(Context con)
+		{
+			this.con = con;
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+			System.gc();
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=get_unread&group_id=101&user_id=50
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "get_unread"));
+			param.add(new BasicNameValuePair("group_id", GroupID + ""));
+			param.add(new BasicNameValuePair("user_id", uID + ""));
+			param.add(new BasicNameValuePair("timezone", com.app.util.GlobalConstant.time_zone + ""));
+
+			String url = "" + GlobalConstant.URL;
+
+			String paramString = URLEncodedUtils.format(param, "utf-8");
+			url += "?" + paramString;
+			System.out.println(url);
+
+			try
+			{
+
+				HttpParams httpParams = new BasicHttpParams();
+				httpParams.setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+				HttpClient httpClient = new DefaultHttpClient(httpParams);
+
+				HttpEntity httpEntity = null;
+				HttpResponse httpResponse = null;
+
+				HttpGet httpGet = new HttpGet(url);
+
+				httpResponse = httpClient.execute(httpGet);
+
+				httpEntity = httpResponse.getEntity();
+
+				response = EntityUtils.toString(httpEntity);
+
+			}
+			catch(Exception e)
+			{
+				System.out.println("EXCEPTION FROM THE SERVER" + e.getMessage());
+				return response = "Error";
+			}
+
+			String jsonString = response;
+
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			// System.out.println(result + "result");
+
+			try
+			{
+
+				JSONObject jobjOuter = new JSONObject(result);
+				String responseMSG = jobjOuter.getString("Message");
+				if( responseMSG.equalsIgnoreCase("Success") )
+				{
+
+					String msgsArrayString = jobjOuter.getString("msgInfo");
+					JSONArray jsonArrMsgs = new JSONArray(msgsArrayString + "");
+
+					SharedPreferences sharedChatDataS = null;
+					JSONArray jsonOLD = null;
+
+					if( GlobalUtills.mygroups_savelocal )
+					{
+
+						sharedChatDataS = con.getSharedPreferences("Chat", Context.MODE_PRIVATE);
+						jsonOLD = new JSONArray(sharedChatDataS.getString(GroupID, ""));
+					}
+					for( int i = 0; i < jsonArrMsgs.length(); i++ )
+					{
+
+						JSONObject jobjinner = jsonArrMsgs.getJSONObject(i);
+
+						String userId = jobjinner.getString("userId");
+						String message = jobjinner.getString("message");
+						String date = jobjinner.getString("date");
+						final String imgURL = jobjinner.getString("image");
+						final String fbID = jobjinner.getString("facebook_id");
+						final String username = jobjinner.getString("user_name");
+						final String youtube = jobjinner.getString("youtube");
+
+						final String user_telephone = jobjinner.getString("user_telephone");
+
+						if( GlobalUtills.mygroups_savelocal )
+						{
+
+							try
+							{
+
+								JSONObject jG = new JSONObject();
+
+								jG.put("userId", "" + userId);
+								jG.put("message", "" + message);
+								jG.put("date", "" + date);
+								jG.put("user_name", username);
+								jG.put("image", "" + imgURL);
+								jG.put("youtube", "" + youtube);
+								jG.put("facebook_id", fbID);
+								jG.put("user_telephone", user_telephone);
+
+								jsonOLD.put(jG);
+
+							}
+							catch(JSONException e)
+							{
+
+								Editor editSHared = sharedChatDataS.edit();
+								editSHared.remove(GroupID);
+								editSHared.apply();
+								e.printStackTrace();
+							}
+
+						}
+						Chat_Single cD = new Chat_Single(userId, message, date, username, imgURL, youtube, fbID, user_telephone);
+						List<Chat_Single> CDL = new ArrayList<Chat_Single>();
+						CDL.add(cD);
+						parseMSG_groupdata(CDL, false, false);
+
+						// parseMSG_groupdata(CDL);
+
+					}
+
+					if( jsonArrMsgs.length() > 0 && GlobalUtills.mygroups_savelocal )
+					{
+
+						Editor editSHared = sharedChatDataS.edit();
+						editSHared.putString(GroupID, jsonOLD.toString());
+						editSHared.apply();
+
+						if( Chat_OneToOne.generateNOti && GlobalUtills.allNotification )
+						{
+							String MessageNoti_group = "You have new message in " + GroupName;
+
+							globalUtills.generateNotification_local(Group_Chat.this, MessageNoti_group, 1);
+							Chat_OneToOne.generateNOti = false;
+						}
+
+					}
+
+				}
+				else
+				{
+					// System.out.println(result + "no msg returnes");
+				}
+
+				if( RefreshChat_G )
+				{
+					if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+					{
+						new getunreadmsgsAsync(Group_Chat.this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+					}
+					else
+					{
+						new getunreadmsgsAsync(Group_Chat.this).execute();
+					}
+				}
+
+			}
+			catch(Exception e)
+			{
+				if( RefreshChat_G )
+				{
+					if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+					{
+						new getunreadmsgsAsync(Group_Chat.this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+					}
+					else
+					{
+						new getunreadmsgsAsync(Group_Chat.this).execute();
+					}
+				}
+
+				e.printStackTrace();
+			}
+
+			super.onPostExecute(result);
+		}
+
+	}
+
+	//
+
+	// add members
+	public class AsyncAddmembers extends AsyncTask<String , Void , String>
+	{
+		String	message;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE, "add_members"));
+			param.add(new BasicNameValuePair("userId", global.getUser_id()));
+			param.add(new BasicNameValuePair("groupId", GroupID));
+			param.add(new BasicNameValuePair("users", appended_friend_ids));
+			param.add(new BasicNameValuePair("phones", appended_phone_no + ""));
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			Log.e("Response from emailexisit ", jsonString);
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			JSONObject jsonObject;
+			try
+			{
+				jsonObject = new JSONObject(result);
+
+				message = jsonObject.getString("Message");
+				if( message.equalsIgnoreCase("Success") )
+				{
+					String count = jsonObject.getString("userAddedCount");
+					if( count.equalsIgnoreCase("0") )
+					{
+						GlobalUtills.showToast("Members already added..!", Group_Chat.this);
+					}
+					else
+					{
+
+						new getGroups_users().execute();
+						if( count.equalsIgnoreCase("1") )
+						{
+							GlobalUtills.showToast(count + " new member added", Group_Chat.this);
+						}
+						else
+						{
+							GlobalUtills.showToast(count + " new members added", Group_Chat.this);
+						}
+
+					}
+
+					if( !appended_phone_no.equals("") )
+					{
+						GlobalUtills.showToast("Invitation sent ,to new numbers..", Group_Chat.this);
+					}
+
+					global.clearhashMAp();
+				}
+				else
+				{
+					GlobalUtills.showToast("No member added..!", Group_Chat.this);
+				}
+
+			}
+			catch(JSONException e)
+			{
+
+				e.printStackTrace();
+			}
+
+			super.onPostExecute(result);
+		}
+	}
+
+	// addmember end
+
+	// -----------------------------JoinWorldGroup-------------------------
+
+	class Join_worldGroup extends AsyncTask<String , String , String>
+	{
+		TransparentProgressDialog	dialog;
+		String						response_JoinWorldGroup;
+		String						messaString;
+		boolean						show_pd	= true;
+
+		public Join_worldGroup(boolean show_pd)
+		{
+			this.show_pd = show_pd;
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+			String GroupID = params[0];
+			ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+
+			param.add(new BasicNameValuePair(GlobalConstant.Join_User_id, global.getUser_id()));
+			param.add(new BasicNameValuePair(GlobalConstant.Group_id, GroupID));
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE, "join_group"));
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=join_group&user_id=1&group_id=106
+			Log.e("parametersValue of  world Group" + "", params.toString());
+
+			try
+			{
+				WebServiceHandler web = new WebServiceHandler();
+
+				response_JoinWorldGroup = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+				Log.e("Response of Join Group", "" + response_JoinWorldGroup.toString());
+
+			}
+			catch(Exception exception)
+
+			{
+				exception.printStackTrace();
+				System.out.println("Exception calling");
+			}
+
+			return response_JoinWorldGroup;
+
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+			dialog = new TransparentProgressDialog(Group_Chat.this, R.drawable.loading_spinner_icon);
+
+			if( show_pd )
+			{
+				dialog.show();
+			}
+
+		}
+
+		protected void onPostExecute(String result)
+		{
+
+			try
+			{
+
+				if( dialog.isShowing() )
+				{
+					dialog.dismiss();
+				}
+
+				JSONObject jsonObject = new JSONObject(result);
+				messaString = jsonObject.getString("Message");
+
+				if( messaString.equalsIgnoreCase("Success") && show_pd )
+				{
+
+					globalUtills.DialogOK(Group_Chat.this, "Join group", "You have successfully joined this group..!");
+
+				}
+				else
+				{
+
+					// Toast.makeText(Group_Chat.this, messaString, 200).show();
+				}
+
+			}
+			catch(Exception e)
+			{
+				Toast.makeText(Group_Chat.this, "Error..!", 200).show();
+				System.out.println(e.getMessage());
+			}
+			super.onPostExecute(result);
+		}
+	}
+
+	// join group
+
+	private void setEmojiconFragment(boolean useSystemDefault)
+	{
+		try
+		{
+
+			getSupportFragmentManager().beginTransaction().replace(R.id.emojiconsG, EmojiconsFragment.newInstance(useSystemDefault)).commit();
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onEmojiconBackspaceClicked(View v)
+	{
+
+		EmojiconsFragment.backspace(edMsg);
+	}
+
+	@Override
+	public void onEmojiconClicked(Emojicon emojicon)
+	{
+
+		EmojiconsFragment.input(edMsg, emojicon);
+	}
+
+	public void DialogoChoose()
+	{
+		final Dialog dialogLoader = new Dialog(this, R.style.Theme_Dialog);
+		dialogLoader.setTitle("Select a Image ");
+		dialogLoader.setContentView(R.layout.dialogo_choose);
+		dialogLoader.getWindow().setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+		ImageButton uiC_imgbtntake_gallery = (ImageButton) dialogLoader.findViewById(R.id.uiC_imgbtntake_gallery);
+		ImageButton uiC_imgbtntake_camera = (ImageButton) dialogLoader.findViewById(R.id.uiC_imgbtntake_camera);
+		ImageButton btnYoutube = (ImageButton) dialogLoader.findViewById(R.id.btn_youTube);
+
+		btnYoutube.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				dialogLoader.dismiss();
+
+				Intent gotoYouTube = new Intent(Group_Chat.this, YouTube_videosList.class);
+				startActivity(gotoYouTube);
+
+			}
+		});
+		uiC_imgbtntake_gallery.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				dialogLoader.dismiss();
+
+				Intent pickPhoto = new Intent(Intent.ACTION_PICK);
+				pickPhoto.setType("image/*");
+				startActivityForResult(pickPhoto, 22);
+
+			}
+		});
+
+		uiC_imgbtntake_camera.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				dialogLoader.dismiss();
+				Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+				cameraIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, getTempUri());
+				cameraIntent.putExtra("return-data", true);
+				startActivityForResult(cameraIntent, 1888);
+
+			}
+		});
+
+		dialogLoader.show();
+	}
+
+	static final String	TEMP_PHOTO_FILE	= "temporary_holder.jpg";
+
+	private Uri getTempUri()
+	{
+		return Uri.fromFile(getTempFile());
+	}
+
+	private File getTempFile()
+	{
+
+		if( Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED) )
+		{
+
+			File file = new File(Environment.getExternalStorageDirectory(), TEMP_PHOTO_FILE);
+			try
+			{
+				file.createNewFile();
+			}
+			catch(IOException e)
+			{}
+
+			return file;
+		}
+		else
+		{
+
+			return null;
+		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data)
+	{
+		switch (requestCode)
+		{
+		case 22:
+			if( resultCode == Activity.RESULT_OK )
+			{
+				try
+				{
+
+					File tempFile = getTempFile();
+					String filePathG = Environment.getExternalStorageDirectory() + "/" + TEMP_PHOTO_FILE;
+
+					InputStream inputStream = getContentResolver().openInputStream(data.getData());
+					FileOutputStream fileOutputStream = new FileOutputStream(filePathG);
+					globalUtills.copyStream(inputStream, fileOutputStream);
+					fileOutputStream.close();
+					inputStream.close();
+
+					decodeFile(filePathG);
+
+					if( tempFile.exists() )
+					{
+						tempFile.delete();
+					}
+
+				}
+				catch(Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+
+			break;
+
+		case 1888:
+
+			try
+			{
+
+				String filePath = null;
+				File tempFile = getTempFile();
+
+				filePath = Environment.getExternalStorageDirectory() + "/" + TEMP_PHOTO_FILE;
+
+				if( filePath != null )
+				{
+
+					decodeFile(filePath);
+				}
+
+				if( tempFile.exists() )
+				{
+					tempFile.delete();
+				}
+
+			}
+			catch(RuntimeException e)
+			{
+				e.printStackTrace();
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+
+		}
+		super.onActivityResult(requestCode, resultCode, data);
+	}
+
+	// -------------------------------------------
+
+	public void decodeFile(String filePath)
+	{
+
+		// Decode image size
+		BitmapFactory.Options o = new BitmapFactory.Options();
+		o.inJustDecodeBounds = true;
+		BitmapFactory.decodeFile(filePath, o);
+
+		// The new size we want to scale to
+		final int REQUIRED_SIZE = 1024;
+
+		// Find the correct scale value. It should be the power of 2.
+		int width_tmp = o.outWidth, height_tmp = o.outHeight;
+		int scale = 1;
+		while (true)
+		{
+			if( width_tmp < REQUIRED_SIZE && height_tmp < REQUIRED_SIZE )
+				break;
+			width_tmp /= 2;
+			height_tmp /= 2;
+			scale *= 2;
+		}
+
+		// Decode with inSampleSize
+		BitmapFactory.Options o2 = new BitmapFactory.Options();
+		o2.inSampleSize = scale;
+		Bitmap bitmap = BitmapFactory.decodeFile(filePath, o2);
+
+		try
+		{
+			ExifInterface ei = new ExifInterface(filePath);
+			int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+			Matrix matrix = new Matrix();
+			switch (orientation)
+			{
+			case ExifInterface.ORIENTATION_ROTATE_90:
+				matrix.postRotate(90);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_180:
+				matrix.postRotate(180);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_270:
+				matrix.postRotate(270);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			default:
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			}
+		}
+		catch(Throwable e)
+		{
+			e.printStackTrace();
+		}
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+
+		imgbytes = globalUtills.BitMapToString(bitmap);
+
+		MsgToSend = "";
+
+		// new SendMsgAsync().execute("");
+
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+		{
+			new SendMsgAsync().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "");
+
+		}
+		else
+		{
+			new SendMsgAsync().execute("");
+		}
+
+		Chat_OneToOne.ShareImage = "";
+		// uiC_imgV_DP.setImageBitmap(bitmap);
+
+	}
+
+	// get group members
+	class getGroups_users extends AsyncTask<String , Void , Void>
+	{
+
+		String	jsonString	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			super.onPreExecute();
+		}
+
+		@Override
+		protected Void doInBackground(String... params)
+		{
+
+			try
+			{
+				List<NameValuePair> param = new ArrayList<NameValuePair>();
+				param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+				param.add(new BasicNameValuePair("mtype", "get_user_group"));
+				param.add(new BasicNameValuePair("group_id", GroupID + ""));
+
+				WebServiceHandler web = new WebServiceHandler();
+
+				jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			}
+			catch(Exception e)
+			{
+
+				e.printStackTrace();
+
+			}
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result)
+		{
+			super.onPostExecute(result);
+
+			GlobalUtills.JsonGroupMembers = jsonString + "";
+
+			GroupMembers_all(jsonString);
+		}
+
+	}
+
+	// end get group members
+	public void GroupMembers_all(String JsonGroup_members)
+	{
+
+		try
+		{
+
+			GlobalUtills.list_of_GroupMembers.clear();
+
+			JSONObject jsonObject = new JSONObject(JsonGroup_members);
+			String message = jsonObject.getString("Message");
+
+			if( message.equalsIgnoreCase("Success") )
+			{
+
+				String AdminfbID = jsonObject.getString("admin_facebook_id");
+
+				JSONArray jsonArray_group_list_info = jsonObject.getJSONArray("user_info");
+
+				for( int i = 0; i < jsonArray_group_list_info.length(); i++ )
+				{
+
+					FriendInfo friendinfo = new FriendInfo();
+
+					JSONObject json_array_group_info = jsonArray_group_list_info.getJSONObject(i);
+
+					if( AdminfbID.equals(json_array_group_info.getString("facebook_id")) )
+					{
+
+						friendinfo.setId(json_array_group_info.getString("facebook_id") + "");
+						friendinfo.setImage(json_array_group_info.getString("userImage") + "");
+						friendinfo.setName(json_array_group_info.getString("userName") + " (Admin)");
+						friendinfo.setMobile_no(json_array_group_info.getString("telephones") + "");
+						friendinfo.setUnread_count("");
+
+						GlobalUtills.list_of_GroupMembers.add(friendinfo);
+					}
+					else
+					{
+						friendinfo.setId(json_array_group_info.getString("facebook_id") + "");
+						friendinfo.setImage(json_array_group_info.getString("userImage") + "");
+						friendinfo.setName(json_array_group_info.getString("userName") + "");
+						friendinfo.setMobile_no(json_array_group_info.getString("telephones") + "");
+						friendinfo.setUnread_count("");
+						GlobalUtills.list_of_GroupMembers.add(friendinfo);
+					}
+
+				}
+
+			}
+
+			if( GlobalUtills.list_of_GroupMembers.size() > 0 )
+			{
+				String Membersname = "";
+				for( int j = 0; j < GlobalUtills.list_of_GroupMembers.size(); j++ )
+				{
+					if( j == 0 )
+					{
+						Membersname = GlobalUtills.list_of_GroupMembers.get(j).getName();
+					}
+					else
+					{
+						Membersname = Membersname + "," + GlobalUtills.list_of_GroupMembers.get(j).getName();
+
+					}
+
+				}
+				actionBarCommon.setActionTextMembersName(Membersname);
+
+			}
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+
+		}
+
+	}
+
+	// end group members
+
+	// parse json group msgs data
+
+	class showMsgDataAsyncngroup extends AsyncTask<String , Void , String>
+	{
+
+		List<Chat_Single>			listChatData;
+		TransparentProgressDialog	Pd;
+
+		public showMsgDataAsyncngroup(List<Chat_Single> listChatData)
+		{
+			this.listChatData = listChatData;
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+			Pd = new TransparentProgressDialog(Group_Chat.this, R.drawable.loading_spinner_icon);
+			Pd.show();
+
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			runOnUiThread(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+
+					// parseMSG_groupdata(listChatData,true,false);
+					parseMSG_groupdata(listChatData, false, true);
+
+				}
+			});
+
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			if( Pd.isShowing() )
+			{
+				Pd.dismiss();
+			}
+
+			super.onPostExecute(result);
+		}
+
+	}
+
+	static String	date_To_match	= "";
+
+	private void parseMSG_groupdata(List<Chat_Single> listChat, boolean loadmore, boolean index)
+	{
+
+		date_To_match = DateTemp;
+
+		if( loadmore )
+		{
+			if( GetchatLength() > 40 )
+			{
+				// date_To_match="";
+				Button btnLoadMore = new Button(getApplicationContext());
+				btnLoadMore.setText("LOAD MORE");
+				btnLoadMore.setBackgroundColor(Color.parseColor("#3c3c3c"));
+				btnLoadMore.setTextSize(18);
+				btnLoadMore.setTextColor(Color.WHITE);
+				btnLoadMore.setAlpha(.40f);
+
+				btnLoadMore.setOnClickListener(new OnClickListener()
+				{
+
+					@Override
+					public void onClick(View v)
+					{
+
+						layoutChat.removeViewAt(0);
+						JSON_to_listLoadMore();
+						Collections.reverse(chatData_list_group);
+
+						if( chatData_list_group.size() > 40 )
+						{
+							new showMsgDataAsyncngroup(chatData_list_group).execute();
+
+						}
+						else
+						{
+							parseMSG_groupdata(chatData_list_group, false, true);
+						}
+
+						//
+
+					}
+				});
+
+				layoutChat.addView(btnLoadMore, 0);
+			}
+		}
+
+		for( int group = 0; group < listChat.size(); group++ )
+		{
+
+			final String userId = listChat.get(group).getUserId();
+			final String message = listChat.get(group).getMessage();
+			final String date = listChat.get(group).getDate();
+			final String username = listChat.get(group).getUsername();
+			final String imgURL = listChat.get(group).getImgURL();
+			final String fbID = listChat.get(group).getFbID();
+			final String youtube = listChat.get(group).getYoutube();
+
+			final String user_telephone = listChat.get(group).getPhNO_();
+
+			String formtDate = parseDateToddMMyyyy(date);
+
+			if( formtDate == null || formtDate.equals("") )
+			{
+
+				formtDate = date_To_match;
+
+			}
+
+			if( index && group == 0 )
+			{
+				date_To_match = formtDate;
+			}
+
+			if( date_To_match.equalsIgnoreCase(formtDate) )
+			{
+
+			}
+			else
+			{
+
+				if( !index )
+
+				{
+
+					LinearLayout.LayoutParams lpDate = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					lpDate.gravity = Gravity.CENTER;
+
+					TextView tvdate = new TextView(getApplicationContext());
+					tvdate.setLayoutParams(lpDate);
+					tvdate.setText(formtDate + "");
+					tvdate.setTextColor(Color.DKGRAY);
+					tvdate.setTextSize(18);
+					tvdate.setPadding(5, 5, 5, 5);
+
+					// tvdate.setBackgroundColor(R.drawable.btn_gray_pressed);
+					tvdate.setGravity(Gravity.CENTER);
+
+					layoutChat.addView(tvdate);
+				}
+				else
+				{
+
+					LinearLayout.LayoutParams lpDate = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					lpDate.gravity = Gravity.CENTER;
+
+					TextView tvdate = new TextView(getApplicationContext());
+					tvdate.setLayoutParams(lpDate);
+					tvdate.setText(date_To_match + "");
+					tvdate.setTextColor(Color.DKGRAY);
+					tvdate.setTextSize(18);
+					tvdate.setPadding(5, 5, 5, 5);
+
+					// tvdate.setBackgroundColor(R.drawable.btn_gray_pressed);
+					tvdate.setGravity(Gravity.CENTER);
+					// layoutChat.addView(tvdate);
+
+					if( group == 0 )
+					{
+
+					}
+					else
+					{
+						layoutChat.addView(tvdate, 0);
+					}
+
+				}
+			}
+
+			if( index )
+			{
+				date_To_match = formtDate;
+			}
+			else
+			{
+				DateTemp = formtDate;
+				date_To_match = DateTemp;
+			}
+
+			LinearLayout layoutMsgContainer = new LinearLayout(Group_Chat.this);
+
+			if( userId.equalsIgnoreCase(global.getUser_id()) )
+			{
+				LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+				lp.gravity = Gravity.LEFT;
+				layoutMsgContainer.setLayoutParams(lp);
+
+				View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.chat_my, layoutMsgContainer);
+
+				EmojiconTextView tvMSG = (EmojiconTextView) view.findViewById(R.id.txtV_MyChatmsg);
+				RoundedCornersGaganImageView imgv = (RoundedCornersGaganImageView) view.findViewById(R.id.imgV_MyChatImage);
+				com.app.messenger.Facebook_ProfilePictureView_rounded DP = (com.app.messenger.Facebook_ProfilePictureView_rounded) view.findViewById(R.id.fb_MyChat);
+				LinearLayout FramemsgLayout = (LinearLayout) view.findViewById(R.id.FrameLayoutMyChat);
+
+				TextView tvTime = (TextView) view.findViewById(R.id.txtV_MyChatDate);
+				FrameLayout imageContainer = (FrameLayout) view.findViewById(R.id.FrameLayoutIMAGE);
+				ImageButton img_btn_play = (ImageButton) view.findViewById(R.id.img_btn_play_youtube_video);
+
+				DP.setProfileId(fbID);
+
+				tvTime.setText(globalUtills.parseDateToTime(date));
+
+				if( imgURL.length() > 2 )
+				{
+
+					tvMSG.setVisibility(View.GONE);
+					imageContainer.setVisibility(View.VISIBLE);
+					// youVideo.setVisibility(View.GONE);
+
+					imgv.setImageUrl(Group_Chat.this, imgURL);
+					imgv.bringToFront();
+					// imgv.setScaleType(ScaleType.FIT_XY);
+					imgv.setOnClickListener(new OnClickListener()
+					{
+
+						@Override
+						public void onClick(View v)
+						{
+
+							globalUtills.ViewPhoto(imgURL, Group_Chat.this, "");
+
+						}
+					});
+
+				}
+				else if( youtube.length() > 5 )
+				{
+					String youtube_url = youtube.substring(0, youtube.indexOf(","));
+					final String youtube_id = youtube.substring(youtube_url.length() + 1, youtube.length());
+					tvMSG.setVisibility(View.GONE);
+					imageContainer.setVisibility(View.VISIBLE);
+					imgv.setImageUrl(Group_Chat.this, "https://" + youtube_url);
+					imgv.setScaleType(ScaleType.FIT_XY);
+
+					img_btn_play.setOnClickListener(new OnClickListener()
+					{
+
+						@Override
+						public void onClick(View v)
+						{
+
+							// stub
+							Intent intent = new Intent(Group_Chat.this, Play_youtube_video.class);
+							intent.putExtra("video_id", youtube_id);
+							intent.putExtra("preview", false);
+							startActivity(intent);
+						}
+					});
+
+				}
+				else
+				{
+
+					FramemsgLayout.setVisibility(View.VISIBLE);
+					imageContainer.setVisibility(View.GONE);
+					// youVideo.setVisibility(View.GONE);
+
+					tvMSG.setText(message);
+					tvTime.setText(globalUtills.parseDateToTime(date));
+
+				}
+			}
+
+			else
+			{
+				LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+				lp.gravity = Gravity.RIGHT;
+				layoutMsgContainer.setLayoutParams(lp);
+
+				View viewOther = LayoutInflater.from(getApplicationContext()).inflate(R.layout.other_chat, layoutMsgContainer);
+
+				EmojiconTextView tvMSG = (EmojiconTextView) viewOther.findViewById(R.id.txtV_otherChatmsg);
+
+				RoundedCornersGaganImageView imgv = (RoundedCornersGaganImageView) viewOther.findViewById(R.id.imgV_otherChatImage);
+				com.app.messenger.Facebook_ProfilePictureView_rounded DP = (com.app.messenger.Facebook_ProfilePictureView_rounded) viewOther.findViewById(R.id.fb_otherChat);
+				LinearLayout FramemsgLayout = (LinearLayout) viewOther.findViewById(R.id.FrameLayoutotherChat);
+				TextView tvNAme = (TextView) viewOther.findViewById(R.id.txtVChatName);
+				TextView tvTime = (TextView) viewOther.findViewById(R.id.txtV_otherChatDate);
+
+				FrameLayout imageContainer = (FrameLayout) viewOther.findViewById(R.id.FrameLayoutIMAGE_Other);
+				ImageButton img_btn_play = (ImageButton) viewOther.findViewById(R.id.img_btn_play_youtube_video_other);
+
+				DP.setProfileId(fbID);
+
+				tvTime.setText(globalUtills.parseDateToTime(date));
+
+				if( fbID.equals("") || username.equals(null) || username.equals("") )
+				{
+					tvNAme.setText("Unknown");
+				}
+				else
+				{
+					tvNAme.setText(username);
+				}
+
+				if( imgURL.length() > 2 )
+				{
+
+					tvMSG.setVisibility(View.GONE);
+					imageContainer.setVisibility(View.VISIBLE);
+					// youVideo.setVisibility(View.GONE);
+
+					imgv.setImageUrl(Group_Chat.this, imgURL);
+					imgv.bringToFront();
+					// imgv.setScaleType(ScaleType.FIT_XY);
+					imgv.setOnClickListener(new OnClickListener()
+					{
+
+						@Override
+						public void onClick(View v)
+						{
+
+							globalUtills.ViewPhoto(imgURL, Group_Chat.this, username + globalUtills.parseDateToSAVE(date));
+
+						}
+					});
+
+				}
+				else if( youtube.length() > 5 )
+				{
+					String youtube_url = youtube.substring(0, youtube.indexOf(","));
+					final String youtube_id = youtube.substring(youtube_url.length() + 1, youtube.length());
+					tvMSG.setVisibility(View.GONE);
+					imageContainer.setVisibility(View.VISIBLE);
+					imgv.setImageUrl(Group_Chat.this, "https://" + youtube_url);
+					imgv.setScaleType(ScaleType.FIT_XY);
+
+					img_btn_play.setOnClickListener(new OnClickListener()
+					{
+
+						@Override
+						public void onClick(View v)
+						{
+
+							// stub
+							Intent intent = new Intent(getApplicationContext(), Play_youtube_video.class);
+							intent.putExtra("video_id", youtube_id);
+							intent.putExtra("preview", false);
+							startActivity(intent);
+						}
+					});
+				}
+				else
+				{
+
+					FramemsgLayout.setVisibility(View.VISIBLE);
+					imageContainer.setVisibility(View.GONE);
+					// youVideo.setVisibility(View.GONE);
+
+					tvMSG.setText(message);
+					tvTime.setText(globalUtills.parseDateToTime(date));
+
+				}
+
+				DP.setOnClickListener(new OnClickListener()
+				{
+
+					@Override
+					public void onClick(View v)
+					{
+
+						// String
+						// FB_id=DP.getProfileId().toString();
+						// String fb_name=DP.getTag().toString();
+						if( fbID.equals("") || username.equals(null) || username.equals("") )
+						{
+							GlobalUtills.showToast("Privacy hidden..!", Group_Chat.this);
+						}
+						else
+						{
+							String FB_id = fbID;
+							String fb_name = username;
+							String number = user_telephone;
+							String usrID = userId;
+							popup_UserDetails(fb_name, FB_id, number, usrID);
+
+						}
+
+					}
+				});
+
+			}
+
+			// layoutChat.addView(layoutMsgContainer);
+			if( index )
+			{
+				layoutChat.addView(layoutMsgContainer, 0);
+
+				if( group == listChat.size() - 1 )
+				{
+					LinearLayout.LayoutParams lpDate = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					lpDate.gravity = Gravity.CENTER;
+
+					TextView tvdate = new TextView(getApplicationContext());
+					tvdate.setLayoutParams(lpDate);
+					tvdate.setText(formtDate + "");
+					tvdate.setTextColor(Color.DKGRAY);
+					tvdate.setTextSize(18);
+					tvdate.setPadding(5, 5, 5, 5);
+
+					// tvdate.setBackgroundColor(R.drawable.btn_gray_pressed);
+					tvdate.setGravity(Gravity.CENTER);
+					layoutChat.addView(tvdate, 0);
+				}
+
+			}
+			else
+			{
+				layoutChat.addView(layoutMsgContainer);
+
+			}
+
+			layoutMsgContainer.setOnLongClickListener(new OnLongClickListener()
+			{
+
+				@Override
+				public boolean onLongClick(View arg0)
+				{
+					if( !message.isEmpty() )
+					{
+						android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+						android.content.ClipData clip = android.content.ClipData.newPlainText("Copied Text", message);
+						clipboard.setPrimaryClip(clip);
+						GlobalUtills.showToast("Text Copied to clip board", Group_Chat.this);
+					}
+
+					return false;
+				}
+			});
+
+		}
+
+		if( !index )
+		{
+			uiC_scroll.post(new Runnable()
+			{
+
+				@Override
+				public void run()
+				{
+					uiC_scroll.fullScroll(ScrollView.FOCUS_DOWN);
+				}
+			});
+		}
+
+		chatData_list_group.clear();
+
+	}
+
+	private int GetchatLength()
+	{
+
+		try
+		{
+			SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+			if( sharedChatDataS.contains(GroupID) )
+			{
+
+				JSONArray jsonArrMsgs = new JSONArray(sharedChatDataS.getString(GroupID, "") + "");
+				return jsonArrMsgs.length();
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return 0;
+
+		}
+
+	}
+
+	// JSON to list
+	// JSON to list
+	private void JSON_to_listLoadMore()
+	{
+
+		try
+		{
+
+			if( chatData_list_group.size() > 0 )
+			{
+				chatData_list_group.clear();
+			}
+
+			SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+			if( sharedChatDataS.contains(GroupID) )
+			{
+
+				JSONArray jsonArrMsgs = new JSONArray(sharedChatDataS.getString(GroupID, "") + "");
+
+				// JSONArray jsonArrMsgs = new JSONArray(stringjarray + "");
+
+				for( int i = 0; i < jsonArrMsgs.length() - 40; i++ )
+				{
+
+					JSONObject jobjinner = jsonArrMsgs.getJSONObject(i);
+
+					String userId = jobjinner.getString("userId");
+					String message = jobjinner.getString("message");
+					String date = jobjinner.getString("date");
+					String username = jobjinner.getString("user_name");
+					String imgURL = jobjinner.getString("image");
+					String fbID = jobjinner.getString("facebook_id");
+					String youtube = jobjinner.getString("youtube");
+					String user_telephone = jobjinner.getString("user_telephone");
+
+					chatData_list_group.add(new Chat_Single(userId, message, date, username, imgURL, youtube, fbID, user_telephone));
+
+				}
+
+			}
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	// end JSON to list
+	private void JSON_to_list(String stringjarray)
+	{
+
+		try
+		{
+
+			JSONArray jsonArrMsgs = new JSONArray(stringjarray + "");
+
+			if( chatData_list_group.size() > 0 )
+			{
+				chatData_list_group.clear();
+			}
+
+			int StartFrom = 0;
+			if( jsonArrMsgs.length() > 40 )
+			{
+				StartFrom = jsonArrMsgs.length() - 40;
+
+			}
+
+			for( int i = StartFrom; i < jsonArrMsgs.length(); i++ )
+			{
+
+				JSONObject jobjinner = jsonArrMsgs.getJSONObject(i);
+
+				String userId = jobjinner.getString("userId");
+				String message = jobjinner.getString("message");
+				String date = jobjinner.getString("date");
+				String username = jobjinner.getString("user_name");
+				String imgURL = jobjinner.getString("image");
+				String fbID = jobjinner.getString("facebook_id");
+				String youtube = jobjinner.getString("youtube");
+				String user_telephone = jobjinner.getString("user_telephone");
+				// jG.put("user_telephone", user_telephone);
+
+				chatData_list_group.add(new Chat_Single(userId, message, date, username, imgURL, youtube, fbID, user_telephone));
+
+			}
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	// end JSON to list
+	// end parse json
+
+	public void DialogShowfrnd()
+	{
+		final Dialog dialogLoader = new Dialog(this, R.style.Theme_Dialog);
+		dialogLoader.setTitle("Selected friends ");
+		dialogLoader.setContentView(R.layout.dialog_showfrnd);
+		dialogLoader.getWindow().setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+
+		dialogLoader.setCancelable(false);
+
+		LinearLayout layout_addedfriends = (LinearLayout) dialogLoader.findViewById(R.id.layout_showfrnds);
+		layout_addedfriends.removeAllViews();
+
+		Button btnadd = (Button) dialogLoader.findViewById(R.id.btn_showfrnds_add);
+		Button btnCancel = (Button) dialogLoader.findViewById(R.id.btn_showfrnds_cancel);
+
+		TextView tvtitle = new TextView(getApplicationContext());
+		tvtitle.setTextColor(Color.WHITE);
+		tvtitle.setText("Selected fb friends (" + friend_id.size() + ") :");
+		tvtitle.setTextSize(25);
+		tvtitle.setTypeface(null, Typeface.ITALIC);
+
+		layout_addedfriends.addView(tvtitle);
+
+		for( int i = 0; i < friend_id.size(); i++ )
+		{
+
+			LinearLayout.LayoutParams lpLayout = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			lpLayout.gravity = Gravity.CENTER_HORIZONTAL;
+
+			Facebook_ProfilePictureView_rounded addedFriends = new Facebook_ProfilePictureView_rounded(getApplicationContext());
+			addedFriends.setLayoutParams(lpLayout);
+			addedFriends.setProfileId(friend_id.get(i));
+
+			layout_addedfriends.addView(addedFriends);
+		}
+
+		if( hashMap_getids_ph.size() > 0 )
+		{
+
+			TextView tvtitle2 = new TextView(getApplicationContext());
+			tvtitle2.setTextColor(Color.WHITE);
+			tvtitle2.setText("Selected phone contacts (" + phone_no.length + ") :");
+			tvtitle.setTextSize(25);
+			tvtitle.setTypeface(null, Typeface.ITALIC);
+
+			layout_addedfriends.addView(tvtitle2);
+
+			for( int g = 0; g < phone_no.length; g++ )
+			{
+
+				LinearLayout.LayoutParams lpLayout = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+				lpLayout.gravity = Gravity.CENTER_HORIZONTAL;
+				TextView tvName = new TextView(getApplicationContext());
+				tvName.setTextColor(Color.parseColor(getString(color.pinkNew)));
+				tvName.setText(phone_no[g] + "");
+				tvName.setLayoutParams(lpLayout);
+				layout_addedfriends.addView(tvName);
+			}
+		}
+
+		btnadd.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				global.clearhashMAp();
+				global.clearhashMAp_ph();
+				friend_id.clear();
+
+				AddSocialFriendAdapter.radio_checkCONtacts.clear();
+				ShowSocialFriends.radio_checkGroup.clear();
+				Aroundme_users.radio_checkAroundME.clear();
+				new AsyncAddmembers().execute();
+				dialogLoader.cancel();
+
+			}
+		});
+
+		btnCancel.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				global.clearhashMAp();
+				global.clearhashMAp_ph();
+				friend_id.clear();
+
+				AddSocialFriendAdapter.radio_checkCONtacts.clear();
+				ShowSocialFriends.radio_checkGroup.clear();
+				Aroundme_users.radio_checkAroundME.clear();
+				dialogLoader.cancel();
+			}
+		});
+
+		dialogLoader.show();
+	}
+
+}

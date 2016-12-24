@@ -1,0 +1,31 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.content.Context;
+import android.content.Intent;
+
+
+//==============================================================================================================================
+public final class CommonUtilities
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void displayMessage(Context context, String message)
+    {
+        Intent intent = new Intent(DISPLAY_MESSAGE_ACTION);
+
+        intent.putExtra(EXTRA_MESSAGE, message);
+
+        context.sendBroadcast(intent);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static final String SENDER_ID              = "1044602154952";  // Google project id
+    public static final String DISPLAY_MESSAGE_ACTION = "com.app.messenger.model.DISPLAY_MESSAGE";
+    public static final String EXTRA_MESSAGE          = "message";
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    static final String SERVER_URL = "https://android.googleapis.com/gcm/send";  // give your server registration url here
+}

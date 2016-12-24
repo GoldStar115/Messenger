@@ -1,0 +1,114 @@
+////==============================================================================================================================
+//package com.app.messenger;
+//
+//
+////==============================================================================================================================
+//
+//import android.app.Activity;
+//
+//import com.ironsource.mobilcore.AdUnitEventListener;
+//import com.ironsource.mobilcore.CallbackResponse;
+//import com.ironsource.mobilcore.MobileCore;
+//
+////------------------------------------------------------------------------------------------------------------------------------
+//
+//
+////==============================================================================================================================
+//public final class MobilecoreAds extends AdsProvider
+//{
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    private enum State
+//    {
+//        VALID,
+//        INVALID,
+//    }
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    private MobilecoreAds()
+//    {
+//    }
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    public static void init(Activity activity)
+//    {
+//        try
+//        {
+//            MobileCore.setAdUnitEventListener(new AdUnitEventListener()
+//            {
+//                @Override
+//                public void onAdUnitEvent(MobileCore.AD_UNITS adUnit, EVENT_TYPE eventType)
+//                {
+//                    if (callbacks_ == null || adUnit != MobileCore.AD_UNITS.INTERSTITIAL)
+//                        return;
+//
+//                    if (eventType == EVENT_TYPE.AD_UNIT_READY)
+//                        callbacks_.onAdLoaded();  // It seems like this will be never called. No method to cache Ad in this
+//                                                  // version of MobileCore SDK was found.
+//
+//                    else
+//                        callbacks_.onAdError();
+//                }
+//            });
+//
+//            MobileCore.init(activity, MOBILECORE_DEV_ID, LOG_TYPE, MobileCore.AD_UNITS.INTERSTITIAL);
+//
+//            state_ = State.VALID;
+//        }
+//        catch (Exception error)
+//        {
+//        }
+//    }
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    public static void cacheAd(Activity activity)
+//    {
+//        if (isValid(activity) && callbacks_ != null)
+//            callbacks_.onAdLoaded();  // No method to cache Ad in this version of MobileCore SDK was found, so we just call
+//                                      // this method like Ad is already cached.
+//    }
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    public static void showAd(Activity activity)
+//    {
+//        if (isValid(activity))
+//            MobileCore.showInterstitial(activity, new CallbackResponse()
+//            {
+//                @Override
+//                public void onConfirmation(TYPE type)
+//                {
+//                    if (callbacks_ != null)
+//                        callbacks_.onAdClosed();
+//                }
+//            });
+//    }
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    public static void refreshOffers(Activity activity)
+//    {
+//        if (isValid(activity))
+//            MobileCore.refreshOffers();
+//    }
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    public static void resetCallbacks(Callbacks callbacks)
+//    {
+//        callbacks_ = callbacks;
+//    }
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    private static boolean isValid(Activity activity)
+//    {
+//        return state_ == State.VALID;
+//    }
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    private static final String              MOBILECORE_DEV_ID = "7PV0WVPOQQJ9POV73X40MKAB9LI27";  // This key must be changed
+//                                                                                                   // to real app key.
+//    private static final MobileCore.LOG_TYPE LOG_TYPE          = MobileCore.LOG_TYPE.DEBUG;  // This flag must be changed to
+//                                                                                             // MobileCore.LOG_TYPE.PRODUCTION
+//
+//    //--------------------------------------------------------------------------------------------------------------------------
+//    private static State state_ = State.INVALID;
+//    private static Callbacks callbacks_ = null;
+//}

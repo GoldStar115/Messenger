@@ -1,0 +1,151 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+
+import android.app.Activity;
+
+import com.appnext.appnextinterstitial.InterstitialManager;
+import com.appnext.appnextinterstitial.OnAdClicked;
+import com.appnext.appnextinterstitial.OnAdClosed;
+import com.appnext.appnextinterstitial.OnAdError;
+import com.appnext.appnextinterstitial.OnAdLoaded;
+import com.appnext.appnextinterstitial.OnVidoeEnded;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+
+//==============================================================================================================================
+public final class AppnextAds extends AdsProvider
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private enum State
+    {
+        UNDEFINED,
+        VALID,
+        INVALID,
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private AppnextAds()
+    {
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void init(Activity activity)
+    {
+        InterstitialManager.setOnVideoEndedCallback(new OnVidoeEnded()
+        {
+            @Override
+            public void videoEnded()
+            {
+                if (callbacks_ != null)
+                    callbacks_.onVidoeEnded();
+            }
+        });
+
+        InterstitialManager.setOnAdLoadedCallback(new OnAdLoaded()
+        {
+            @Override
+            public void adLoaded()
+            {
+                if (callbacks_ != null)
+                    callbacks_.onAdLoaded();
+            }
+        });
+
+        InterstitialManager.setOnAdClickedCallback(new OnAdClicked()
+        {
+            @Override
+            public void adClicked()
+            {
+                if (callbacks_ != null)
+                    callbacks_.onAdClicked();
+            }
+        });
+
+        InterstitialManager.setOnAdClosedCallback(new OnAdClosed()
+        {
+            @Override
+            public void onAdClosed()
+            {
+                if (callbacks_ != null)
+                    callbacks_.onAdClosed();
+            }
+        });
+
+        InterstitialManager.setOnAdErrorCallback(new OnAdError()
+        {
+            @Override
+            public void adError(String error)
+            {
+                if (callbacks_ != null)
+                    callbacks_.onAdError();
+            }
+        });
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void cacheAd(Activity activity)
+    {
+        if (isValid(activity))
+            InterstitialManager.cacheInterstitial(activity, APPNEXT_PLACEMTNT_ID, InterstitialManager.INTERSTITIAL_VIDEO);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void showAd(Activity activity)
+    {
+        if (isValid(activity))
+            InterstitialManager.showInterstitial(activity, APPNEXT_PLACEMTNT_ID, InterstitialManager.INTERSTITIAL_VIDEO);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void refreshOffers(Activity activity)
+    {
+        // Does nothing because no such functionality is provided in this verstion of AppNext SDK.
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void resetCallbacks(Callbacks callbacks)
+    {
+        callbacks_ = callbacks;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private static void validateStateByPlayServiceAvailability(Activity activity)
+    {
+        int result = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity);
+
+        if (result == ConnectionResult.SUCCESS)
+        {
+            state_ = State.VALID;
+
+            return;
+        }
+
+        state_ = State.INVALID;
+
+        GoogleApiAvailability.getInstance().getErrorDialog(activity, result, 0).show();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private static boolean isValid(Activity activity)
+    {
+        if (state_ == State.UNDEFINED)
+            validateStateByPlayServiceAvailability(activity);
+
+        return state_ == State.VALID;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private final static String APPNEXT_PLACEMTNT_ID = "a00509c5-9570-4718-8a25-61d15489b85b";  // This key must be changed to
+                                                                                                // real app key.
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private static State     state_     = State.UNDEFINED;
+    private static Callbacks callbacks_ = null;
+}

@@ -1,0 +1,662 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.app.Dialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.adapter.ShowSocialFriends;
+import com.app.adapter.WorldGroupAdapter;
+import com.app.model.FriendInfo;
+import com.app.model.GroupInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import org.apache.http.NameValuePair;  // TODO: remove deprecated classes
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+//==============================================================================================================================
+public class AroundMeActivity extends ActivityInTab
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    // ASYNC CLASS TO get nearby groups
+    public class NearbyGroupsGetter extends AsyncTask<String, Void, String>
+    {
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+
+            buttonGroupsAround_.setTextColor(getResources().getColor(R.color.pinkNew));
+            buttonUsersAround_.setTextColor(Color.parseColor("#000000"));
+
+            viewGroupsAround_.setVisibility(View.VISIBLE);
+            viewUsersAround_.setVisibility(View.INVISIBLE);
+
+            progressDialog_ = new TransparentProgressDialog(AroundMeActivity.this, R.drawable.loading_spinner_icon);
+
+            if (nearbyGroups_.isEmpty())
+                progressDialog_.show();
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected String doInBackground(String... params)
+        {
+            List<NameValuePair> param = new ArrayList<NameValuePair>();
+
+            param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+
+            param.add(new BasicNameValuePair("mtype",     "user_around_me"));
+            param.add(new BasicNameValuePair("radius",    distance_ + ""));
+            param.add(new BasicNameValuePair("latitude",  com.app.util.GlobalConstant.lati + ""));
+            param.add(new BasicNameValuePair("longitude", com.app.util.GlobalConstant.longi + ""));
+            param.add(new BasicNameValuePair("user_id",   global_.getUser_id() + ""));
+
+            Log.e("Param if exist: ", "> " + param);
+
+            // TODO: this looks like copy/paste from UsersAroundMe.java
+            WebServiceHandler webServiceHandler = new WebServiceHandler();  // TODO: no need of var.
+            String            jsonString        = webServiceHandler.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET,
+                                                                                    param);
+
+            if (jsonString.equals("Error! Try Again"))
+                return jsonString;
+
+            else
+            {
+                try
+                {
+                    JSONObject jsonObject = new JSONObject(jsonString);
+
+                    response_ = jsonObject.getString("Message");
+
+                    if (response_.equalsIgnoreCase("Success"))
+                    {
+                        String    stringGroupsInfo = jsonObject.getString("groupInfo");
+                        JSONArray jsonGroupsInfo   = new JSONArray(stringGroupsInfo + "");
+
+                        nearbyGroups_.clear();
+
+                        for (int index = 0; index < jsonGroupsInfo.length(); ++index)
+                        {
+                            GroupInfo  groupInfo = new GroupInfo();
+                            JSONObject jsonGroup = jsonGroupsInfo.getJSONObject(index);
+
+                            String groupID = jsonGroup.getString("groupId");  // TODO: no var needed.
+                            groupInfo.setgroupId(groupID);
+
+                            String groupName = jsonGroup.getString("groupName");
+                            groupInfo.setgroupName(groupName);
+
+                            String groupImage = jsonGroup.getString("groupImage");
+                            groupInfo.setgroupImage(groupImage);
+
+                            String groupTotalMembers = jsonGroup.getString("groupTotalMembers");
+                            groupInfo.setgroupTotalMembers(groupTotalMembers);
+
+                            String groupType = jsonGroup.getString("groupType");
+                            groupInfo.setGroupType(groupType);
+
+                            String groupPassword = jsonGroup.getString("groupPassword");
+                            groupInfo.setGroupPassword(groupPassword);
+
+                            groupInfo.setGroupTotalmsgs(jsonGroup.getString("groupMessageCount"));
+                            groupInfo.setGroupTotalnew (jsonGroup.getString("groupLastMessageCount"));
+                            groupInfo.setUserStatus    (jsonGroup.getString("user_status"));  // TODO: rearrange on func rename
+
+                            nearbyGroups_.add(groupInfo);
+                        }
+                    }
+                }
+                catch (JSONException error)
+                {
+                    error.printStackTrace();
+                }
+
+                return response_;
+            }
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPostExecute(String result)
+        {
+            super.onPostExecute(result);
+
+            if (progressDialog_.isShowing())
+                progressDialog_.dismiss();
+
+            if (result.equals("Error! Try Again")) // TODO: bad err code. copy/paste
+                GlobalUtills.showToast("No network connection..!", AroundMeActivity.this);
+
+            else
+            {
+                if (nearbyGroups_.size() > 0)
+                {
+                    nearbyAdapter_ = new WorldGroupAdapter(AroundMeActivity.this, nearbyGroups_);
+
+                    listViewAround_.setAdapter(nearbyAdapter_);
+                }
+                else  // TODO: this block must be first
+                    GlobalUtills.showToast("No near by Groups found ..!", AroundMeActivity.this);
+            }
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        TransparentProgressDialog progressDialog_;
+        String                    response_ = "";
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    // ASYNC CLASS TO get nearby groups
+    public class NearbyUsersGetter extends AsyncTask<String, Void, String>  // TODO: copy/paste
+    {
+        
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+
+            buttonGroupsAround_.setTextColor(Color.parseColor("#000000"));
+            buttonUsersAround_.setTextColor(getResources().getColor(R.color.pinkNew));
+
+            viewGroupsAround_.setVisibility(View.INVISIBLE);
+            viewUsersAround_.setVisibility(View.VISIBLE);
+
+            progressDialog_ = new TransparentProgressDialog(AroundMeActivity.this, R.drawable.loading_spinner_icon,true);
+
+            progressDialog_.show();
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected String doInBackground(String... params)
+        {
+            List<NameValuePair> param = new ArrayList<NameValuePair>();
+
+            param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+
+            param.add(new BasicNameValuePair("mtype",     "uaround_me"));
+            param.add(new BasicNameValuePair("radius",    distance_ + ""));
+            param.add(new BasicNameValuePair("latitude",  com.app.util.GlobalConstant.lati + ""));
+            param.add(new BasicNameValuePair("longitude", com.app.util.GlobalConstant.longi + ""));
+            param.add(new BasicNameValuePair("userId",    global_.getUser_id() + ""));
+
+            WebServiceHandler webServiceHandler = new WebServiceHandler();
+            String            jsonString        = webServiceHandler.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET,
+                                                                                    param);
+
+            if (jsonString.equals("Error! Try Again"))  // TODO:
+                return jsonString;
+
+            else // TODO:
+            {
+                try
+                {
+                    JSONObject jsonObject = new JSONObject(jsonString);
+
+                    response_ = jsonObject.getString("Message");
+
+                    if (response_.equalsIgnoreCase("Success"))
+                    {
+                        String    stringUsersInfo = jsonObject.getString("userInfo");
+                        JSONArray jsonUsersInfo   = new JSONArray(stringUsersInfo + "");
+
+                        nearbyUsers_.clear();
+
+                        for (int index = 0; index < jsonUsersInfo.length(); ++index)
+                        {
+                            FriendInfo nearByUsers  = new FriendInfo();
+                            JSONObject jsonUserInfo = jsonUsersInfo.getJSONObject(index);
+
+                            nearByUsers.setId          (jsonUserInfo.getString("facebook_id") + "");
+                            nearByUsers.setImage       (jsonUserInfo.getString("userimage") + "");
+                            nearByUsers.setName        (jsonUserInfo.getString("username") + "");
+                            nearByUsers.setMobileNumber(jsonUserInfo.getString("user_telephone") + "");
+                            nearByUsers.setUnread_count(jsonUserInfo.getString("distance") + "");
+
+                            if (nearByUsers.getId().equalsIgnoreCase(faceBookID_))
+                            {
+                                // TODO:
+                            }
+                            else
+                                nearbyUsers_.add(nearByUsers);
+                        }
+                    }
+                }
+                catch (JSONException error)
+                {
+                    error.printStackTrace();
+                }
+
+                return response_;
+            }
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPostExecute(final String result)
+        {
+            super.onPostExecute(result);
+
+
+
+                new CountDownTimer(2000,4000)  // TODO: magic numbers
+                {
+                    @Override
+                    public void onTick(long arg0)
+                    {
+                    }
+
+                    @Override
+                    public void onFinish()
+                    {
+
+
+                        if (result.equals("Error! Try Again"))  // TODO: copy/paste
+                        {
+                            GlobalUtills.showToast("No network connection..!", AroundMeActivity.this);
+                        }
+                        else
+                        {
+                            if (nearbyUsers_.size() > 0)
+                            {
+                                // TODO:
+                                ShowSocialFriends users = new ShowSocialFriends(AroundMeActivity.this, nearbyUsers_, false, false);
+
+                                listViewUsersAround_.setAdapter(users);
+                            }
+                            else  // TODO:
+                                GlobalUtills.showToast("No near by Users found ..!", AroundMeActivity.this);
+                        }
+                        if (progressDialog_.isShowing())
+                        {
+                            progressDialog_.dismiss();
+                        }
+                    }
+                }.start();// TODO: wait for 4000ms
+
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        TransparentProgressDialog progressDialog_;
+        String                    response_       = "";
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    class Join_worldGroup_Aroundme extends AsyncTask<String , String , String>
+    {
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected String doInBackground(String... params)
+        {
+            String GroupID = params[0];
+
+            ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();  // TODO: deprecated.
+
+            param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE,    "post"));
+            param.add(new BasicNameValuePair(GlobalConstant.U_TYPE,       "join_group"));
+            param.add(new BasicNameValuePair(GlobalConstant.Join_User_id, global_.getUser_id()));
+            param.add(new BasicNameValuePair(GlobalConstant.Group_id,     GroupID));
+
+            try
+            {
+                WebServiceHandler webServiceHandler = new WebServiceHandler();
+
+                joinWorldGroupResponse_ = webServiceHandler.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+                Log.e("Response of Join Group", "" + joinWorldGroupResponse_.toString());
+            }
+            catch (Exception exception)
+            {
+                exception.printStackTrace();
+
+                System.out.println("Exception calling");
+            }
+
+            return joinWorldGroupResponse_;
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+
+            dialog_ = new TransparentProgressDialog(AroundMeActivity.this, R.drawable.loading_spinner_icon);
+
+            dialog_.show();
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        protected void onPostExecute(String result)
+        {
+            dialog_.dismiss();
+
+            try
+            {
+                JSONObject jsonObject = new JSONObject(result);
+
+                messaString_ = jsonObject.getString("Message");
+
+                if (messaString_.equalsIgnoreCase("Success"))
+                    globalUtills_.DialogOK(AroundMeActivity.this,
+                        "Join request sent", "If members of this group will accept your request,then you will become member of this group.");
+
+                else
+                    Toast.makeText(AroundMeActivity.this, messaString_, Toast.LENGTH_LONG).show();  // TODO: mag num
+            }
+            catch(Exception e)
+            {
+                System.out.println(e.getMessage());
+            }
+
+            super.onPostExecute(result);
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        TransparentProgressDialog dialog_;
+        String                    joinWorldGroupResponse_;
+        String                    messaString_;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public void onBackPressed()
+    {
+        super.onBackPressed();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public void Gotochat(final int position)
+    {
+        if ((nearbyGroups_.get(position).getGroupType()).equalsIgnoreCase("PV") &&
+            (nearbyGroups_.get(position).getUserStatus()).equalsIgnoreCase("N"))
+            openLogoutAlert(position);
+
+        else
+        {
+            if (nearbyGroups_.get(position).getUserStatus().equalsIgnoreCase("Y"))  // TODO:
+                GlobalUtills.joinORadd_group = true;
+
+            else
+                GlobalUtills.joinORadd_group = false;
+
+            if ((nearbyGroups_.get(position).getUserStatus()).equalsIgnoreCase("N"))
+                GlobalUtills.mygroups_savelocal = false;
+
+            Intent gotoChatting = new Intent(AroundMeActivity.this, GroupChat.class);
+
+            gotoChatting.putExtra("groupID",    nearbyGroups_.get(position).getgroupId());
+            gotoChatting.putExtra("groupName",  nearbyGroups_.get(position).getgroupName());
+            gotoChatting.putExtra("groupImage", nearbyGroups_.get(position).getgroupImage() + "");
+
+            startActivity(gotoChatting);
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    // TODO: huge method.
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.map_activity);
+
+        global_ = new Global();
+
+        actionBarCommon_ = (ActionBarCommon) findViewById(R.id.action_bar);  // TODO: rearrange if possible.
+
+        actionBarCommon_.setActionText("Around Me");
+
+        listViewAround_      = (ListView) findViewById(R.id.listVAroundgroup);
+        listViewUsersAround_ = (ListView) findViewById(R.id.listVAroundMembers);
+        buttonUsersAround_   = (Button)   findViewById(R.id.btnAroundmefriends);
+        buttonGroupsAround_  = (Button)   findViewById(R.id.btnAroundmeGroups);
+        viewGroupsAround_    = (View)     findViewById(R.id.viewbtnAroundmeGroups);
+        viewUsersAround_     = (View)     findViewById(R.id.viewbtnAroundmefriends);
+
+        SharedPreferences sharedPreferences = getSharedPreferences("fbID", MODE_PRIVATE);
+
+        faceBookID_ = sharedPreferences.getString("fb", "");
+
+        listViewAround_.setOnItemClickListener(new OnItemClickListener()
+        {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+            {
+                if (globalUtills_.haveNetworkConnection(AroundMeActivity.this))
+                    Gotochat(position);
+
+                else
+                    GlobalUtills.showToast("No network connection..!", AroundMeActivity.this);  // magic liter. copy/paste
+            }
+        });
+
+        listViewUsersAround_.setOnItemClickListener(new OnItemClickListener()
+        {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+            {
+                Intent gotoChatting = new Intent(AroundMeActivity.this, ChatOneToOne.class);
+
+                gotoChatting.putExtra("name", nearbyUsers_.get(position).getName() + "");
+                gotoChatting.putExtra("fbID", nearbyUsers_.get(position).getId() + "");
+                gotoChatting.putExtra("ph",   nearbyUsers_.get(position).getMobile_no() + "");
+
+                startActivity(gotoChatting);
+            }
+        });
+
+        buttonUsersAround_.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                if (listViewUsersAround_.getVisibility() == View.VISIBLE)
+                {
+                    // TODO: remove
+                }
+                else
+                {
+                    listViewAround_.setVisibility(View.GONE);
+                    listViewUsersAround_.setVisibility(View.VISIBLE);
+
+                    if (globalUtills_.haveNetworkConnection(AroundMeActivity.this))
+                    {
+                        listViewUsersAround_.setAdapter(null);
+                        new NearbyUsersGetter().execute();
+                    }
+                    else
+                    {
+                        if (nearbyUsers_.size() > 0)
+                        {
+                            // TODO: var is not needed. copy/paste
+                            ShowSocialFriends users = new ShowSocialFriends(AroundMeActivity.this, nearbyUsers_, false, false);
+
+                            listViewUsersAround_.setAdapter(users);
+                        }
+
+                        GlobalUtills.showToast("No network connection..!", AroundMeActivity.this);  // TODO:
+                    }
+                }
+            }
+        });
+
+        buttonGroupsAround_.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                if (listViewAround_.getVisibility() == View.VISIBLE)
+                {
+                    // TODO:
+                }
+                else
+                {
+                    listViewAround_.setVisibility(View.VISIBLE);
+                    listViewUsersAround_.setVisibility(View.GONE);
+
+                    if (globalUtills_.haveNetworkConnection(AroundMeActivity.this))
+                        new NearbyGroupsGetter().execute();
+
+                    else
+                    {
+                        if (nearbyGroups_.size() > 0)
+                        {
+                            nearbyAdapter_ = new WorldGroupAdapter(AroundMeActivity.this, nearbyGroups_);
+
+                            listViewAround_.setAdapter(nearbyAdapter_);
+                        }
+
+                        GlobalUtills.showToast("No network connection..!", AroundMeActivity.this);
+                    }
+                }
+            }
+        });
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+
+        global_       = new Global();
+        globalUtills_ = new GlobalUtills();
+        preferences_  = getSharedPreferences("CountryPreferences", Context.MODE_PRIVATE);
+
+        if( preferences_.contains("km") )
+            distance_ = preferences_.getInt("km", 100);
+
+        else
+            distance_ = 100;  // TODO:
+
+        if (listViewAround_.getVisibility() == View.VISIBLE)
+        {
+            if (nearbyGroups_.size() > 0)
+            {
+                buttonGroupsAround_.setTextColor(getResources().getColor(R.color.pinkNew));
+                buttonUsersAround_.setTextColor(Color.parseColor("#000000"));
+
+                viewGroupsAround_.setVisibility(View.VISIBLE);
+                viewUsersAround_.setVisibility(View.INVISIBLE);
+            }
+            else  // TODO:
+                new NearbyGroupsGetter().execute();
+        }
+        else
+        {
+            listViewUsersAround_.setAdapter(null);
+            if (nearbyUsers_.size() > 0)
+            {
+                buttonGroupsAround_.setTextColor(Color.parseColor("#000000"));
+                buttonUsersAround_.setTextColor(getResources().getColor(R.color.pinkNew));
+
+                viewGroupsAround_.setVisibility(View.INVISIBLE);
+                viewUsersAround_.setVisibility(View.VISIBLE);
+            }
+
+            new NearbyUsersGetter().execute();
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    void openLogoutAlert(final int position)
+    {
+        final Dialog dialog = globalUtills_.prepararDialog(AroundMeActivity.this, R.layout.dialog_three_options);
+
+        TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+
+        title.setText("Join Group");
+
+        TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+
+        subheading.setText("You are not a member of this closed group..!");
+
+        Button      buttonChat   = (Button)      dialog.findViewById(R.id.btnChat);
+        Button      buttonCall   = (Button)      dialog.findViewById(R.id.btncall);
+        Button      buttonGroups = (Button)      dialog.findViewById(R.id.btngroups);
+        ImageButton buttonClose  = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+        buttonClose.setVisibility(View.GONE);
+        buttonGroups.setVisibility(View.GONE);
+
+        buttonCall.setText("Join");
+        buttonChat.setText("Cancel");
+
+        buttonChat.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                dialog.dismiss();
+            }
+        });
+
+        buttonCall.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                new Join_worldGroup_Aroundme().execute(nearbyGroups_.get(position).getgroupId());
+
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private ActionBarCommon       actionBarCommon_;
+    private ArrayList<GroupInfo>  nearbyGroups_        = new ArrayList<GroupInfo>();
+    private ArrayList<FriendInfo> nearbyUsers_         = new ArrayList<FriendInfo>();
+    private Button                buttonGroupsAround_;
+    private Button                buttonUsersAround_;
+    private Global                global_;
+    private GlobalUtills          globalUtills_;
+    private int                   distance_            = 0;
+    private ListView              listViewAround_;  // TODO: what is around?
+    private ListView              listViewUsersAround_;
+    private SharedPreferences     preferences_;
+    private String                faceBookID_          = "";
+    private View                  viewGroupsAround_;
+    private View                  viewUsersAround_;
+    private WorldGroupAdapter     nearbyAdapter_;
+}

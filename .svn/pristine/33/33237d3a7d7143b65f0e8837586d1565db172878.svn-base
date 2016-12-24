@@ -1,0 +1,120 @@
+package com.app.messenger;
+
+import android.app.Activity;
+import android.content.Context;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+
+import com.app.util.GlobalUtills;
+import com.app.webserviceshandler.GetYouTubeUserVideosTask;
+import com.app.webserviceshandler.Library;
+import com.app.webserviceshandler.VideosListView;
+
+public class YouTube_videosList extends Activity
+{
+
+	private VideosListView	listView;
+
+	EditText				edSerachKey;
+
+	public static Context	conYouTube;
+
+	@Override
+	public void onBackPressed()
+	{
+		GlobalUtills.YouTube_URL = "";
+
+		GlobalUtills.YouTube_VIdeoID = "";
+
+		super.onBackPressed();
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_you_tube_videos_list);
+		edSerachKey = (EditText) findViewById(R.id.edSearch_youtube);
+
+		listView = (VideosListView) findViewById(R.id.videosListView);
+
+		conYouTube = this;
+		
+		new Thread(new GetYouTubeUserVideosTask(responseHandler, "",true)).start();
+
+	}
+
+	// This is the XML onClick listener to retreive a users video feed
+	public void getUserYouTubeFeed(View v)
+	{
+
+		String SerachKey = edSerachKey.getText().toString().trim() + "";
+
+		if( SerachKey.equals("") )
+		{
+			GlobalUtills.showToast("Please enter some search keyword..!", YouTube_videosList.this);
+		}
+		else
+		{
+// if(SerachKey.contains(" ")){
+// SerachKey=SerachKey.replaceAll(" ", "");
+// }
+// ((Button)findViewById(R.id.btn_youtube)).setEnabled(false);
+			new Thread(new GetYouTubeUserVideosTask(responseHandler, SerachKey,false)).start();
+		}
+
+	}
+
+	// This is the handler that receives the response when the YouTube task has
+// finished
+	Handler	responseHandler	= new Handler()
+							{
+								public void handleMessage(Message msg)
+								{
+									populateListWithVideos(msg);
+								};
+							};
+
+	/**
+	 * This method retrieves the Library of videos from the task and passes them
+	 * to our ListView
+	 * 
+	 * @param msg
+	 */
+	private void populateListWithVideos(Message msg)
+	{
+		// Retreive the videos are task found from the data bundle sent back
+		Library lib = (Library) msg.getData().get(GetYouTubeUserVideosTask.LIBRARY);
+		// Because we have created a custom ListView we don't have to worry
+// about setting the adapter in the activity
+		// we can just call our custom method with the list of items we want to
+// display
+// if(lib.getVideos().size()>0)
+// {
+
+		listView.setVideos(lib.getVideos());
+		((Button) findViewById(R.id.btn_youtube)).setEnabled(true);
+// }
+// else
+// {
+// GlobalUtills.showToast("No result found ..!", YouTube_videosList.this);
+// ((Button)findViewById(R.id.btn_youtube)).setEnabled(true);
+// }
+
+	}
+
+	@Override
+	protected void onStop()
+	{
+		// Make sure we null our handler when the activity has stopped
+		// because who cares if we get a callback once the activity has stopped?
+// not me!
+		responseHandler = null;
+		super.onStop();
+	}
+
+}

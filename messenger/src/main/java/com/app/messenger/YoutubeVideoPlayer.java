@@ -1,0 +1,123 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.util.GlobalUtills;
+import com.google.android.youtube.player.YouTubeBaseActivity;
+import com.google.android.youtube.player.YouTubeInitializationResult;
+import com.google.android.youtube.player.YouTubePlayer;
+import com.google.android.youtube.player.YouTubePlayer.Provider;
+import com.google.android.youtube.player.YouTubePlayerView;
+
+
+//==============================================================================================================================
+public class YoutubeVideoPlayer extends YouTubeBaseActivity implements YouTubePlayer.OnInitializedListener
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public void onInitializationFailure(Provider provider, YouTubeInitializationResult result)
+    {
+        GlobalUtills.showToast("Youtube player not found.", YoutubeVideoPlayer.this);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public void onInitializationSuccess(Provider provider, YouTubePlayer player, boolean wasRestored)
+    {
+        if(!wasRestored)
+            player.loadVideo(videoID_);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public void closeYoutube(View view)
+    {
+        YoutubeVideoPlayer.this.finish();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        setContentView(R.layout.activity_play_youtube_video);
+
+        try
+        {
+            intent_            = getIntent();
+            videoID_           = intent_.getStringExtra("video_id");
+            preview_           = intent_.getBooleanExtra("preview", false);
+            layoutWithButtons_ = (LinearLayout) findViewById(R.id.PreviewButtons);
+
+            layoutWithButtons_.setVisibility(preview_ ? View.VISIBLE : View.GONE);
+
+            videoPlayer_ = (YouTubePlayerView) findViewById(R.id.youtubeplayerview_full_screen);
+
+            videoPlayer_.initialize(GlobalConstant.YOUTUBE_APIKEY, YoutubeVideoPlayer.this);
+        }
+        catch (Exception error)
+        {
+            error.printStackTrace();
+        }
+        catch (OutOfMemoryError error)
+        {
+            error.printStackTrace();
+        }
+
+        // TODO: remove warn.
+        (buttonCancel_ = (Button) findViewById(R.id.btnCancel_previwe)).setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                YoutubeVideoPlayer.this.finish();
+            }
+        });
+
+        // TODO: remove warn.
+        (buttonSend_ = (Button) findViewById(R.id.btnSend_previwe)).setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                try
+                {
+                    YoutubeVideoPlayer.this.finish();
+
+                    ((Activity) YouTubeVideosList.youtubeContext()).finish();
+                }
+                catch(Exception error)
+                {
+                }
+            }
+        });
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private static String            videoID_     = "";
+    private static YouTubePlayerView videoPlayer_;
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private boolean      preview_        = false;
+    private Button       buttonSend_;
+    private Button       buttonCancel_;
+    private Intent       intent_        = null;
+    private LinearLayout layoutWithButtons_;
+}

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="3"><dataSet config="main"><source path="F:\MyProject\AndroidProject\Messenger\messenger\src\main\shaders"/></dataSet><dataSet config="debug"><source path="F:\MyProject\AndroidProject\Messenger\messenger\src\debug\shaders"/></dataSet></merger>

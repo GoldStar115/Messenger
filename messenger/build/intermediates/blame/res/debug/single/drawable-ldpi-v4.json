@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\drawable-ldpi-v4\\progress.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\drawable-ldpi\\progress.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\drawable-ldpi-v4\\com_facebook_close.png",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\Messenger\\facebookSDK\\unspecified\\res\\drawable-ldpi-v4\\com_facebook_close.png"
+    }
+]

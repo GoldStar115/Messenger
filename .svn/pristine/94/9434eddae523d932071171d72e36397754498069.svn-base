@@ -1,0 +1,697 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.database.Cursor;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.telephony.TelephonyManager;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.app.adapter.AddSocialFriendAdapter;
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.NetworkCheck;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+import com.facebook.Request;
+import com.facebook.Request.GraphUserListCallback;
+import com.facebook.Response;
+import com.facebook.Session;
+import com.facebook.model.GraphUser;
+
+public class ShowingSocialsFreinds extends Activity
+{
+	private ListView					facebook_friend_ListView;
+	EditText							et_search_contact;
+	public static ArrayList<FriendInfo>	list_of_allfriend		= new ArrayList<FriendInfo>();
+	ArrayList<FriendInfo>				list_of_allfriend_PH	= new ArrayList<FriendInfo>();
+
+	AddSocialFriendAdapter				friend_adapter;
+	Global								global;
+
+	ArrayList<FriendInfo>				Phone_list				= new ArrayList<FriendInfo>();
+	// ActionBarCommon actionBarCommon;
+
+	TransparentProgressDialog			progress_dialog;
+	ArrayList<FriendInfo>				friend_info_list		= new ArrayList<FriendInfo>();
+	String								FBID_checkValidation	= "";
+	FriendInfo							friendInfo;
+
+	String								ph_no					= "";
+
+	@Override
+	public void onBackPressed()
+	{
+		if( global.getHashMap().size() != 0 || global.getHashMap_ph().size() != 0 )
+		{
+			GlobalUtills.showToast("Friends successfully added", ShowingSocialsFreinds.this);
+		}
+		else
+		{
+			GlobalUtills.showToast("No friend added", ShowingSocialsFreinds.this);
+		}
+		finish();
+		super.onBackPressed();
+	}
+
+	@Override
+	protected void onResume()
+	{
+		TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+		GlobalUtills.country_iso_code = tm.getSimCountryIso();
+		if( GlobalUtills.country_iso_code.equals("") )
+		{
+			GlobalUtills.country_iso_code = "IL";
+		}
+		super.onResume();
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+		setContentView(R.layout.showingfriends);
+		global = new Global();
+		// actionBarCommon = new ActionBarCommon(ShowingSocialsFreinds.this,
+		// null);
+		facebook_friend_ListView = (ListView) findViewById(R.id.mainListView);
+		// actionBarCommon = (ActionBarCommon)
+		// findViewById(R.id.action_barFriend);
+		et_search_contact = (EditText) findViewById(R.id.search_edit_text_phone_contact_activity);
+
+		et_search_contact.setCursorVisible(false);
+		et_search_contact.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				// TODO Auto-generated method stub
+				et_search_contact.setCursorVisible(true);
+			}
+		});
+		et_search_contact.setOnEditorActionListener(new TextView.OnEditorActionListener()
+		{
+
+			@Override
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
+			{
+
+				if( actionId == EditorInfo.IME_ACTION_SEARCH )
+				{
+					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+					if( et_search_contact.getText().toString().trim().equals("") )
+					{
+						et_search_contact.setCursorVisible(false);
+					}
+				}
+				return false;
+			}
+		});
+		et_search_contact.addTextChangedListener(new TextWatcher()
+		{
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count)
+			{
+
+				ArrayList<FriendInfo> temp_friend_list = new ArrayList<FriendInfo>();
+				if( list_of_allfriend.size() > 0 )
+				{
+					for( int i = 0; i < list_of_allfriend.size(); i++ )
+					{
+						if( list_of_allfriend.get(i).getName().toLowerCase().contains(s.toString().toLowerCase()) || list_of_allfriend.get(i).getMobile_no().contains(s.toString()) )
+						{
+							temp_friend_list.add(list_of_allfriend.get(i));
+						}
+					}
+
+					// if (temp_friend_list.size() > 0) {
+					friend_adapter = new AddSocialFriendAdapter(ShowingSocialsFreinds.this, temp_friend_list);
+					facebook_friend_ListView.setAdapter(friend_adapter);
+					if( temp_friend_list.size() < 1 )
+					{
+						GlobalUtills.showToast("No contacts Found..!", ShowingSocialsFreinds.this);
+					}
+
+				}
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after)
+			{
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void afterTextChanged(Editable s)
+			{
+				// TODO Auto-generated method stub
+
+			}
+		});
+		getFriends();
+		// clearLISTS_setdata();
+
+	}
+
+	public void clearLISTS_setdata()
+	{
+		if( list_of_allfriend.size() > 0 )
+		{
+			list_of_allfriend.clear();
+		}
+		if( list_of_allfriend_PH.size() > 0 )
+		{
+			list_of_allfriend_PH.clear();
+		}
+
+		// list_of_allfriend.addAll(global.getFriend_info_list());
+		for( int fb = 0; fb < global.getFriend_info_list().size(); fb++ )
+		{
+
+			list_of_allfriend.add(global.getFriend_info_list().get(fb));
+
+		}
+
+		if( NetworkCheck.getConnectivityStatusString(ShowingSocialsFreinds.this).equals("true") )
+		{
+			new getValidContacts().execute();
+		}
+		else
+		{
+			GlobalUtills.showToast("No network connection..!", ShowingSocialsFreinds.this);
+		}
+	}
+
+	void gettingPhoneContacts()
+	{
+
+		ContentResolver cr = getContentResolver();
+
+		// Read Contacts
+		Cursor c = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, new String[ ] { ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME,
+				ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.RawContacts.ACCOUNT_TYPE }, ContactsContract.RawContacts.ACCOUNT_TYPE + " <> 'google' ", null, null);
+
+		if( c.getCount() <= 0 )
+		{
+			Toast.makeText(ShowingSocialsFreinds.this, "No Phone Contact Found..!", 200).show();
+		}
+		else
+		{
+
+			StringBuilder sb = new StringBuilder();
+			ph_no = "";
+			while (c.moveToNext())
+			{
+				FriendInfo contactDetail = new FriendInfo();
+				String Phone_number = c.getString(c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+
+				String name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+
+				// ======================
+				String ph_noValid = Phone_number.replaceAll(" ", "");
+				System.out.println("ph_noValid----->" + ph_noValid);
+				/*
+				 * Pattern p = Pattern
+				 * .compile("[\\p{Alpha}]*[\\p{Punct}][\\p{Alpha}]*"); Matcher m
+				 * = p.matcher(ph_noValid); boolean b = m.matches();
+				 */
+
+				if( ph_noValid.length() > 6 && !ph_noValid.contains("*") && !ph_noValid.contains("#") && !ph_noValid.contains("&") && !ph_noValid.contains("%") )
+				{
+
+					try
+					{
+
+						if( ph_noValid.contains("(") )
+						{
+							ph_noValid = ph_noValid.replace("(", "");
+
+						}
+						if( ph_noValid.contains(")") )
+						{
+							ph_noValid = ph_noValid.replace(")", "");
+						}
+						if( ph_noValid.contains("-") )
+						{
+							ph_noValid = ph_noValid.replace("-", "");
+						}
+
+						Log.e("Phone Number valid--->", ph_noValid);
+						contactDetail.setMobile_no("" + ph_noValid);
+						contactDetail.setName(name);
+						contactDetail.setId("");
+						list_of_allfriend_PH.add(contactDetail);
+
+						Log.e("NAme", name);
+					}
+					catch(Exception e)
+					{
+						e.printStackTrace();
+					}
+
+					// ======================
+
+					if( sb.length() > 0 )
+					{
+						sb.append(',');
+					}
+					sb.append(ph_noValid);
+
+					ph_no = sb.toString();
+				}
+			}
+		}
+	}
+
+	private void getFriends()
+	{
+		progress_dialog = new TransparentProgressDialog(ShowingSocialsFreinds.this, R.drawable.loading_spinner_icon);
+		progress_dialog.show();
+		Session activeSession = Session.getActiveSession();
+		if( activeSession == null )
+		{
+			// try to restore from cache
+			activeSession = Session.openActiveSessionFromCache(ShowingSocialsFreinds.this);
+		}
+		if( activeSession != null )
+		{
+			if( activeSession.getState().isOpened() )
+			{
+				Request friendRequest = Request.newMyFriendsRequest(activeSession, new GraphUserListCallback()
+				{
+					public void onCompleted(List<GraphUser> users, Response response)
+					{
+
+						try
+						{
+
+							Log.e("USser Size :", "" + users.size());
+							Log.e("INFO", response.toString());
+
+							// ArrayList<HashMap<String, String>>
+							// friend_list_array = new
+							// ArrayList<HashMap<String, String>>();
+
+							String friend_list = response.getGraphObject().getProperty("data").toString();
+
+							SharedPreferences sharedPref = getSharedPreferences("FacebookFrnd", MODE_PRIVATE);
+							Editor editorPref = sharedPref.edit();
+							editorPref.clear();
+							editorPref.commit();
+							editorPref.putString("FriendList", friend_list + "");
+							editorPref.commit();
+							SetFriendInfo_Json();
+
+						}
+						catch(Exception e)
+						{
+							if( progress_dialog.isShowing() )
+							{
+								progress_dialog.dismiss();
+							}
+						}
+					}
+				});
+
+				Bundle params = new Bundle();
+				params.putString("fields", "id,name,email,picture,gender");
+				friendRequest.setParameters(params);
+				friendRequest.executeAsync();
+			}
+		}
+	}
+
+	public void SetFriendInfo_Json()
+	{
+		try
+		{
+			// creating JSONaqDa
+
+			if( !friend_info_list.isEmpty() )
+			{
+				friend_info_list.clear();
+			}
+
+			ArrayList<HashMap<String , String>> friend_list_array = new ArrayList<HashMap<String , String>>();
+
+			SharedPreferences sharedPref = getSharedPreferences("FacebookFrnd", MODE_PRIVATE);
+			String friend_list = sharedPref.getString("FriendList", "");
+
+			JSONArray jSonArr = new JSONArray();
+			FBID_checkValidation = "";
+			JSONArray jarr = new JSONArray(friend_list);
+			for( int i = 0; i < jarr.length(); i++ )
+			{
+				JSONObject obj = jarr.getJSONObject(i);
+				JSONObject picture = obj.getJSONObject("picture");
+				JSONObject jsonObject_url = picture.getJSONObject("data");
+
+				String id = obj.getString("id");
+				friendInfo = new FriendInfo();
+				String IMAGE_URL = jsonObject_url.getString("url");
+
+				Log.e("Friend ID", id);
+				friendInfo.setId(id);
+				String name = obj.getString("name");
+				friendInfo.setImage(IMAGE_URL);
+
+				HashMap<String , String> map = new HashMap<String , String>();
+				map.put("id", id);
+				friend_list_array.add(map);
+				JSONObject pnObj = new JSONObject();
+				pnObj.put("userid", id);
+				Log.e("list of friends ", "" + friend_list_array.size());
+				Log.e("Friends Detail  ", "" + friend_list_array.toString());
+				jSonArr.put(pnObj);
+
+				friendInfo.setName(name);
+				// friend_info_list.add(friendInfo);
+
+				if( FBID_checkValidation.equals("") )
+				{
+					FBID_checkValidation = id + "";
+				}
+				else
+				{
+					FBID_checkValidation = FBID_checkValidation + "," + id;
+				}
+
+			}
+
+		}
+		catch(JSONException e)
+		{
+
+			if( progress_dialog.isShowing() )
+			{
+				progress_dialog.dismiss();
+			}
+			e.printStackTrace();
+		}
+		// global.setFriend_info_list(friend_info_list);
+
+		new Getvalid_frnds().execute();
+
+	}
+
+	// get valid friends from fb
+	public class Getvalid_frnds extends AsyncTask<Void , Void , String>
+	{
+		String	message;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+		}
+
+		@Override
+		protected String doInBackground(Void... params)
+		{
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair("post_type", "post"));
+			param.add(new BasicNameValuePair("mtype", "get_valid_fb_users"));
+			param.add(new BasicNameValuePair("users", FBID_checkValidation));
+
+			Log.e("Param Getvalid_frnds: ", "> " + param);
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			try
+			{
+
+				if( !friend_info_list.isEmpty() )
+				{
+					friend_info_list.clear();
+				}
+
+				// {"Message":"Success","users":[]}
+
+				JSONObject jsonResponse = new JSONObject(result);
+
+				if( jsonResponse.getString("Message").equalsIgnoreCase("Success") )
+				{
+					JSONArray jsonArr = jsonResponse.getJSONArray("users");
+
+					for( int g = 0; g < jsonArr.length(); g++ )
+					{
+						FriendInfo friend = new FriendInfo();
+						JSONObject innerJson = jsonArr.getJSONObject(g);
+
+						friend.setId(innerJson.getString("facebook_id"));
+						friend.setName(innerJson.getString("user_name"));
+						friend.setMobile_no(innerJson.getString("user_telephone"));
+
+						friend_info_list.add(friend);
+					}
+					global.setFriend_info_list(friend_info_list);
+					clearLISTS_setdata();
+
+					if( progress_dialog.isShowing() )
+					{
+						try
+						{
+							progress_dialog.dismiss();
+						}
+						catch(Exception e)
+						{
+							e.printStackTrace();
+						}
+						finally
+						{
+							progress_dialog = null;
+						}
+					}
+				}
+
+			}
+			catch(Exception e)
+			{
+				if( progress_dialog.isShowing() )
+				{
+					progress_dialog.dismiss();
+				}
+				e.printStackTrace();
+			}
+
+			super.onPostExecute(result);
+		}
+
+	}
+
+	// get valid contacts
+	class getValidContacts extends AsyncTask<String , Void , String>
+	{
+
+		TransparentProgressDialog	pd;
+
+		String						message	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			if( list_of_allfriend_PH.size() > 0 )
+			{
+				list_of_allfriend_PH.clear();
+			}
+
+			pd = new TransparentProgressDialog(ShowingSocialsFreinds.this, R.drawable.loading_spinner_icon);
+			pd.show();
+
+			gettingPhoneContacts();
+
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=phone_find&phones=+914646464664,+91505309995,+917355169903
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			// param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE,
+			// "post"));
+			// param.add(new BasicNameValuePair("mtype", "phone_find"));
+			param.add(new BasicNameValuePair("phones", ph_no + ""));
+			param.add(new BasicNameValuePair("user_id", global.getUser_id() + ""));
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(GlobalConstant.URL + "?post_type=post&mtype=phone_find", WebServiceHandler.POST, param);
+			// GlobalConstant.URL+"?post_type=post&mtype=phone_find
+			if( jsonString.equals("Error! Try Again") )
+			{
+				return jsonString;
+			}
+			else
+			{
+
+				try
+				{
+
+					JSONObject jsonObject = new JSONObject(jsonString);
+					message = jsonObject.getString("Message");
+
+					JSONArray jsonArray_group_list_info = jsonObject.getJSONArray("users");
+
+					for( int i = 0; i < jsonArray_group_list_info.length(); i++ )
+					{
+
+						FriendInfo contactDetail = new FriendInfo();
+
+						JSONObject json_array_group_info = jsonArray_group_list_info.getJSONObject(i);
+
+						// "facebook_id": "761027393946902",
+						// "user_name": "Nishant",
+						// "user_phone": "+914646464664"
+
+						contactDetail.setMobile_no(json_array_group_info.getString("user_telephone"));
+
+						contactDetail.setId(json_array_group_info.getString("facebook_id"));
+
+						String name = json_array_group_info.getString("user_name");
+
+						for( int fb_remove = 0; fb_remove < list_of_allfriend.size(); fb_remove++ )
+						{
+							if( json_array_group_info.getString("user_telephone").equals(list_of_allfriend.get(fb_remove).getMobile_no()) )
+							{
+								list_of_allfriend.remove(fb_remove);
+								break;
+							}
+
+						}
+
+						for( int g = 0; g < list_of_allfriend_PH.size(); g++ )
+						{
+
+							String no_ph = list_of_allfriend_PH.get(g).getMobile_no().replaceAll(" ", "");
+							if( no_ph.startsWith("0") )
+							{
+								no_ph = no_ph.substring(1);
+							}
+
+							if( json_array_group_info.getString("user_telephone").contains(no_ph) )
+							{
+								name = list_of_allfriend_PH.get(g).getName() + "(" + name + ")";
+								list_of_allfriend_PH.remove(g);
+
+								break;
+							}
+
+						}
+
+						contactDetail.setName(name);
+
+						Phone_list.add(contactDetail);
+
+					}
+
+				}
+				catch(JSONException e)
+				{
+
+					e.printStackTrace();
+				}
+				catch(Exception e)
+				{
+
+					e.printStackTrace();
+				}
+
+				return message;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			try
+			{
+
+				Collections.sort(list_of_allfriend_PH, new Comparator<FriendInfo>()
+				{
+					@Override
+					public int compare(FriendInfo text1, FriendInfo text2)
+					{
+						return text1.getName().compareToIgnoreCase(text2.getName());
+					}
+				});
+				Collections.sort(Phone_list, new Comparator<FriendInfo>()
+				{
+					@Override
+					public int compare(FriendInfo text1, FriendInfo text2)
+					{
+						return text1.getName().compareToIgnoreCase(text2.getName());
+					}
+				});
+
+				Phone_list.addAll(list_of_allfriend_PH);
+
+				list_of_allfriend.addAll(Phone_list);
+
+				friend_adapter = new AddSocialFriendAdapter(ShowingSocialsFreinds.this, list_of_allfriend);
+				facebook_friend_ListView.setAdapter(friend_adapter);
+
+				pd.dismiss();
+
+			}
+			catch(Exception e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+				e.printStackTrace();
+			}
+
+		}
+
+	}
+
+}

@@ -1,0 +1,2037 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.Dialog;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.provider.ContactsContract;
+import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.app.adapter.Chat_contact_adapter;
+import com.app.adapter.ShowSocialFriends;
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.NetworkCheck;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.Remove_chat;
+import com.app.webserviceshandler.WebServiceHandler;
+import com.facebook.Request;
+import com.facebook.Request.GraphUserListCallback;
+import com.facebook.Response;
+import com.facebook.Session;
+import com.facebook.model.GraphUser;
+
+public class ChatFragment extends Fragment
+{
+	ActionBarCommon						actionBarCommon;
+	ListView							listV_chatGmember, ListVChats_recent;
+	EditText							et_search_contact;
+	Button								btnChats_recent, btnContacts, btnFBmembers;
+	TransparentProgressDialog			progress_dialog;
+
+	View								viewChats_recent, viewFBgroupMem, viewContact;
+
+	// public static ShowSocialFriends friend_adapter;
+	// PhoneFriendAdapter phoneContactAdapter;
+
+	public static Chat_contact_adapter	phoneContactAdapter;
+
+	ArrayList<FriendInfo>				list_of_allfriend		= new ArrayList<FriendInfo>();
+
+	public static ArrayList<FriendInfo>	ChatfrndList_recent		= new ArrayList<FriendInfo>();
+	public static ArrayList<FriendInfo>	completeListOFfrnds		= new ArrayList<FriendInfo>();
+	public static ArrayList<FriendInfo>	list_of_users			= new ArrayList<FriendInfo>();
+
+	Global								global;
+
+	ArrayList<FriendInfo>				friend_info_list		= new ArrayList<FriendInfo>();
+	public static String				FBID_checkValidation	= "";
+	public static boolean				newSingleMSG			= false;
+
+	FriendInfo							friendInfo;
+
+	ArrayList<FriendInfo>				Phone_list				= new ArrayList<FriendInfo>();
+	ArrayList<FriendInfo>				Phone_list_R			= new ArrayList<FriendInfo>();
+
+	public static ShowSocialFriends		socialusers;
+	public static ShowSocialFriends		recentchatAdapter;
+
+	String								myFBid					= "", ph_no = "";
+
+	public static String				Groupmember				= "C";
+	ArrayList<Integer>					positionFB				= new ArrayList<Integer>();
+	ArrayList<Integer>					positionPH				= new ArrayList<Integer>();
+	ArrayList<Integer>					positionC				= new ArrayList<Integer>();
+
+	// public static String count1 = "";
+
+	public static boolean				newmsg					= false;
+
+	GlobalUtills						globalUtills;
+
+	@Override
+	public void onResume()
+	{
+		globalUtills = new GlobalUtills();
+
+		if( GlobalUtills.badge1 != null )
+		{
+			if( GlobalUtills.badge1.isShown() )
+			{
+				GlobalUtills.badge1.toggle();
+				SharedPreferences sharedPref = getActivity().getSharedPreferences("login", Context.MODE_PRIVATE);
+				Editor editorPref = sharedPref.edit();
+				editorPref.remove("notification_flag_single_chat");
+				editorPref.commit();
+			}
+
+		}
+
+		newSingleMSG = true;
+
+		if( NetworkCheck.checkInternetConnection(getActivity()) )
+		{
+
+			Phone_list.clear();
+			positionFB.clear();
+			positionPH.clear();
+			positionC.clear();
+
+			global = new Global();
+			SharedPreferences sharedPref = getActivity().getSharedPreferences("login", Context.MODE_PRIVATE);
+			global.setUser_id(sharedPref.getString("UserID", ""));
+
+			if( Groupmember.equals("C") )
+			{
+
+				change_tab(Groupmember);
+
+				newmsg = false;
+
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				{
+					new getRecentChats(global.getUser_id()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+				}
+				else
+				{
+					new getRecentChats(global.getUser_id()).execute();
+				}
+
+			}
+			else if( Groupmember.equals("PH") )
+			{
+
+				change_tab(Groupmember);
+
+				if( completeListOFfrnds.size() > 0 && !newmsg )
+				{
+
+				}
+				else
+				{
+
+					newmsg = false;
+					getFriends();
+				}
+
+			}
+			else if( Groupmember.equals("FB_M") )
+			{
+
+				change_tab(Groupmember);
+
+				newmsg = false;
+
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				{
+					new getActiveFriends().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+				}
+				else
+				{
+					new getActiveFriends().execute();
+				}
+
+			}
+
+		}
+		else
+		{
+
+			if( Groupmember.equals("C") )
+			{
+
+				change_tab(Groupmember);
+
+			}
+
+			else if( Groupmember.equals("PH") )
+			{
+
+				change_tab(Groupmember);
+
+			}
+			else if( Groupmember.equals("FB_M") )
+			{
+
+				change_tab(Groupmember);
+
+			}
+
+			// GlobalUtills.showToast("No network connection..!",
+			// getActivity());
+		}
+		super.onResume();
+	}
+
+	@Override
+	public void onPause()
+	{
+		newSingleMSG = false;
+
+		super.onPause();
+	}
+
+	@Override
+	public void onDestroy()
+	{
+		newSingleMSG = false;
+		super.onDestroy();
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+	{
+		super.onCreateView(inflater, container, savedInstanceState);
+		container = (ViewGroup) inflater.inflate(R.layout.chat_activity, container, false);
+		actionBarCommon = new ActionBarCommon(getActivity(), null);
+		gettingValues(container);
+		actionBarCommon.setActionText("Chat");
+
+		actionBarCommon.right_image.setImageResource(R.drawable.invite);
+		actionBarCommon.layoutRightClick(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				String shareBody = "Hey ..! i found get-groupy an osm application to connect with your friends.. https://play.google.com/store/apps/details?id=com.app.messenger&hl=en";
+				Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+				sharingIntent.setType("text/plain");
+				sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Get-Groupy");
+				sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
+				startActivity(Intent.createChooser(sharingIntent, "Invite Friends"));
+
+			}
+		});
+
+		newSingleMSG = true;
+
+		SharedPreferences sharedPref = getActivity().getSharedPreferences("fbID", Context.MODE_PRIVATE);
+		myFBid = sharedPref.getString("fb", "");
+
+		global = new Global();
+
+		et_search_contact.setCursorVisible(false);
+		et_search_contact.setOnEditorActionListener(new TextView.OnEditorActionListener()
+		{
+
+			@Override
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
+			{
+
+				if( actionId == EditorInfo.IME_ACTION_SEARCH )
+				{
+					InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+					inputMethodManager.hideSoftInputFromWindow(getActivity().getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+					if( et_search_contact.getText().toString().trim().equals("") )
+					{
+						et_search_contact.setCursorVisible(false);
+					}
+
+				}
+				return false;
+			}
+		});
+
+		et_search_contact.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				et_search_contact.setCursorVisible(true);
+			}
+		});
+		et_search_contact.addTextChangedListener(new TextWatcher()
+		{
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count)
+			{
+				ArrayList<FriendInfo> temp_friend_list = new ArrayList<FriendInfo>();
+				ArrayList<FriendInfo> temp_Phone_list = new ArrayList<FriendInfo>();
+				temp_friend_list.clear();
+
+				positionFB.clear();
+				positionPH.clear();
+				positionC.clear();
+
+				if( Groupmember.equals("FB_M") )
+				{
+					// -----------search for facebook group members
+					for( int i = 0; i < list_of_users.size(); i++ )
+					{
+						if( list_of_users.get(i).getName().toLowerCase().contains(s.toString().toLowerCase()) )
+						{
+
+							positionFB.add(i);
+							temp_friend_list.add(list_of_users.get(i));
+						}
+					}
+					if( temp_friend_list.size() > 0 )
+					{
+						socialusers = new ShowSocialFriends(getActivity(), temp_friend_list, true, false);
+						listV_chatGmember.setAdapter(socialusers);
+					}
+					else
+					{
+						GlobalUtills.showToast(getString(R.string.no_records), getActivity().getApplicationContext());
+					}
+				}
+				else if( Groupmember.equals("C") )
+				{
+
+					// --------search for chats
+					if( ChatfrndList_recent.size() <= 0 )
+					{
+						ListVChats_recent.setAdapter(null);
+					}
+					else
+					{
+
+						for( int i = 0; i < ChatfrndList_recent.size(); i++ )
+						{
+							if( ChatfrndList_recent.get(i).getName().toLowerCase().contains(s.toString().toLowerCase()) || ChatfrndList_recent.get(i).getMobile_no().contains(s.toString()) )
+							{
+								positionC.add(i);
+								temp_friend_list.add(ChatfrndList_recent.get(i));
+							}
+						}
+						if( temp_friend_list.size() > 0 )
+						{
+							recentchatAdapter = new ShowSocialFriends(getActivity(), temp_friend_list, true, false);
+							ListVChats_recent.setAdapter(recentchatAdapter);
+						}
+						else
+						{
+							GlobalUtills.showToast(getString(R.string.no_records), getActivity().getApplicationContext());
+						}
+					}
+				}
+				else if( Groupmember.equals("PH") )
+				{
+					// --------------search for phone contacts
+					for( int i = 0; i < completeListOFfrnds.size(); i++ )
+					{
+						if( completeListOFfrnds.get(i).getName().toLowerCase().contains(s.toString().toLowerCase()) || completeListOFfrnds.get(i).getMobile_no().contains(s.toString()) )
+						{
+
+							positionPH.add(i);
+							temp_Phone_list.add(completeListOFfrnds.get(i));
+						}
+					}
+
+					if( temp_Phone_list.size() > 0 )
+					{
+						phoneContactAdapter = new Chat_contact_adapter(getActivity(), temp_Phone_list);
+						GlobalUtills.list_chat.setAdapter(phoneContactAdapter);
+					}
+					else
+					{
+						GlobalUtills.showToast(getString(R.string.no_records), getActivity().getApplicationContext());
+					}
+				}
+
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after)
+			{
+
+			}
+
+			@Override
+			public void afterTextChanged(Editable s)
+			{
+
+			}
+		});
+
+		btnContacts.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( viewContact.getVisibility() == View.VISIBLE )
+				{
+
+				}
+				else
+				{
+
+					newSingleMSG = true;
+
+					if( globalUtills.haveNetworkConnection(getActivity()) )
+					{
+
+						// et_search_contact.setText("");
+
+						change_tab("PH");
+
+						ph_no = "";
+
+						Phone_list.clear();
+						positionFB.clear();
+						positionPH.clear();
+						positionC.clear();
+						// list_of_allfriend.clear();
+						System.out.println("phone no." + ph_no);
+
+						if( completeListOFfrnds.size() > 0 && !newmsg )
+						{
+
+							if( phoneContactAdapter != null )
+							{
+
+							}
+							else
+							{
+								phoneContactAdapter = new Chat_contact_adapter(getActivity(), completeListOFfrnds);
+								GlobalUtills.list_chat.setAdapter(phoneContactAdapter);
+							}
+
+						}
+						else
+						{
+
+							newmsg = false;
+							getFriends();
+						}
+
+					}
+					else
+					{
+
+						if( completeListOFfrnds.size() > 0 )
+						{
+
+							ph_no = "";
+
+							Phone_list.clear();
+							positionFB.clear();
+							positionPH.clear();
+							positionC.clear();
+
+							phoneContactAdapter = new Chat_contact_adapter(getActivity(), completeListOFfrnds);
+							GlobalUtills.list_chat.setAdapter(phoneContactAdapter);
+						}
+						else
+						{
+							GlobalUtills.showToast("No network connection..!", getActivity());
+						}
+
+					}
+
+				}
+
+				Groupmember = "g";
+				et_search_contact.setText("");
+				Groupmember = "PH";
+
+			}
+		});
+
+		btnFBmembers.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( viewFBgroupMem.getVisibility() == View.VISIBLE )
+				{
+
+				}
+				else
+				{
+
+					newSingleMSG = true;
+					if( globalUtills.haveNetworkConnection(getActivity()) )
+					{
+
+						// et_search_contact.setText("");
+
+						change_tab("FB_M");
+
+						Phone_list.clear();
+						positionFB.clear();
+						positionPH.clear();
+						positionC.clear();
+
+						newmsg = false;
+
+						if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+						{
+							new getActiveFriends().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+						}
+						else
+						{
+							new getActiveFriends().execute();
+						}
+
+					}
+					else
+					{
+						if( list_of_users.size() > 0 )
+						{
+
+							Phone_list.clear();
+
+							socialusers = new ShowSocialFriends(getActivity(), list_of_users, true, false);
+							listV_chatGmember.setAdapter(socialusers);
+						}
+						else
+						{
+							GlobalUtills.showToast("No network connection..!", getActivity());
+						}
+
+					}
+
+					Groupmember = "g";
+					et_search_contact.setText("");
+					Groupmember = "FB_M";
+
+					System.gc();
+				}
+
+			}
+		});
+
+		btnChats_recent.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( viewChats_recent.getVisibility() == View.VISIBLE )
+				{
+
+				}
+				else
+				{
+
+					change_tab("C");
+
+					Phone_list.clear();
+					positionFB.clear();
+					positionPH.clear();
+					positionC.clear();
+
+					newSingleMSG = true;
+					if( globalUtills.haveNetworkConnection(getActivity()) )
+					{
+
+						if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+						{
+							new getRecentChats(global.getUser_id()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+						}
+						else
+						{
+							new getRecentChats(global.getUser_id()).execute();
+						}
+
+					}
+					else
+					{
+						GlobalUtills.showToast("No network connection..!", getActivity());
+					}
+
+				}
+
+				Groupmember = "g";
+				et_search_contact.setText("");
+				Groupmember = "C";
+
+			}
+		});
+
+		GlobalUtills.list_chat.setOnItemClickListener(new OnItemClickListener()
+		{
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, final int position, long id)
+			{
+
+				final int positionFBM;
+
+				if( GlobalUtills.badge1 != null )
+				{
+					if( GlobalUtills.badge1.isShown() )
+					{
+						GlobalUtills.msgCountSingle = "";
+						GlobalUtills.badge1.toggle();
+						SharedPreferences sharedPref = getActivity().getSharedPreferences("login", Context.MODE_PRIVATE);
+						Editor editorPref = sharedPref.edit();
+						editorPref.remove("notification_flag_single_chat");
+						editorPref.commit();
+					}
+				}
+
+				// if (Groupmember.equals("FB_M")) {} else if
+				// (Groupmember.equals("FB")) {} else
+				// if (Groupmember.equals("PH")) {
+
+				if( positionPH.size() > 0 )
+				{
+					positionFBM = positionPH.get(position);
+				}
+				else
+				{
+					positionFBM = position;
+				}
+
+				if( completeListOFfrnds.get(positionFBM).getId().equals("") )
+				{
+
+					dialo_3options(completeListOFfrnds.get(positionFBM).getName() + " is not Registered..!", "Contact No.: " + completeListOFfrnds.get(positionFBM).getMobile_no(), positionFBM, false);
+
+					if( et_search_contact.getText().toString().equals("") )
+					{
+
+					}
+					else
+					{
+						et_search_contact.setText("");
+					}
+
+				}
+				else
+				{
+
+					// dialo_3options(completeListOFfrnds.get(positionFBM).getName().toString(),"Contact No.: "
+					// + completeListOFfrnds.get(positionFBM)
+					// .getMobile_no(),positionFBM,true);
+
+					Intent gotoChatting = new Intent(getActivity(), Chat_OneToOne.class);
+					gotoChatting.putExtra("name", completeListOFfrnds.get(positionFBM).getName() + "");
+					gotoChatting.putExtra("fbID", completeListOFfrnds.get(positionFBM).getId() + "");
+					gotoChatting.putExtra("ph", completeListOFfrnds.get(positionFBM).getMobile_no() + "");
+
+					startActivity(gotoChatting);
+
+					if( et_search_contact.getText().toString().equals("") )
+					{
+
+					}
+					else
+					{
+						et_search_contact.setText("");
+					}
+
+				}
+
+				positionFB.clear();
+
+			}
+		});
+
+		listV_chatGmember.setOnItemClickListener(new OnItemClickListener()
+		{
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+			{
+
+				if( GlobalUtills.badge1 != null )
+				{
+					if( GlobalUtills.badge1.isShown() )
+					{
+						GlobalUtills.msgCountSingle = "";
+						GlobalUtills.badge1.toggle();
+						SharedPreferences sharedPref = getActivity().getSharedPreferences("login", Context.MODE_PRIVATE);
+						Editor editorPref = sharedPref.edit();
+						editorPref.remove("notification_flag_single_chat");
+						editorPref.commit();
+					}
+				}
+
+				final int positionFBM;
+
+				if( positionFB.size() > 0 )
+				{
+					positionFBM = positionFB.get(position);
+				}
+				else
+				{
+					positionFBM = position;
+				}
+
+				Intent gotoChatting = new Intent(getActivity(), Chat_OneToOne.class);
+				positionFB.clear();
+				gotoChatting.putExtra("name", list_of_users.get(positionFBM).getName() + "");
+				gotoChatting.putExtra("fbID", list_of_users.get(positionFBM).getId() + "");
+				gotoChatting.putExtra("ph", list_of_users.get(positionFBM).getMobile_no() + "");
+				startActivity(gotoChatting);
+
+				if( list_of_users.get(position).getUnread_count().equalsIgnoreCase("0") )
+				{
+
+				}
+				else
+				{
+					list_of_users.get(position).setUnread_count("0");
+					socialusers.notifyDataSetChanged();
+					newmsg = true;
+				}
+
+				if( et_search_contact.getText().toString().equals("") )
+				{
+
+				}
+				else
+				{
+					et_search_contact.setText("");
+				}
+
+			}
+		});
+
+		registerForContextMenu(ListVChats_recent);
+		ListVChats_recent.setOnItemClickListener(new OnItemClickListener()
+		{
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+			{
+
+				if( GlobalUtills.badge1 != null )
+				{
+					if( GlobalUtills.badge1.isShown() )
+					{
+						GlobalUtills.msgCountSingle = "";
+						GlobalUtills.badge1.toggle();
+						SharedPreferences sharedPref = getActivity().getSharedPreferences("login", Context.MODE_PRIVATE);
+						Editor editorPref = sharedPref.edit();
+						editorPref.remove("notification_flag_single_chat");
+						editorPref.commit();
+					}
+				}
+
+				final int positionCM;
+
+				if( positionC.size() > 0 )
+				{
+					positionCM = positionC.get(position);
+				}
+				else
+				{
+					positionCM = position;
+				}
+
+				Intent gotoChatting = new Intent(getActivity(), Chat_OneToOne.class);
+				positionC.clear();
+				gotoChatting.putExtra("name", ChatfrndList_recent.get(positionCM).getName() + "");
+				gotoChatting.putExtra("fbID", ChatfrndList_recent.get(positionCM).getId() + "");
+				gotoChatting.putExtra("ph", ChatfrndList_recent.get(positionCM).getMobile_no() + "");
+				startActivity(gotoChatting);
+
+				if( ChatfrndList_recent.get(position).getUnread_count().equalsIgnoreCase("0") )
+				{
+
+				}
+				else
+				{
+
+					ChatfrndList_recent.get(position).setUnread_count("0");
+					recentchatAdapter.notifyDataSetChanged();
+					newmsg = true;
+				}
+
+				if( et_search_contact.getText().toString().equals("") )
+				{
+
+				}
+				else
+				{
+					et_search_contact.setText("");
+				}
+
+			}
+		});
+
+		return container;
+
+	}
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo)
+	{
+		super.onCreateContextMenu(menu, v, menuInfo);
+		getActivity().getMenuInflater().inflate(R.menu.tab_chat_fragment, menu);
+	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item)
+	{
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+		switch (item.getItemId())
+		{
+		case R.id.remove_chat:
+
+			new Remove_chat(getActivity(), global.getUser_id(), ChatfrndList_recent.get(info.position).getId(), info.position).execute();
+
+			return true;
+
+		default:
+			return super.onContextItemSelected(item);
+		}
+	}
+
+	private void change_tab(String tabName)
+	{
+
+		if( tabName.equals("C") )
+		{
+			btnFBmembers.setTextColor(Color.parseColor("#000000"));
+			btnContacts.setTextColor(Color.parseColor("#000000"));
+			btnChats_recent.setTextColor(Color.parseColor("#fc6278"));
+
+			GlobalUtills.list_chat.setVisibility(View.GONE);
+			listV_chatGmember.setVisibility(View.GONE);
+			ListVChats_recent.setVisibility(View.VISIBLE);
+
+			viewContact.setVisibility(View.INVISIBLE);
+			viewChats_recent.setVisibility(View.VISIBLE);
+			viewFBgroupMem.setVisibility(View.INVISIBLE);
+		}
+		else if( tabName.equals("PH") )
+		{
+			btnContacts.setTextColor(Color.parseColor("#fc6278"));
+			btnFBmembers.setTextColor(Color.parseColor("#000000"));
+			btnChats_recent.setTextColor(Color.parseColor("#000000"));
+
+			listV_chatGmember.setVisibility(View.GONE);
+			GlobalUtills.list_chat.setVisibility(View.VISIBLE);
+			ListVChats_recent.setVisibility(View.GONE);
+
+			viewContact.setVisibility(View.VISIBLE);
+			viewChats_recent.setVisibility(View.INVISIBLE);
+			viewFBgroupMem.setVisibility(View.INVISIBLE);
+
+		}
+		else if( tabName.equals("FB_M") )
+		{
+			btnFBmembers.setTextColor(Color.parseColor("#fc6278"));
+			btnContacts.setTextColor(Color.parseColor("#000000"));
+			btnChats_recent.setTextColor(Color.parseColor("#000000"));
+
+			ListVChats_recent.setVisibility(View.GONE);
+			GlobalUtills.list_chat.setVisibility(View.GONE);
+			listV_chatGmember.setVisibility(View.VISIBLE);
+
+			viewContact.setVisibility(View.INVISIBLE);
+			viewChats_recent.setVisibility(View.INVISIBLE);
+			viewFBgroupMem.setVisibility(View.VISIBLE);
+		}
+
+	}
+
+	// ----------------GettingValues-----------------
+	private void gettingValues(ViewGroup container)
+	{
+		GlobalUtills.list_chat = (ListView) container.findViewById(R.id.list_chat);
+		listV_chatGmember = (ListView) container.findViewById(R.id.list_chatGmember);
+		ListVChats_recent = (ListView) container.findViewById(R.id.ListVChats_recent);
+
+		// GlobalUtills.list_chat.setScrollingCacheEnabled(false);
+		actionBarCommon = (ActionBarCommon) container.findViewById(R.id.action_bar);
+
+		btnChats_recent = (Button) container.findViewById(R.id.btnChats_recent);
+		btnContacts = (Button) container.findViewById(R.id.btnContacts);
+		btnFBmembers = (Button) container.findViewById(R.id.btnFbGroupmembers);
+		et_search_contact = (EditText) container.findViewById(R.id.search_edit_text_chat_activity);
+		viewChats_recent = (View) container.findViewById(R.id.viewChats_recent);
+		viewFBgroupMem = (View) container.findViewById(R.id.viewbtnFBgroupmember);
+		viewContact = (View) container.findViewById(R.id.viewbtncontact);
+
+	}
+
+	public int getSpecialCharacterCount(String s)
+	{
+		if( s == null || s.trim().isEmpty() )
+		{
+			return 0;
+		}
+		int theCount = 0;
+		for( int i = 0; i < s.length(); i++ )
+		{
+			if( s.substring(i, 1).matches("[^A-Za-z0-9 ]") )
+			{
+				theCount++;
+			}
+		}
+		return theCount;
+	}
+
+	// CONTACT NO IN A LIST
+	void gettingPhoneContacts()
+	{
+
+		if( Phone_list_R.size() > 0 )
+		{
+			Phone_list_R.clear();
+		}
+
+		ContentResolver cr = getActivity().getContentResolver();
+
+		// Read Contacts
+		// Cursor c =
+		// cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+		// new String[] { ContactsContract.Contacts._ID,
+		// ContactsContract.Contacts.DISPLAY_NAME,
+		// ContactsContract.CommonDataKinds.Phone.NUMBER }, null,
+		// null, null);
+
+		Cursor c = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, new String[ ] { ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME,
+				ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.RawContacts.ACCOUNT_TYPE }, ContactsContract.RawContacts.ACCOUNT_TYPE + " <> 'google' ", null, null);
+
+		if( c.getCount() <= 0 )
+		{
+			Toast.makeText(getActivity(), "No Phone Contact Found..!", Toast.LENGTH_SHORT).show();
+		}
+		else
+		{
+
+			// while (c.moveToNext()) {
+			// String Phone_number = c
+			// .getString(c
+			// .getColumnIndex(ContactsContract.RawContacts.DISPLAY_NAME_PRIMARY));
+			// Log.i("Phone_number--->",Phone_number);
+			// }
+			StringBuilder sb = new StringBuilder();
+			while (c.moveToNext())
+			{
+				FriendInfo contactDetail = new FriendInfo();
+				String Phone_number = c.getString(c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+
+				String name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+
+				// ======================
+
+				String ph_noValid = Phone_number.replaceAll(" ", "");
+
+				// ph_noValid = Phone_number.replaceAll("\\(","");
+
+				System.out.println("ph_noValid----->" + ph_noValid);
+				/*
+				 * Pattern p = Pattern
+				 * .compile("[\\p{Alpha}]*[\\p{Punct}][\\p{Alpha}]*"); Matcher m
+				 * = p.matcher(ph_noValid); boolean b = m.matches();
+				 */
+
+				if( ph_noValid.length() > 6 && !ph_noValid.contains("*") && !ph_noValid.contains("#") && !ph_noValid.contains("&") && !ph_noValid.contains("%") )
+				{
+
+					// if (ph_noValid.startsWith("0")) {
+					// ph_noValid = ph_noValid.substring(1);
+					// }
+
+					// PhoneNumberUtil phoneUtil =
+					// PhoneNumberUtil.getInstance();
+					// PhoneNumber phNumberProto = null;
+					try
+					{
+
+						// if (GlobalUtills.country_iso_code.equals("")) {
+						// GlobalUtills.country_iso_code = "IN";
+						// }
+
+						// phNumberProto = phoneUtil.parse(ph_noValid,
+						// GlobalUtills.country_iso_code);
+						// Log.i("phNumberProto--->",
+						// String.valueOf(phNumberProto));
+
+						// check if the number is valid
+						// boolean isValid = phoneUtil
+						// .isValidNumber(phNumberProto);
+
+						// if (isValid) {
+
+						// String temp_country_code = String
+						// .valueOf(phNumberProto.getCountryCode());
+						// String temp_National_number = String
+						// .valueOf(phNumberProto.getNationalNumber());
+						// ph_noValid = temp_country_code
+						// + temp_National_number;
+
+						if( ph_noValid.contains("(") )
+						{
+							ph_noValid = ph_noValid.replace("(", "");
+
+						}
+						if( ph_noValid.contains(")") )
+						{
+							ph_noValid = ph_noValid.replace(")", "");
+						}
+						if( ph_noValid.contains("-") )
+						{
+							ph_noValid = ph_noValid.replace("-", "");
+						}
+
+						contactDetail.setMobile_no("" + ph_noValid);
+						contactDetail.setName(name);
+						contactDetail.setId("");
+						contactDetail.setUnread_count("0");
+						Phone_list_R.add(contactDetail);
+						
+
+					}
+					catch(Exception e)
+					{
+						e.printStackTrace();
+					}
+
+					// ======================
+					try
+					{
+
+						if( sb.length() > 0 )
+						{
+							sb.append(',');
+						}
+						sb.append(ph_noValid);
+
+					}
+					catch(Exception e)
+					{
+						e.printStackTrace();
+					}
+
+					ph_no = sb.toString();
+
+				}
+			}
+
+		}
+	}
+
+	class getActiveFriends extends AsyncTask<String , Void , String>
+	{
+
+		TransparentProgressDialog	pd;
+
+		String						message	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			// if (list_of_users.size() > 0) {
+			// list_of_users.clear();
+			// }
+			ListVChats_recent.setVisibility(View.GONE);
+			GlobalUtills.list_chat.setVisibility(View.GONE);
+			listV_chatGmember.setVisibility(View.VISIBLE);
+			pd = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+
+			if( list_of_users.isEmpty() )
+			{
+				pd.show();
+			}
+
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "get_active_members"));
+			param.add(new BasicNameValuePair("user_id", global.getUser_id() + ""));
+
+			WebServiceHandler web = new WebServiceHandler();
+
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			if( jsonString.equals("Error! Try Again") )
+			{
+				return jsonString;
+			}
+			else
+			{
+
+				try
+				{
+
+					JSONObject jsonObject = new JSONObject(jsonString);
+					message = jsonObject.getString("Message");
+
+					if( message.equalsIgnoreCase("Success") )
+					{
+						list_of_users.clear();
+						JSONArray jsonArray_group_list_info = jsonObject.getJSONArray("user_info");
+
+						for( int i = 0; i < jsonArray_group_list_info.length(); i++ )
+						{
+
+							FriendInfo friendinfo = new FriendInfo();
+
+							JSONObject json_array_group_info = jsonArray_group_list_info.getJSONObject(i);
+
+							if( myFBid.equals(json_array_group_info.getString("facebook_id")) )
+							{
+
+							}
+							else
+							{
+
+								friendinfo.setId(json_array_group_info.getString("facebook_id") + "");
+								friendinfo.setImage(json_array_group_info.getString("userImage") + "");
+								friendinfo.setName(json_array_group_info.getString("userName") + "");
+								friendinfo.setUnread_count(json_array_group_info.getString("unread_count"));
+								friendinfo.setMobile_no(json_array_group_info.getString("user_telephone") + "");
+
+								list_of_users.add(friendinfo);
+
+							}
+
+						}
+					}
+
+				}
+				catch(JSONException e)
+				{
+					message = "Error";
+					e.printStackTrace();
+				}
+				catch(Exception e)
+				{
+					message = "Error";
+					e.printStackTrace();
+				}
+
+				return message;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			try
+			{
+
+				if( result.equalsIgnoreCase("Success") )
+				{
+
+					if( socialusers == null )
+					{
+						socialusers = new ShowSocialFriends(getActivity(), list_of_users, true, false);
+						listV_chatGmember.setAdapter(socialusers);
+
+					}
+					else if( listV_chatGmember.getAdapter() != socialusers )
+					{
+						listV_chatGmember.setAdapter(socialusers);
+					}
+					else
+					{
+						listV_chatGmember.invalidateViews();
+					}
+
+				}
+				else
+				{
+					// listV_chatGmember.setAdapter(null);
+					GlobalUtills.showToast("No Group Members found..!", getActivity());
+				}
+
+				positionFB.clear();
+				positionPH.clear();
+				positionC.clear();
+
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+			}
+			catch(Exception e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+				e.printStackTrace();
+			}
+			catch(Error e)
+			{
+				// TODO: handle exception
+			}
+
+		}
+
+	}
+
+	// get valid contacts
+	class getValidContacts extends AsyncTask<String , Void , String>
+	{
+
+		String	message	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			gettingPhoneContacts();
+
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+			String jsonString = "";
+
+			try
+			{
+
+				// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=phone_find&phones=+914646464664,+91505309995,+917355169903
+				List<NameValuePair> param = new ArrayList<NameValuePair>();
+				// param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE,
+				// "post"));
+				// param.add(new BasicNameValuePair("mtype", "phone_find"));
+				param.add(new BasicNameValuePair("phones", ph_no + ""));
+				param.add(new BasicNameValuePair("user_id", global.getUser_id() + ""));
+
+				Log.e("Param getValidContacts: ", "> " + param);
+
+				WebServiceHandler web = new WebServiceHandler();
+
+				jsonString = web.makeServiceCall(GlobalConstant.URL + "?post_type=post&mtype=phone_find", WebServiceHandler.POST, param);
+
+				// GlobalConstant.URL+"?post_type=post&mtype=phone_find"
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+
+			if( jsonString.equals("Error! Try Again") )
+			{
+				return jsonString;
+			}
+			else
+			{
+
+				try
+				{
+
+					JSONObject jsonObject = new JSONObject(jsonString);
+					message = jsonObject.getString("Message");
+
+					JSONArray jsonArray_group_list_info = jsonObject.getJSONArray("users");
+
+					for( int i = 0; i < jsonArray_group_list_info.length(); i++ )
+					{
+
+						FriendInfo contactDetail = new FriendInfo();
+
+						JSONObject json_array_group_info = jsonArray_group_list_info.getJSONObject(i);
+
+						// "facebook_id": "761027393946902",
+						// "user_name": "Nishant",
+						// "user_phone": "+914646464664"
+
+						contactDetail.setMobile_no(json_array_group_info.getString("user_telephone"));
+
+						contactDetail.setId(json_array_group_info.getString("facebook_id"));
+
+						contactDetail.setUnread_count(json_array_group_info.getString("unread_count"));
+
+						String name = json_array_group_info.getString("user_name");
+
+						for( int fb_remove = 0; fb_remove < list_of_allfriend.size(); fb_remove++ )
+						{
+							if( json_array_group_info.getString("user_telephone").equals(list_of_allfriend.get(fb_remove).getMobile_no()) )
+							{
+								list_of_allfriend.remove(fb_remove);
+								break;
+							}
+
+						}
+
+						for( int g = 0; g < Phone_list_R.size(); g++ )
+						{
+
+							String no_ph = Phone_list_R.get(g).getMobile_no();
+							if( no_ph.startsWith("0") )
+							{
+								no_ph = no_ph.substring(1);
+							}
+
+							if( json_array_group_info.getString("user_telephone").contains(no_ph) )
+							{
+								name = Phone_list_R.get(g).getName() + "(" + name + ")";
+
+								Phone_list_R.remove(g);
+								break;
+							}
+
+						}
+
+						contactDetail.setName(name);
+
+						Phone_list.add(contactDetail);
+
+					}
+
+				}
+				catch(JSONException e)
+				{
+
+					e.printStackTrace();
+				}
+				catch(Exception e)
+				{
+
+					e.printStackTrace();
+				}
+				catch(Error e)
+				{
+					// TODO: handle exception
+				}
+
+				return message;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			try
+			{
+
+				if( result.equals("Error! Try Again") )
+				{
+					if( progress_dialog.isShowing() )
+					{
+						progress_dialog.dismiss();
+					}
+					GlobalUtills.showToast("Oops an error has occur..!", getActivity());
+				}
+				else
+				{
+
+					Collections.sort(Phone_list_R, new Comparator<FriendInfo>()
+					{
+						@Override
+						public int compare(FriendInfo text1, FriendInfo text2)
+						{
+							return text1.getName().compareToIgnoreCase(text2.getName());
+						}
+					});
+					Collections.sort(Phone_list, new Comparator<FriendInfo>()
+					{
+						@Override
+						public int compare(FriendInfo text1, FriendInfo text2)
+						{
+							return text1.getName().compareToIgnoreCase(text2.getName());
+						}
+					});
+
+					completeListOFfrnds.clear();
+					Phone_list.addAll(Phone_list_R);
+
+					completeListOFfrnds.addAll(list_of_allfriend);
+					completeListOFfrnds.addAll(Phone_list);
+
+					phoneContactAdapter = new Chat_contact_adapter(getActivity(), completeListOFfrnds);
+					GlobalUtills.list_chat.setAdapter(phoneContactAdapter);
+
+					positionFB.clear();
+					positionPH.clear();
+					positionC.clear();
+
+					if( progress_dialog.isShowing() )
+					{
+						progress_dialog.dismiss();
+					}
+
+				}
+
+			}
+			catch(Exception e)
+			{
+				if( progress_dialog.isShowing() )
+				{
+					progress_dialog.dismiss();
+				}
+
+				e.printStackTrace();
+			}
+			catch(Error e)
+			{
+				// TODO: handle exception
+			}
+
+		}
+
+	}
+
+	//
+
+	// send request msg
+	// get valid contacts
+	class send_msg_request extends AsyncTask<String , Void , String>
+	{
+
+		TransparentProgressDialog	pd;
+
+		String						message	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			pd = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+			pd.show();
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+			String phno_ = params[0];
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=phone_find&phones=+914646464664,+91505309995,+917355169903
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "send_msg_request"));
+			param.add(new BasicNameValuePair("userId", global.getUser_id() + ""));
+			param.add(new BasicNameValuePair("phone", phno_ + ""));
+
+			Log.e("Param send_msg_request: ", "> " + param);
+
+			WebServiceHandler web = new WebServiceHandler();
+
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			System.out.println(jsonString.toString() + "response send request");
+
+			return message;
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			// Phone_list.addAll(Phone_list_R);
+
+			pd.dismiss();
+			GlobalUtills.showToast("Request has been successfully sent..!", getActivity());
+
+		}
+
+	}
+
+	//
+	// end send request msg
+	private void getFriends()
+	{
+		try
+		{
+
+			progress_dialog = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+			if( completeListOFfrnds.isEmpty() )
+			{
+				progress_dialog.show();
+			}
+
+			Session activeSession = Session.getActiveSession();
+			if( activeSession == null )
+			{
+				// try to restore from cache
+				activeSession = Session.openActiveSessionFromCache(getActivity());
+			}
+			if( activeSession != null )
+			{
+				if( activeSession.getState().isOpened() )
+				{
+					Request friendRequest = Request.newMyFriendsRequest(activeSession, new GraphUserListCallback()
+					{
+						public void onCompleted(List<GraphUser> users, Response response)
+						{
+							try
+							{
+
+								Log.e("INFO", response.toString());
+
+								String friend_list = response.getGraphObject().getProperty("data").toString();
+
+								SharedPreferences sharedPref = getActivity().getSharedPreferences("FacebookFrnd", Context.MODE_PRIVATE);
+								Editor editorPref = sharedPref.edit();
+								editorPref.clear();
+								editorPref.commit();
+								editorPref.putString("FriendList", friend_list + "");
+								editorPref.commit();
+								SetFriendInfo_Json();
+
+							}
+							catch(Exception e)
+							{
+								if( progress_dialog.isShowing() )
+								{
+									progress_dialog.dismiss();
+								}
+								e.printStackTrace();
+
+							}
+
+						}
+					});
+
+					Bundle params = new Bundle();
+					params.putString("fields", "id,name,email,picture,gender");
+					friendRequest.setParameters(params);
+					friendRequest.executeAsync();
+				}
+			}
+		}
+		catch(Exception e)
+		{
+			if( progress_dialog.isShowing() )
+			{
+				progress_dialog.dismiss();
+			}
+			e.printStackTrace();
+		}
+	}
+
+	// get valid friends from fb
+	public class Getvalid_frnds extends AsyncTask<Void , Void , String>
+	{
+		String	message;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+		}
+
+		@Override
+		protected String doInBackground(Void... params)
+		{
+
+			String jsonString = "";
+			try
+			{
+
+				List<NameValuePair> param = new ArrayList<NameValuePair>();
+				param.add(new BasicNameValuePair("post_type", "post"));
+				param.add(new BasicNameValuePair("mtype", "get_valid_fb_users"));
+				param.add(new BasicNameValuePair("users", FBID_checkValidation));
+				param.add(new BasicNameValuePair("user_id", global.getUser_id()));
+
+				Log.e("Param Getvalid_frnds: ", "> " + param);
+
+				WebServiceHandler web = new WebServiceHandler();
+				jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			try
+			{
+
+				friend_info_list.clear();
+
+				// {"Message":"Success","users":[]}
+
+				JSONObject jsonResponse = new JSONObject(result);
+
+				if( jsonResponse.getString("Message").equalsIgnoreCase("Success") )
+				{
+					JSONArray jsonArr = jsonResponse.getJSONArray("users");
+
+					for( int g = 0; g < jsonArr.length(); g++ )
+					{
+						FriendInfo friend = new FriendInfo();
+						JSONObject innerJson = jsonArr.getJSONObject(g);
+
+						friend.setId(innerJson.getString("facebook_id"));
+						friend.setName(innerJson.getString("user_name"));
+						friend.setMobile_no(innerJson.getString("user_telephone"));
+						friend.setUnread_count(innerJson.getString("unread_count"));
+
+						friend_info_list.add(friend);
+					}
+
+					global.setFriend_info_list(friend_info_list);
+					list_of_allfriend.clear();
+					// completeListOFfrnds.clear();
+
+					list_of_allfriend.addAll(friend_info_list);
+
+					Collections.sort(list_of_allfriend, new Comparator<FriendInfo>()
+					{
+						@Override
+						public int compare(FriendInfo text1, FriendInfo text2)
+						{
+							return text1.getUnread_count().compareToIgnoreCase(text2.getUnread_count());
+						}
+					});
+
+					Collections.reverse(list_of_allfriend);
+
+					// friend_adapter = new ShowSocialFriends(getActivity(),
+					// list_of_allfriend, true, false);
+					// GlobalUtills.list_chat.setAdapter(friend_adapter);
+
+					// friend_adapter.notifyDataSetChanged();
+					new getValidContacts().execute();
+
+				}
+
+			}
+			catch(Exception e)
+			{
+				if( progress_dialog.isShowing() )
+				{
+					progress_dialog.dismiss();
+				}
+				e.printStackTrace();
+			}
+			catch(Error e)
+			{
+				// TODO: handle exception
+			}
+
+			super.onPostExecute(result);
+		}
+
+	}
+
+	// ----------------------------
+	private void SetFriendInfo_Json()
+	{
+		try
+		{
+			// creating JSONaqDa
+
+			if( !friend_info_list.isEmpty() )
+			{
+				friend_info_list.clear();
+			}
+
+			ArrayList<HashMap<String , String>> friend_list_array = new ArrayList<HashMap<String , String>>();
+
+			SharedPreferences sharedPref = getActivity().getSharedPreferences("FacebookFrnd", Context.MODE_PRIVATE);
+			String friend_list = sharedPref.getString("FriendList", "");
+
+			JSONArray jSonArr = new JSONArray();
+			FBID_checkValidation = "";
+			JSONArray jarr = new JSONArray(friend_list);
+			for( int i = 0; i < jarr.length(); i++ )
+			{
+				JSONObject obj = jarr.getJSONObject(i);
+				JSONObject picture = obj.getJSONObject("picture");
+				JSONObject jsonObject_url = picture.getJSONObject("data");
+
+				String id = obj.getString("id");
+				friendInfo = new FriendInfo();
+				String IMAGE_URL = jsonObject_url.getString("url");
+
+				Log.e("Friend ID", id);
+				friendInfo.setId(id);
+				String name = obj.getString("name");
+				friendInfo.setImage(IMAGE_URL);
+
+				HashMap<String , String> map = new HashMap<String , String>();
+				map.put("id", id);
+				friend_list_array.add(map);
+				JSONObject pnObj = new JSONObject();
+				pnObj.put("userid", id);
+
+				jSonArr.put(pnObj);
+
+				friendInfo.setName(name);
+				// friend_info_list.add(friendInfo);
+
+				if( FBID_checkValidation.equals("") )
+				{
+					FBID_checkValidation = id + "";
+				}
+				else
+				{
+					FBID_checkValidation = FBID_checkValidation + "," + id;
+				}
+
+			}
+
+			new Getvalid_frnds().execute();
+		}
+		catch(Exception e)
+		{
+			if( progress_dialog.isShowing() )
+			{
+				progress_dialog.dismiss();
+			}
+			e.printStackTrace();
+		}
+		// global.setFriend_info_list(friend_info_list);
+
+		// new updateDATA().execute();
+
+	}
+
+	private void dialo_3options(final String Name, final String subHeading, final int positionFBM, final boolean registered)
+	{
+		final Dialog dialog = globalUtills.prepararDialog(getActivity(), R.layout.dialog_three_options);
+
+		TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+		title.setText(Name.toString());
+
+		TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+		subheading.setText(subHeading.toString());
+
+		Button btn_Chat = (Button) dialog.findViewById(R.id.btnChat);
+		Button btn_call = (Button) dialog.findViewById(R.id.btncall);
+		Button btn_groups = (Button) dialog.findViewById(R.id.btngroups);
+		ImageButton btn_close = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+		if( !registered )
+		{
+
+			btn_groups.setVisibility(View.GONE);
+			btn_Chat.setText("Send Request");
+		}
+
+		btn_Chat.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+
+				if( registered )
+				{
+
+					Intent gotoChatting = new Intent(getActivity(), Chat_OneToOne.class);
+					gotoChatting.putExtra("name", completeListOFfrnds.get(positionFBM).getName() + "");
+					gotoChatting.putExtra("fbID", completeListOFfrnds.get(positionFBM).getId() + "");
+					startActivity(gotoChatting);
+
+				}
+				else
+				{
+					String temp_phone = completeListOFfrnds.get(positionFBM).getMobile_no();
+					if( completeListOFfrnds.get(positionFBM).getMobile_no().charAt(0) == '+' )
+					{
+						temp_phone = completeListOFfrnds.get(positionFBM).getMobile_no().substring(1, completeListOFfrnds.get(positionFBM).getMobile_no().length());
+					}
+					temp_phone = temp_phone.replaceAll(" ", "");
+
+				
+					String shareBody = "Hey ..! i found get-groupy an osm application to connect with your friends..   https://play.google.com/store/apps/details?id=com.app.messenger&hl=en";
+					Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+					sharingIntent.setType("text/plain");
+					sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Get-Groupy");
+					sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
+					startActivity(Intent.createChooser(sharingIntent, "Invite Friends"));
+					
+
+				}
+
+				dialog.dismiss();
+
+			}
+		});
+		btn_call.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				try
+				{
+					Intent callIntent = new Intent("android.intent.action.CALL_PRIVILEGED");
+					callIntent.setData(Uri.parse("tel:" + completeListOFfrnds.get(positionFBM).getMobile_no()));
+
+					startActivity(callIntent);
+				}
+				catch(Exception e)
+				{
+					Intent callIntent = new Intent(Intent.ACTION_CALL);
+					callIntent.setData(Uri.parse("tel:" + completeListOFfrnds.get(positionFBM).getMobile_no()));
+					callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+					startActivity(callIntent);
+				}
+
+				dialog.dismiss();
+
+			}
+		});
+		btn_groups.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				String FriendID = "";
+				FriendID = completeListOFfrnds.get(positionFBM).getId();
+				System.out.println(FriendID + "friend's id");
+
+				Intent gotoHangout_groups = new Intent(getActivity(), Hangout_friendGroup.class);
+				positionPH.clear();
+				gotoHangout_groups.putExtra("FrndID", FriendID + "");
+				startActivity(gotoHangout_groups);
+				dialog.dismiss();
+
+			}
+		});
+		btn_close.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				dialog.dismiss();
+
+			}
+		});
+
+		dialog.show();
+
+	}
+
+	class getRecentChats extends AsyncTask<Void , Void , String>
+	{
+		String						response	= "", message = "", userid = "";
+
+		TransparentProgressDialog	pd;
+
+		public getRecentChats(String user)
+		{
+
+			this.userid = user;
+
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			pd = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+
+			if( ChatfrndList_recent.isEmpty() )
+			{
+				pd.show();
+			}
+
+			Groupmember = "C";
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(Void... params)
+		{
+
+			// http://ameba.get-groupy.com/webservice/get_posts/?post_type=post&mtype=recent_chat
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "recent_chat"));
+
+			param.add(new BasicNameValuePair("userid", "" + userid));
+
+			WebServiceHandler web = new WebServiceHandler();
+			response = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			try
+			{
+
+				
+
+				JSONObject jsonObject = new JSONObject(response);
+				message = jsonObject.getString("message");
+
+				if( message.equalsIgnoreCase("Success") )
+				{
+
+					JSONArray jsonArray_group_list_info = jsonObject.getJSONArray("response");
+
+					ChatfrndList_recent.clear();
+					for( int i = 0; i < jsonArray_group_list_info.length(); i++ )
+					{
+
+						FriendInfo friendinfo = new FriendInfo();
+
+						JSONObject json_array_group_info = jsonArray_group_list_info.getJSONObject(i);
+
+						friendinfo.setId(json_array_group_info.getString("facebook_id") + "");
+						friendinfo.setImage(json_array_group_info.getString("userImage") + "");
+						friendinfo.setName(json_array_group_info.getString("userName") + "");
+						friendinfo.setUnread_count(json_array_group_info.getString("unread_count"));
+						friendinfo.setMobile_no(json_array_group_info.getString("user_telephone") + "");
+
+						ChatfrndList_recent.add(friendinfo);
+
+					}
+				}
+
+			}
+			catch(JSONException e)
+			{
+
+				e.printStackTrace();
+			}
+			catch(Exception e)
+			{
+
+				e.printStackTrace();
+			}
+			catch(Error e)
+			{
+				// TODO: handle exception
+			}
+
+			return message;
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			try
+			{
+
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+
+				if( result.contains("Success") )
+				{
+
+					// Collections.reverse(ChatfrndList_recent);
+
+					if( recentchatAdapter == null )
+					{
+						recentchatAdapter = new ShowSocialFriends(getActivity(), ChatfrndList_recent, true, false);
+						ListVChats_recent.setAdapter(recentchatAdapter);
+
+					}
+					else if( ListVChats_recent.getAdapter() != recentchatAdapter )
+					{
+						ListVChats_recent.setAdapter(recentchatAdapter);
+					}
+					else
+					{
+						ListVChats_recent.invalidateViews();
+					}
+
+				}
+				else
+				{
+					// ListVChats_recent.setAdapter(null);
+					GlobalUtills.showToast("No recent chat found ..!", getActivity());
+				}
+
+			}
+			catch(Exception e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+			}
+			catch(Error e)
+			{
+				// TODO: handle exception
+			}
+			super.onPostExecute(result);
+		}
+
+	}
+
+}

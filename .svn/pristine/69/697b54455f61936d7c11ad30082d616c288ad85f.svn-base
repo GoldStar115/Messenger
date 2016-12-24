@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="VideoInterstitialSDK">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/messenger/libs/VideoInterstitialSDK.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

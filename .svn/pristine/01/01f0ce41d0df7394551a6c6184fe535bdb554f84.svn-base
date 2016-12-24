@@ -1,0 +1,2542 @@
+package com.app.messenger;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.ActionBar.LayoutParams;
+import android.app.Activity;
+import android.app.Dialog;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.LayerDrawable;
+import android.media.ExifInterface;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
+import android.support.v4.app.FragmentActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
+import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.RatingBar;
+import android.widget.RatingBar.OnRatingBarChangeListener;
+import android.widget.ScrollView;
+import android.widget.TextView;
+
+import com.app.model.Chat_Single;
+import com.app.util.GlobalUtills;
+import com.app.util.RoundedCornersGaganImageView;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.Block_Unblock;
+import com.app.webserviceshandler.GetRatings;
+import com.app.webserviceshandler.GetunreadSingle;
+import com.app.webserviceshandler.Set_Rating;
+import com.app.webserviceshandler.WebServiceHandler;
+import com.rockerhieu.emojicon.EmojiconEditText;
+import com.rockerhieu.emojicon.EmojiconGridFragment;
+import com.rockerhieu.emojicon.EmojiconTextView;
+import com.rockerhieu.emojicon.EmojiconsFragment;
+import com.rockerhieu.emojicon.emoji.Emojicon;
+
+public class Chat_OneToOne extends FragmentActivity implements AnimationListener, EmojiconGridFragment.OnEmojiconClickedListener, EmojiconsFragment.OnEmojiconBackspaceClickedListener
+{
+
+	public static boolean	RefreshChat			= false;
+	public static boolean	generateNOti		= false;
+
+	ImageButton				btnSendChat;
+	EmojiconEditText		edMsg;
+	static LinearLayout		layoutChat;
+	FrameLayout				layout_smily;
+	ScrollView				uiC_scroll;
+	String					MsgToSend			= "";
+	ActionBarCommon			actionBarCommon;
+	Global					global;
+	ImageView				img_view_smily, img_view_keyboard, uiC_imgVtakePic;
+	FrameLayout				frame_emoji;
+	static ImageView		img_view_erase;
+
+	Animation				anim_erase;
+
+	static String			FbID				= "", myFbID = "";
+	int						chat_msg_count_int	= 0;
+	String					Name				= "", phone_no = "";
+	CharSequence			temp_msg			= "";
+	boolean					check_keyboard		= true, check_unread_flag = true;
+
+	String					DateTemp			= "";
+	ProgressBar				progressBSendMsg;
+
+	boolean					msgOrnot			= false;
+	String					imgbytes			= "";
+	List<Chat_Single>		chatData_list		= new ArrayList<Chat_Single>();
+
+	SharedPreferences		sharedChatDataUnread;
+
+	boolean					loadmore			= false;
+
+	// boolean resumeORnot = false;
+	String					blocked				= "";
+	String					blockStat			= "";
+
+	LinearLayout			layoutSendChat, layoutSendChatBlocked;
+	GlobalUtills			globalUtills;
+
+	public static String	ShareImage			= "";
+
+	@Override
+	protected void onStop()
+	{
+		responseHandlerCHat = null;
+
+		super.onStop();
+	}
+
+	@Override
+	public void onBackPressed()
+	{
+
+		GlobalUtills.SingleChat_noti = true;
+		// GlobalUtills.delete_chat_notification = true;
+		GlobalUtills.SingleChat_Sender = "";
+
+		if( !check_keyboard )
+		{
+			check_keyboard = true;
+			img_view_smily.setVisibility(View.VISIBLE);
+			img_view_keyboard.setVisibility(View.INVISIBLE);
+			// InputMethodManager imm = (InputMethodManager)
+			// getSystemService(Context.INPUT_METHOD_SERVICE);
+			// imm.showSoftInput(edMsg, InputMethodManager.SHOW_IMPLICIT);
+			frame_emoji.setVisibility(View.GONE);
+		}
+		else
+		{
+			DateTemp = "";
+			RefreshChat = false;
+			super.onBackPressed();
+		}
+
+	}
+
+	@Override
+	protected void onResume()
+	{
+
+		globalUtills = new GlobalUtills();
+
+		if( GlobalUtills.YouTube_URL.length() > 2 )
+		{
+			// edMsg.setText(GlobalUtills.YouTube_URL);
+			// GlobalUtills.YouTube_URL = "";
+			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+			{
+				new SendMsgAsyncOneToOne().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "");
+
+			}
+			else
+			{
+				new SendMsgAsyncOneToOne().execute("");
+			}
+
+		}
+
+		RefreshChat = true;
+
+		SharedPreferences sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+		global.setUser_id(sharedPref.getString("UserID", ""));
+
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+		{
+			new GetunreadSingle(FbID, global.getUser_id(), responseHandlerCHat).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+		}
+		else
+		{
+			new GetunreadSingle(FbID, global.getUser_id(), responseHandlerCHat).execute();
+		}
+
+		if( FbID.length() > 0 )
+		{
+			GlobalUtills.SingleChat_Sender = FbID;
+		}
+
+		NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		notifManager.cancel(0);
+
+		sharedChatDataUnread = getSharedPreferences("Chat", Context.MODE_PRIVATE);
+
+		super.onResume();
+	}
+
+	@Override
+	protected void onPause()
+	{
+		GlobalUtills.SingleChat_noti = true;
+		// GlobalUtills.delete_chat_notification = true;
+		GlobalUtills.SingleChat_Sender = "";
+		// resumeORnot = false;
+		RefreshChat = false;
+		super.onPause();
+	}
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		// HIDE THE KEYBOARD
+		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+		setContentView(R.layout.chat__one_to_one);
+
+		System.gc();
+
+		// GlobalUtills.SingleChat_noti = false;
+		// GlobalUtills.delete_chat_notification = false;
+
+		layoutSendChat = (LinearLayout) findViewById(R.id.layoutSendChat);
+		layoutSendChatBlocked = (LinearLayout) findViewById(R.id.layoutSendChatNO);
+
+		uiC_scroll = ((ScrollView) findViewById(R.id.uiC_scrllView_OneToOne));
+		layoutChat = (LinearLayout) findViewById(R.id.layoutChat_OneToOne);
+		layout_smily = (FrameLayout) findViewById(R.id.linear_layout_smily_one_to_one);
+		btnSendChat = (ImageButton) findViewById(R.id.btnSentChat_OneToOne);
+		edMsg = (EmojiconEditText) findViewById(R.id.edMsg_OneToOne);
+		progressBSendMsg = (ProgressBar) findViewById(R.id.uiC_progressBSendMsg);
+		img_view_smily = (ImageView) findViewById(R.id.img_view_smily_one_to_one);
+		img_view_keyboard = (ImageView) findViewById(R.id.img_view_keyboard_one_to_one);
+		frame_emoji = (FrameLayout) findViewById(R.id.emojicons);
+		uiC_imgVtakePic = (ImageView) findViewById(R.id.uiC_imgVtakePic);
+		img_view_erase = (ImageView) findViewById(R.id.img_view_erase);
+
+		generateNOti = false;
+		RefreshChat = true;
+		global = new Global();
+		globalUtills = new GlobalUtills();
+		GlobalUtills.YouTube_URL = "";
+		Intent intentdata = getIntent();
+		Name = intentdata.getStringExtra("name");
+		FbID = intentdata.getStringExtra("fbID") + "";
+		phone_no = intentdata.getStringExtra("ph");
+		GlobalUtills.SingleChat_Sender = FbID;
+
+		SharedPreferences sharedPref = getSharedPreferences("fbID", MODE_PRIVATE);
+		myFbID = "";
+		myFbID = sharedPref.getString("fb", "");
+
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+		{
+
+			new Block_Unblock(Chat_OneToOne.this, global.getUser_id(), FbID, responseHandlerGEtBlocked).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+		}
+		else
+		{
+			new Block_Unblock(Chat_OneToOne.this, global.getUser_id(), FbID, responseHandlerGEtBlocked).execute();
+		}
+
+		actionBarCommon = new ActionBarCommon(Chat_OneToOne.this, null);
+		actionBarCommon = (ActionBarCommon) findViewById(R.id.action_barC_OneToOne);
+
+		actionBarCommon.setActionText(Name + "");
+		actionBarCommon.text.setCompoundDrawablesWithIntrinsicBounds(0, // left
+				0, // top
+				android.R.drawable.ic_menu_info_details, // right
+				0);
+
+		actionBarCommon.layoutCenterclick(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				dialogOptions("" + Name, phone_no, FbID);
+			}
+		});
+
+		actionBarCommon.left_image.setImageResource(R.drawable.icon_back_arrow);
+		actionBarCommon.layout_left.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(edMsg.getWindowToken(), 0);
+
+				DateTemp = "";
+				RefreshChat = false;
+				GlobalUtills.SingleChat_noti = true;
+				// GlobalUtills.delete_chat_notification = false;
+
+				finish();
+
+			}
+		});
+
+		actionBarCommon.right_image.setImageResource(R.drawable.delete);
+		actionBarCommon.layout_Right.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+
+				if( globalUtills.haveNetworkConnection(Chat_OneToOne.this) )
+				{
+
+					if( msgOrnot )
+					{
+
+						DateTemp = "";
+
+						InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+						imm.hideSoftInputFromWindow(edMsg.getWindowToken(), 0);
+
+						chat_msg_count_int = 0;
+						check_unread_flag = true;
+						RefreshChat = false;
+
+						new AsyncClearMsg().execute();
+					}
+					else
+					{
+						GlobalUtills.showToast("No messages..!", Chat_OneToOne.this);
+					}
+
+				}
+				else
+				{
+					GlobalUtills.showToast("No network connection..!", Chat_OneToOne.this);
+				}
+
+			}
+		});
+
+		edMsg.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				// TODO Auto-generated method stub
+				if( !check_keyboard )
+				{
+					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+				}
+			}
+		});
+
+		layout_smily.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				// TODO Auto-generated method stub
+				if( check_keyboard )
+				{
+					check_keyboard = false;
+					img_view_smily.setVisibility(View.INVISIBLE);
+					img_view_keyboard.setVisibility(View.VISIBLE);
+					InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+					inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+					frame_emoji.setVisibility(View.VISIBLE);
+				}
+				else
+				{
+					check_keyboard = true;
+					img_view_smily.setVisibility(View.VISIBLE);
+					img_view_keyboard.setVisibility(View.INVISIBLE);
+					InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+					imm.showSoftInput(edMsg, InputMethodManager.SHOW_IMPLICIT);
+					frame_emoji.setVisibility(View.GONE);
+				}
+
+			}
+		});
+
+		btnSendChat.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( edMsg.getText().toString().trim().equals("") )
+				{
+					// Toast.makeText(Chat_OneToOne.this, "nothing to send ..!",
+					// Toast.LENGTH_LONG).show();
+					GlobalUtills.showToast("nothing to send ..!", Chat_OneToOne.this);
+
+				}
+				else
+				{
+					MsgToSend = edMsg.getText().toString().trim();
+					temp_msg = edMsg.getText();
+					if( globalUtills.haveNetworkConnection(Chat_OneToOne.this) )
+					{
+						GlobalUtills.YouTube_URL = "";
+						GlobalUtills.YouTube_VIdeoID = "";
+
+						if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+						{
+							new SendMsgAsyncOneToOne().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, MsgToSend);
+
+						}
+						else
+						{
+							new SendMsgAsyncOneToOne().execute(MsgToSend);
+						}
+
+					}
+					else
+					{
+						// Toast.makeText(Chat_OneToOne.this,
+						// "No internet connection..!",
+						// Toast.LENGTH_LONG).show();
+						GlobalUtills.showToast("No internet connection..!", Chat_OneToOne.this);
+					}
+				}
+
+			}
+		});
+
+		uiC_imgVtakePic.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( globalUtills.haveNetworkConnection(getApplicationContext()) )
+				{
+					DialogoChoose();
+				}
+				else
+				{
+					GlobalUtills.showToast("No network connection..!", Chat_OneToOne.this);
+				}
+			}
+		});
+
+		edMsg.addTextChangedListener(new TextWatcher()
+		{
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count)
+			{
+
+				if( edMsg.getText().toString().length() > 0 )
+				{
+					uiC_imgVtakePic.setVisibility(View.GONE);
+					btnSendChat.setVisibility(View.VISIBLE);
+				}
+				else
+				{
+					uiC_imgVtakePic.setVisibility(View.VISIBLE);
+					btnSendChat.setVisibility(View.GONE);
+				}
+
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after)
+			{
+
+			}
+
+			@Override
+			public void afterTextChanged(Editable s)
+			{
+
+			}
+		});
+
+		SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+		if( sharedChatDataS.contains(FbID) )
+		{
+
+			chatData_list.clear();
+
+			JSON_to_list(sharedChatDataS.getString(FbID, ""));
+		}
+		else
+		{
+			chatData_list.clear();
+		}
+
+		if( globalUtills.haveNetworkConnection(Chat_OneToOne.this) )
+		{
+
+			if( chatData_list.size() > 0 )
+			{
+				parseMSGdata(chatData_list, true, false);
+
+				// if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				// {
+				// new GetunreadSingle(FbID, global.getUser_id(),
+				// responseHandlerCHat).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+				//
+				// }
+				// else
+				// {
+				// new GetunreadSingle(FbID, global.getUser_id(),
+				// responseHandlerCHat).execute();
+				// }
+
+			}
+			else
+			{
+
+				// if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				// {
+				// new
+				// RECEIVEMsgAsync_OneToOne().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+				//
+				// }
+				// else
+				// {
+				new RECEIVEMsgAsync_OneToOne().execute();
+				// }
+
+			}
+
+		}
+		else
+		{
+
+			if( chatData_list.size() > 0 )
+			{
+
+				new showMsgDataAsyncn(chatData_list).execute();
+
+				/*
+				 * if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+				 * new GetunreadSingle(FbID, global.getUser_id(),
+				 * responseHandlerCHat
+				 * ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+				 * 
+				 * } else { new GetunreadSingle(FbID, global.getUser_id(),
+				 * responseHandlerCHat).execute(); }
+				 */
+			}
+
+		}
+		setEmojiconFragment(false);
+
+		// load the animation
+		anim_erase = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.sequential);
+
+		// set animation listener
+		anim_erase.setAnimationListener(this);
+
+		if( !ShareImage.isEmpty() )
+		{
+			decodeFile(ShareImage);
+			GlobalUtills.showToast("Sharing Image....", Chat_OneToOne.this);
+		}
+
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu)
+	{
+
+		menu.add("Clear Chat").setIcon(android.R.drawable.ic_menu_delete);
+
+		return super.onCreateOptionsMenu(menu);
+
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+
+		if( msgOrnot )
+		{
+
+			new AsyncClearMsg().execute();
+		}
+		else
+		{
+			GlobalUtills.showToast("No messages..!", Chat_OneToOne.this);
+		}
+
+		return super.onOptionsItemSelected(item);
+	}
+
+	@Override
+	public void onAnimationEnd(Animation animation)
+	{
+		// Take any action after completing the animation
+
+		// check for zoom in animation
+		if( animation == anim_erase )
+		{}
+
+	}
+
+	@Override
+	public void onAnimationRepeat(Animation animation)
+	{
+
+	}
+
+	@Override
+	public void onAnimationStart(Animation animation)
+	{
+
+	}
+
+	// ASYNC CLASS TO SEND MSGS
+	public class SendMsgAsyncOneToOne extends AsyncTask<String , Void , String>
+	{
+
+		String	response			= "";
+
+		String	youtubeThumbnail	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			// progressBSendMsg.setVisibility(View.VISIBLE);
+			// btnSendChat.setEnabled(false);
+
+			if( !(GlobalUtills.YouTube_URL.equals("")) )
+			{
+				youtubeThumbnail = GlobalUtills.YouTube_URL.substring(8, GlobalUtills.YouTube_URL.length());
+
+				youtubeThumbnail = youtubeThumbnail + "," + GlobalUtills.YouTube_VIdeoID;
+
+				GlobalUtills.YouTube_URL = "";
+				GlobalUtills.YouTube_VIdeoID = "";
+				MsgToSend = "";
+			}
+
+			if( imgbytes.equals("") )
+			{
+
+				Calendar c = Calendar.getInstance();
+				SimpleDateFormat dfJOBJ = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				String formattedDateJOBJ = dfJOBJ.format(c.getTime());
+
+				Chat_Single cD = new Chat_Single(global.getUser_id(), MsgToSend, formattedDateJOBJ, "", "", "" + youtubeThumbnail, FbID, "");
+				List<Chat_Single> CDL = new ArrayList<Chat_Single>();
+				CDL.add(cD);
+
+				try
+				{
+
+					SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+
+					JSONArray jsonOLD = null;
+
+					if( sharedChatDataS.contains(FbID) )
+					{
+						jsonOLD = new JSONArray(sharedChatDataS.getString(FbID, ""));
+
+						JSONObject jG = new JSONObject();
+
+						jG.put("userId", "" + global.getUser_id());
+						jG.put("message", "" + MsgToSend);
+						jG.put("date", "" + formattedDateJOBJ);
+						jG.put("user_name", "G");
+						jG.put("image", "" + "");
+						jG.put("youtube", "" + youtubeThumbnail);
+						jsonOLD.put(jG);
+
+						Editor editSHared = sharedChatDataS.edit();
+						editSHared.putString(FbID, jsonOLD.toString());
+						editSHared.apply();
+
+					}
+					else
+					{
+
+						jsonOLD = new JSONArray();
+
+						JSONObject jG = new JSONObject();
+
+						jG.put("userId", "" + global.getUser_id());
+						jG.put("message", "" + MsgToSend);
+						jG.put("date", "" + formattedDateJOBJ);
+						jG.put("user_name", "G");
+						jG.put("image", "" + "");
+						jG.put("youtube", "" + youtubeThumbnail);
+						jsonOLD.put(jG);
+
+						Editor editSHared = sharedChatDataS.edit();
+						editSHared.putString(FbID, jsonOLD.toString());
+						editSHared.apply();
+
+					}
+
+				}
+				catch(Exception e)
+				{
+					// TODO: handle exception
+				}
+
+				parseMSGdata(CDL, false, false);
+
+			}
+			else
+			{
+				progressBSendMsg.setVisibility(View.VISIBLE);
+				btnSendChat.setEnabled(false);
+			}
+			edMsg.setText("");
+			super.onPreExecute();
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+			String msg = params[0];
+
+			String jsonString = "";
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=save_single_chat&user_id=52&facebook_id=10152304589067723&message=Hi
+			try
+			{
+
+				List<NameValuePair> param = new ArrayList<NameValuePair>();
+				if( imgbytes.equals("") )
+				{
+					param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+					param.add(new BasicNameValuePair("mtype", "save_single_chat"));
+				}
+				param.add(new BasicNameValuePair("user_id", global.getUser_id() + ""));
+				param.add(new BasicNameValuePair("facebook_id", FbID));
+				param.add(new BasicNameValuePair("message", msg + ""));
+				param.add(new BasicNameValuePair("image", imgbytes + ""));
+				param.add(new BasicNameValuePair("youtube", youtubeThumbnail));
+
+				if( imgbytes.equals("") )
+				{
+					String url = "" + GlobalConstant.URL;
+
+					String paramString = URLEncodedUtils.format(param, "UTF-8");
+					url += "?" + paramString;
+					System.out.println(url);
+
+					HttpClient httpClient = new DefaultHttpClient();
+
+					HttpEntity httpEntity = null;
+					HttpResponse httpResponse = null;
+
+					HttpGet httpGet = new HttpGet(url);
+
+					httpResponse = httpClient.execute(httpGet);
+
+					httpEntity = httpResponse.getEntity();
+
+					jsonString = EntityUtils.toString(httpEntity);
+
+				}
+				else
+				{
+					WebServiceHandler web = new WebServiceHandler();
+
+					jsonString = web.makeServiceCallSendchat(GlobalConstant.URLSendMSG, WebServiceHandler.POST, param);
+				}
+
+				// System.out.println(jsonString + "responsesend smsg");
+
+			}
+			catch(Exception e)
+			{
+				return "error";
+			}
+			catch(OutOfMemoryError e)
+			{
+				return "error";
+			}
+
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			try
+			{
+
+				// btnSendChat.setEnabled(true);
+				// progressBSendMsg.setVisibility(View.GONE);
+
+				if( result.contains("Success") )
+				{
+
+					if( !imgbytes.equals("") )
+					{
+
+						msgOrnot = true;
+						try
+						{
+
+							JSONObject jobjIMage = new JSONObject(result);
+							String imageURL = jobjIMage.getString("image");
+
+							SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+
+							JSONArray jsonOLD = null;
+
+							if( sharedChatDataS.contains(FbID) )
+							{
+								jsonOLD = new JSONArray(sharedChatDataS.getString(FbID, ""));
+
+								JSONObject jG = new JSONObject();
+
+								Calendar c = Calendar.getInstance();
+								SimpleDateFormat dfJOBJ = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+								String formattedDateJOBJ = dfJOBJ.format(c.getTime());
+
+								jG.put("userId", "" + global.getUser_id());
+								jG.put("message", "" + "");
+								jG.put("date", "" + formattedDateJOBJ);
+								jG.put("user_name", "G");
+								jG.put("image", "" + imageURL);
+								jG.put("youtube", "" + youtubeThumbnail);
+								jsonOLD.put(jG);
+
+								Editor editSHared = sharedChatDataS.edit();
+								editSHared.putString(FbID, jsonOLD.toString());
+								editSHared.apply();
+
+								// if( imgbytes.equals("") )
+								// {
+								//
+								// }
+								// else
+								// {
+
+								btnSendChat.setEnabled(true);
+								progressBSendMsg.setVisibility(View.GONE);
+
+								Chat_Single cD = new Chat_Single(global.getUser_id(), "", formattedDateJOBJ, "", imageURL, "", FbID, "");
+								List<Chat_Single> CDL = new ArrayList<Chat_Single>();
+								CDL.add(cD);
+
+								parseMSGdata(CDL, false, false);
+								// }
+
+							}
+							else
+							{
+
+								jsonOLD = new JSONArray();
+
+								JSONObject jG = new JSONObject();
+
+								Calendar c = Calendar.getInstance();
+								SimpleDateFormat dfJOBJ = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+								String formattedDateJOBJ = dfJOBJ.format(c.getTime());
+
+								jG.put("userId", "" + global.getUser_id());
+								jG.put("message", "");
+								jG.put("date", "" + formattedDateJOBJ);
+								jG.put("user_name", "G");
+								jG.put("image", "" + imageURL);
+								jG.put("youtube", "");
+								jsonOLD.put(jG);
+
+								Editor editSHared = sharedChatDataS.edit();
+								editSHared.putString(FbID, jsonOLD.toString());
+								editSHared.apply();
+
+								// if( imgbytes.equals("") )
+								// {
+								//
+								// }
+								// else
+								// {
+								btnSendChat.setEnabled(true);
+
+								Chat_Single cD = new Chat_Single(global.getUser_id(), MsgToSend, formattedDateJOBJ, "", imageURL, "", FbID, "");
+								List<Chat_Single> CDL = new ArrayList<Chat_Single>();
+								CDL.add(cD);
+
+								parseMSGdata(CDL, false, false);
+								progressBSendMsg.setVisibility(View.GONE);
+								// }
+							}
+
+							imgbytes = "";
+
+						}
+						catch(JSONException e)
+						{
+							SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+							Editor editSHared = sharedChatDataS.edit();
+							editSHared.remove(FbID);
+							editSHared.apply();
+							e.printStackTrace();
+						}
+
+					}
+				}
+				else
+				{
+					btnSendChat.setEnabled(true);
+					progressBSendMsg.setVisibility(View.GONE);
+
+					GlobalUtills.showToast("Error..!", Chat_OneToOne.this);
+				}
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+				imgbytes = "";
+
+				btnSendChat.setEnabled(true);
+				progressBSendMsg.setVisibility(View.GONE);
+
+				SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+				Editor editSHared = sharedChatDataS.edit();
+				editSHared.remove(FbID);
+				editSHared.apply();
+			}
+
+			super.onPostExecute(result);
+		}
+
+	}
+
+	//
+
+	// RECEIVE MSGS FIRST TIME
+	public class RECEIVEMsgAsync_OneToOne extends AsyncTask<String , Void , String>
+	{
+
+		String						response	= "";
+
+		TransparentProgressDialog	pd;
+		boolean						localdata	= false;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+			pd = new TransparentProgressDialog(Chat_OneToOne.this, R.drawable.loading_spinner_icon);
+
+			if( chatData_list.size() > 0 )
+			{
+				localdata = true;
+				pd.show();
+			}
+			else
+			{
+				localdata = false;
+				pd.show();
+			}
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=get_single_chat&user_id=53&facebook_id=10152754229019909
+			String jsonString = "";
+
+			if( localdata )
+			{
+
+			}
+			else
+			{
+
+				List<NameValuePair> param = new ArrayList<NameValuePair>();
+				param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+				param.add(new BasicNameValuePair("mtype", "get_single_chat"));
+				param.add(new BasicNameValuePair("user_id", global.getUser_id() + ""));
+				param.add(new BasicNameValuePair("facebook_id", FbID + ""));
+				param.add(new BasicNameValuePair("timezone", com.app.util.GlobalConstant.time_zone + ""));
+
+				Log.e("Param receive msg: ", "> " + param);
+
+				WebServiceHandler web = new WebServiceHandler();
+
+				jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			}
+
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			System.out.println(result + "result");
+
+			try
+			{
+
+				if( localdata )
+				{
+					parseMSGdata(chatData_list, true, false);
+					if( pd.isShowing() )
+					{
+						pd.dismiss();
+					}
+
+					// new showMsgDataAsyncn(chatData_list).execute();
+
+				}
+				else
+				{
+
+					JSONObject jobjOuter = new JSONObject(result);
+					String responseMSG = jobjOuter.getString("Message");
+					if( responseMSG.equalsIgnoreCase("Success") )
+					{
+
+						msgOrnot = true;
+
+						String msgsArrayString = jobjOuter.getString("msgInfo");
+
+						SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+						Editor editSHared = sharedChatDataS.edit();
+						editSHared.putString(FbID, msgsArrayString);
+						editSHared.apply();
+
+						JSON_to_list(msgsArrayString);
+
+						// new showMsgDataAsyncn(chatData_list).execute();
+
+						parseMSGdata(chatData_list, true, false);
+						if( pd.isShowing() )
+						{
+							pd.dismiss();
+						}
+						// }
+
+					}
+					else
+					{
+						if( pd.isShowing() )
+						{
+							pd.dismiss();
+						}
+						System.out.println(result + "error");
+					}
+
+				}
+
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+
+				// new getunreadmsgsAsync_OneToOne().execute();
+				// new GetunreadSingle(FbID, global.getUser_id(),
+				// responseHandlerCHat).execute();
+
+				/*
+				 * if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+				 * new GetunreadSingle(FbID, global.getUser_id(),
+				 * responseHandlerCHat
+				 * ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+				 * 
+				 * } else { new GetunreadSingle(FbID, global.getUser_id(),
+				 * responseHandlerCHat).execute(); }
+				 */
+
+			}
+			catch(JSONException e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+
+				e.printStackTrace();
+			}
+			catch(Exception e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+
+				e.printStackTrace();
+			}
+
+			super.onPostExecute(result);
+		}
+	}
+
+	private int GetchatLength()
+	{
+
+		try
+		{
+			SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+			if( sharedChatDataS.contains(FbID) )
+			{
+
+				JSONArray jsonArrMsgs = new JSONArray(sharedChatDataS.getString(FbID, "") + "");
+				return jsonArrMsgs.length();
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return 0;
+
+		}
+
+	}
+
+	// JSON to list
+	private void JSON_to_list(String stringjarray)
+	{
+
+		try
+		{
+
+			JSONArray jsonArrMsgs = new JSONArray(stringjarray + "");
+
+			if( chatData_list.size() > 0 )
+			{
+				chatData_list.clear();
+			}
+
+			int StartFrom = 0;
+			if( jsonArrMsgs.length() > 40 )
+			{
+				StartFrom = jsonArrMsgs.length() - 40;
+
+			}
+
+			for( int i = StartFrom; i < jsonArrMsgs.length(); i++ )
+			{
+
+				JSONObject jobjinner = jsonArrMsgs.getJSONObject(i);
+
+				String userId = jobjinner.getString("userId");
+				String message = jobjinner.getString("message");
+				String date = jobjinner.getString("date");
+				String username = jobjinner.getString("user_name");
+				String imgURL = jobjinner.getString("image");
+				String youtube = jobjinner.getString("youtube");
+
+				chatData_list.add(new Chat_Single(userId, message, date, username, imgURL, youtube, "", ""));
+
+			}
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	// end JSON to list
+
+	// JSON to list
+	private void JSON_to_listLoadMore()
+	{
+
+		try
+		{
+
+			if( chatData_list.size() > 0 )
+			{
+				chatData_list.clear();
+			}
+
+			SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+			if( sharedChatDataS.contains(FbID) )
+			{
+
+				JSONArray jsonArrMsgs = new JSONArray(sharedChatDataS.getString(FbID, "") + "");
+
+				// JSONArray jsonArrMsgs = new JSONArray(stringjarray + "");
+
+				for( int i = 0; i < jsonArrMsgs.length() - 40; i++ )
+				{
+
+					JSONObject jobjinner = jsonArrMsgs.getJSONObject(i);
+
+					String userId = jobjinner.getString("userId");
+					String message = jobjinner.getString("message");
+					String date = jobjinner.getString("date");
+					String username = jobjinner.getString("user_name");
+					String imgURL = jobjinner.getString("image");
+					String youtube = jobjinner.getString("youtube");
+
+					chatData_list.add(new Chat_Single(userId, message, date, username, imgURL, youtube, "", ""));
+
+				}
+
+			}
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	// end JSON to list
+
+	// ASYNC CLASS TO get unread msgs
+
+	public void getunread(Context con)
+	{
+
+		// global = (Global) getApplicationContext();
+		// Chat_OneToOne c=new Chat_OneToOne();
+		// new getunreadmsgsAsync_OneToOne().execute();
+
+		// new GetunreadSingle(FbID,
+		// global.getUser_id(),responseHandlerCHat).execute();
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+		{
+			new GetunreadSingle(FbID, global.getUser_id(), responseHandlerCHat).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+		}
+		else
+		{
+			new GetunreadSingle(FbID, global.getUser_id(), responseHandlerCHat).execute();
+		}
+
+	}
+
+	public void clrChat(final Context con)
+	{
+
+		// img_view_erase = (ImageView) ((Activity)
+		// con).findViewById(R.id.img_view_erase);
+		anim_erase = AnimationUtils.loadAnimation(con, R.anim.sequential);
+		img_view_erase.bringToFront();
+		img_view_erase.setVisibility(View.VISIBLE);
+		img_view_erase.startAnimation(anim_erase);
+
+		new CountDownTimer(4000, 1)
+		{
+
+			@Override
+			public void onTick(long millisUntilFinished)
+			{
+
+			}
+
+			@Override
+			public void onFinish()
+			{
+
+				chatData_list.clear();
+				// SharedPreferences sharedChatDataS = getSharedPreferences(
+				// "Chat", MODE_PRIVATE);
+				// Editor editSHared = sharedChatDataS.edit();
+				// editSHared.remove(FbID);
+				// editSHared.commit();
+
+				img_view_erase.setVisibility(View.GONE);
+				img_view_erase.setAnimation(null);
+
+				layoutChat.removeAllViews();
+
+				msgOrnot = false;
+				DateTemp = "";
+				date_To_match = "";
+
+				GlobalUtills.showToast("Messages deleted by " + Name + " !", con);
+			}
+		}.start();
+
+	}
+
+	Handler	responseHandlerCHat			= new Handler()
+										{
+											public void handleMessage(Message msg)
+											{
+												Bundle bundle = msg.getData();
+												String dta = bundle.getString("unread");
+												unreadData(dta);
+
+												if( generateNOti && GlobalUtills.allNotification )
+												{
+													String msgNoti = "You have new message from " + Name;
+
+													globalUtills.generateNotification_local(Chat_OneToOne.this, msgNoti, 0);
+													generateNOti = false;
+												}
+
+												// new GetunreadSingle(FbID,
+												// global.getUser_id(),
+												// responseHandlerCHat).execute();
+
+												if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+												{
+													new GetunreadSingle(FbID, global.getUser_id(), responseHandlerCHat).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+												}
+												else
+												{
+													new GetunreadSingle(FbID, global.getUser_id(), responseHandlerCHat).execute();
+												}
+
+											};
+										};
+
+	Handler	responseHandlerGEtBlocked	= new Handler()
+										{
+
+											public void handleMessage(Message msg)
+											{
+												try
+												{
+													Bundle bundle = msg.getData();
+													String blocking = bundle.getString("Block");
+													if( blocking.contains("Y") || blocking.equals("B") )
+													{
+														layoutSendChat.setVisibility(View.GONE);
+														layoutSendChatBlocked.setVisibility(View.VISIBLE);
+														blocked = "B";
+
+														if( blocking.equals("Y_other") )
+														{
+															blocked = "B_other";
+														}
+
+													}
+													else if( blocking.equals("U") )
+													{
+														layoutSendChatBlocked.setVisibility(View.GONE);
+														layoutSendChat.setVisibility(View.VISIBLE);
+														blocked = "U";
+
+													}
+													// else if(
+													// blocking.equals("B") )
+													// {
+													// layoutSendChat.setVisibility(View.GONE);
+													// layoutSendChatBlocked.setVisibility(View.VISIBLE);
+													// blocked = true;
+													// }
+													else
+													{
+														blocked = "U";
+													}
+
+												}
+												catch(Exception e)
+												{}
+												catch(Error e)
+												{}
+
+											}
+
+										};
+
+	String	responseMSG					= "";
+
+	public void unreadData(String msg)
+	{
+		String result = msg;
+
+		try
+		{
+
+			JSONObject jobjOuter = new JSONObject(result);
+			responseMSG = jobjOuter.getString("Message");
+			Log.e("result get_unread_chat----->", result + "");
+			/*
+			 * if (check_unread_flag) { chat_msg_count_int =
+			 * jobjOuter.getInt("count"); check_unread_flag = false; } else { if
+			 * (chat_msg_count_int <= jobjOuter.getInt("count")) {
+			 * chat_msg_count_int = jobjOuter.getInt("count"); } else {
+			 * chat_msg_count_int = jobjOuter.getInt("count");
+			 * img_view_erase.bringToFront();
+			 * img_view_erase.setVisibility(View.VISIBLE);
+			 * img_view_erase.startAnimation(anim_erase);
+			 * 
+			 * new CountDownTimer(4000, 1) {
+			 * 
+			 * @Override public void onTick(long millisUntilFinished) {
+			 * 
+			 * }
+			 * 
+			 * @Override public void onFinish() {
+			 * 
+			 * 
+			 * 
+			 * chatData_list.clear(); SharedPreferences sharedChatDataS =
+			 * getSharedPreferences( "Chat", MODE_PRIVATE); Editor editSHared =
+			 * sharedChatDataS.edit(); editSHared.remove(FbID);
+			 * editSHared.commit();
+			 * 
+			 * img_view_erase.setVisibility(View.GONE);
+			 * img_view_erase.setAnimation(null);
+			 * 
+			 * layoutChat.removeAllViews();
+			 * 
+			 * msgOrnot = false; DateTemp = ""; chat_msg_count_int = 0;
+			 * GlobalUtills.showToast("Messages deleted by " + Name + " !",
+			 * Chat_OneToOne.this); responseMSG = "ClearMSG"; } }.start(); } }
+			 */
+			if( responseMSG.equalsIgnoreCase("Success") )
+			{
+
+				msgOrnot = true;
+
+				String msgsArrayString = jobjOuter.getString("msgInfo");
+				JSONArray jsonArrMsgs = new JSONArray(msgsArrayString + "");
+
+				JSONArray jsonOLD = null;
+				if( sharedChatDataUnread.contains(FbID) )
+				{
+					jsonOLD = new JSONArray(sharedChatDataUnread.getString(FbID, ""));
+				}
+				else
+				{
+					jsonOLD = new JSONArray();
+				}
+
+				for( int i = 0; i < jsonArrMsgs.length(); i++ )
+				{
+
+					JSONObject jobjinner = jsonArrMsgs.getJSONObject(i);
+
+					String userId = jobjinner.getString("userId");
+					final String message = jobjinner.getString("message");
+					String date = jobjinner.getString("date");
+					final String imgURL = jobjinner.getString("image");
+					final String youtube = jobjinner.getString("youtube");
+
+					try
+					{
+
+						if( sharedChatDataUnread.contains(FbID) )
+						{
+
+							JSONObject jG = new JSONObject();
+
+							jG.put("userId", "" + userId);
+							jG.put("message", "" + message);
+							jG.put("date", "" + date);
+							jG.put("user_name", "G");
+							jG.put("image", "" + imgURL);
+							jG.put("youtube", "" + youtube);
+							jsonOLD.put(jG);
+						}
+
+					}
+					catch(JSONException e)
+					{
+
+						Editor editSHared = sharedChatDataUnread.edit();
+						editSHared.remove(FbID);
+						editSHared.apply();
+						e.printStackTrace();
+					}
+
+					List<Chat_Single> data = new ArrayList<Chat_Single>();
+					data.add(new Chat_Single(userId, message, date, "", imgURL, youtube, "", ""));
+
+					parseMSGdata(data, false, false);
+
+				}
+
+				if( jsonArrMsgs.length() > 0 && jsonOLD != null )
+				{
+
+					Editor editSHared = sharedChatDataUnread.edit();
+					editSHared.putString(FbID, jsonOLD.toString());
+					editSHared.apply();
+
+				}
+
+			}
+
+			// if (RefreshChat) {
+			// new getunreadmsgsAsync_OneToOne().execute();
+			// }
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	// ASYNC CLASS TO CLEAR MSGS
+	public class AsyncClearMsg extends AsyncTask<String , Void , String>
+	{
+
+		String	response	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			img_view_erase.bringToFront();
+			img_view_erase.setVisibility(View.VISIBLE);
+			img_view_erase.startAnimation(anim_erase);
+
+			RefreshChat = false;
+
+			super.onPreExecute();
+
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=dlt_personal_chat&sender_id=10152849406159520&receiver_id=1505284763054326
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "dlt_personal_chat"));
+			param.add(new BasicNameValuePair("sender_id", myFbID + ""));
+			param.add(new BasicNameValuePair("receiver_id", FbID));
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			try
+			{
+				JSONObject json_object = new JSONObject(result);
+
+				String message_string = json_object.getString("Message");
+				if( message_string.equalsIgnoreCase("Success") )
+				{
+
+					new CountDownTimer(4000, 1)
+					{
+
+						@Override
+						public void onTick(long millisUntilFinished)
+						{
+
+						}
+
+						@Override
+						public void onFinish()
+						{
+
+							chatData_list.clear();
+							SharedPreferences sharedChatDataS = getSharedPreferences("Chat", MODE_PRIVATE);
+							Editor editSHared = sharedChatDataS.edit();
+							editSHared.remove(FbID);
+							editSHared.apply();
+
+							img_view_erase.setVisibility(View.GONE);
+							img_view_erase.setAnimation(null);
+
+							layoutChat.removeAllViews();
+
+							msgOrnot = false;
+
+							GlobalUtills.showToast("Messages deleted..!", Chat_OneToOne.this);
+						}
+					}.start();
+
+				}
+				else
+				{
+					GlobalUtills.showToast("Error while deleting messages.", Chat_OneToOne.this);
+					// layoutChat.removeAllViews();
+
+					// msgOrnot = false;
+				}
+
+				//
+
+				RefreshChat = true;
+				// new getunreadmsgsAsync_OneToOne().execute();
+				// new GetunreadSingle(FbID, global.getUser_id(),
+				// responseHandlerCHat).execute();
+
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				{
+					new GetunreadSingle(FbID, global.getUser_id(), responseHandlerCHat).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+				}
+				else
+				{
+					new GetunreadSingle(FbID, global.getUser_id(), responseHandlerCHat).execute();
+				}
+
+			}
+			catch(JSONException e)
+			{
+				GlobalUtills.showToast("Error while deleting messages.", Chat_OneToOne.this);
+				img_view_erase.setVisibility(View.GONE);
+				img_view_erase.setAnimation(null);
+				e.printStackTrace();
+			}
+			super.onPostExecute(result);
+		}
+	}
+
+	//
+
+	public static String parseDateToddMMyyyy(String time)
+	{
+		String inputPattern = "yyyy-MM-dd HH:mm:ss";
+		String outputPattern = "dd-MMMM";
+		SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
+		SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);
+
+		Date date = null;
+		String str = null;
+
+		try
+		{
+			date = inputFormat.parse(time);
+			str = outputFormat.format(date);
+		}
+		catch(ParseException e)
+		{
+
+			e.printStackTrace();
+		}
+		catch(java.text.ParseException e)
+		{
+
+			e.printStackTrace();
+		}
+		return str;
+	}
+
+	private void setEmojiconFragment(boolean useSystemDefault)
+	{
+		getSupportFragmentManager().beginTransaction().replace(R.id.emojicons, EmojiconsFragment.newInstance(useSystemDefault)).commit();
+	}
+
+	@Override
+	public void onEmojiconBackspaceClicked(View v)
+	{
+
+		EmojiconsFragment.backspace(edMsg);
+	}
+
+	@Override
+	public void onEmojiconClicked(Emojicon emojicon)
+	{
+
+		EmojiconsFragment.input(edMsg, emojicon);
+	}
+
+	public void DialogoChoose()
+	{
+		final Dialog dialogLoader = new Dialog(this, R.style.Theme_Dialog);
+		dialogLoader.setTitle("Select a Image ");
+		dialogLoader.setContentView(R.layout.dialogo_choose);
+		dialogLoader.getWindow().setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+		ImageButton uiC_imgbtntake_gallery = (ImageButton) dialogLoader.findViewById(R.id.uiC_imgbtntake_gallery);
+		ImageButton uiC_imgbtntake_camera = (ImageButton) dialogLoader.findViewById(R.id.uiC_imgbtntake_camera);
+
+		ImageButton btnYoutube = (ImageButton) dialogLoader.findViewById(R.id.btn_youTube);
+
+		btnYoutube.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				dialogLoader.dismiss();
+
+				Intent gotoYouTube = new Intent(Chat_OneToOne.this, YouTube_videosList.class);
+				startActivity(gotoYouTube);
+
+			}
+		});
+
+		uiC_imgbtntake_gallery.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				dialogLoader.dismiss();
+				Intent pickPhoto = new Intent(Intent.ACTION_PICK);
+				pickPhoto.setType("image/*");
+				startActivityForResult(pickPhoto, 22);
+
+			}
+		});
+
+		uiC_imgbtntake_camera.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				dialogLoader.dismiss();
+				Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+				cameraIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, getTempUri());
+				cameraIntent.putExtra("return-data", true);
+				startActivityForResult(cameraIntent, 1888);
+
+			}
+		});
+
+		dialogLoader.show();
+	}
+
+	static final String	TEMP_PHOTO_FILE	= "temporary_holder.jpg";
+
+	private Uri getTempUri()
+	{
+		return Uri.fromFile(getTempFile());
+	}
+
+	private File getTempFile()
+	{
+
+		if( Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED) )
+		{
+
+			File file = new File(Environment.getExternalStorageDirectory(), TEMP_PHOTO_FILE);
+			try
+			{
+				file.createNewFile();
+			}
+			catch(IOException e)
+			{}
+
+			return file;
+		}
+		else
+		{
+
+			return null;
+		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data)
+	{
+		switch (requestCode)
+		{
+		case 22:
+			if( resultCode == Activity.RESULT_OK )
+			{
+
+				try
+				{
+
+					File tempFile = getTempFile();
+
+					String filePathG = Environment.getExternalStorageDirectory() + "/" + TEMP_PHOTO_FILE;
+
+					InputStream inputStream = getContentResolver().openInputStream(data.getData());
+					FileOutputStream fileOutputStream = new FileOutputStream(filePathG);
+					globalUtills.copyStream(inputStream, fileOutputStream);
+					fileOutputStream.close();
+					inputStream.close();
+
+					decodeFile(filePathG);
+
+					if( tempFile.exists() )
+					{
+						tempFile.delete();
+					}
+
+				}
+				catch(Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+
+			break;
+
+		case 1888:
+
+			try
+			{
+
+				String filePath = null;
+				File tempFile = getTempFile();
+
+				filePath = Environment.getExternalStorageDirectory() + "/" + TEMP_PHOTO_FILE;
+
+				if( filePath != null )
+				{
+
+					decodeFile(filePath);
+				}
+
+				if( tempFile.exists() )
+				{
+					tempFile.delete();
+				}
+
+			}
+			catch(RuntimeException e)
+			{
+				e.printStackTrace();
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+
+		}
+		super.onActivityResult(requestCode, resultCode, data);
+	}
+
+	// -------------------------------------------
+
+	public void decodeFile(String filePath)
+	{
+
+		// Decode image size
+		BitmapFactory.Options o = new BitmapFactory.Options();
+		o.inJustDecodeBounds = true;
+		BitmapFactory.decodeFile(filePath, o);
+
+		// The new size we want to scale to
+		final int REQUIRED_SIZE = 1024;
+
+		// Find the correct scale value. It should be the power of 2.
+		int width_tmp = o.outWidth, height_tmp = o.outHeight;
+		int scale = 1;
+		while (true)
+		{
+			if( width_tmp < REQUIRED_SIZE && height_tmp < REQUIRED_SIZE )
+				break;
+			width_tmp /= 2;
+			height_tmp /= 2;
+			scale *= 2;
+		}
+
+		// Decode with inSampleSize
+		BitmapFactory.Options o2 = new BitmapFactory.Options();
+		o2.inSampleSize = scale;
+		Bitmap bitmap = BitmapFactory.decodeFile(filePath, o2);
+
+		try
+		{
+			ExifInterface ei = new ExifInterface(filePath);
+			int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+			Matrix matrix = new Matrix();
+			switch (orientation)
+			{
+			case ExifInterface.ORIENTATION_ROTATE_90:
+				matrix.postRotate(90);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_180:
+				matrix.postRotate(180);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_270:
+				matrix.postRotate(270);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			default:
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			}
+		}
+		catch(Throwable e)
+		{
+			e.printStackTrace();
+		}
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+
+		imgbytes = globalUtills.BitMapToString(bitmap);
+
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+		{
+			new SendMsgAsyncOneToOne().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "");
+
+		}
+		else
+		{
+			new SendMsgAsyncOneToOne().execute("");
+		}
+
+		ShareImage = "";
+
+		// uiC_imgV_DP.setImageBitmap(bitmap);
+
+	}
+
+	// dial9og
+	private void dialogOptions(final String Name, final String phoneNumber, final String fb_)
+	{
+		final Dialog dialog = globalUtills.prepararDialog(Chat_OneToOne.this, R.layout.profile_info_other);
+
+		dialog.setCanceledOnTouchOutside(true);
+
+		final RatingBar ratingBar = (RatingBar) dialog.findViewById(R.id.ratingBarG);
+		LayerDrawable stars = (LayerDrawable) ratingBar.getProgressDrawable();
+		stars.getDrawable(0).setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_ATOP);
+		stars.getDrawable(1).setColorFilter(Color.LTGRAY, PorterDuff.Mode.SRC_ATOP);
+		stars.getDrawable(2).setColorFilter(Color.parseColor("#f4d334"), PorterDuff.Mode.SRC_ATOP);
+
+		com.app.messenger.Facebook_ProfilePictureView_rounded pic = (com.app.messenger.Facebook_ProfilePictureView_rounded) dialog.findViewById(R.id.ImageV_user);
+
+		pic.setProfileId(fb_);
+
+		TextView tvName = (TextView) dialog.findViewById(R.id.txtvProfileNameOther);
+		TextView tvTel = (TextView) dialog.findViewById(R.id.txtv_phoneCAllother);
+
+		tvName.setText("" + Name);
+		tvTel.setText("" + phoneNumber);
+		tvTel.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				Intent callIntent = new Intent(Intent.ACTION_CALL);
+				callIntent.setData(Uri.parse("tel:" + phoneNumber));
+				startActivity(callIntent);
+
+			}
+		});
+
+		// Float fRating = Float.parseFloat(GetRatings.Rating);
+
+		final TextView tvAVG_rating = (TextView) dialog.findViewById(R.id.textViewAVG);
+		final RatingBar ratingBarAVG = (RatingBar) dialog.findViewById(R.id.ratingBarAVG);
+
+		Handler responseHandlerRatings = new Handler()
+		{
+
+			public void handleMessage(Message msg)
+			{
+				try
+				{
+					Bundle bundle = msg.getData();
+					String ratinggs = bundle.getString("ratings");
+
+					tvAVG_rating.setText(ratinggs);
+					ratingBarAVG.setRating(Float.parseFloat(ratinggs));
+					ratingBar.setRating(Float.parseFloat(bundle.getString("user_rating")));
+				}
+				catch(Exception e)
+				{}
+				catch(Error e)
+				{}
+
+			}
+
+		};
+
+		if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+		{
+
+			new GetRatings(global.getUser_id(), FbID, responseHandlerRatings).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+		}
+		else
+		{
+			new GetRatings(global.getUser_id(), FbID, responseHandlerRatings).execute();
+		}
+
+		ratingBar.setOnRatingBarChangeListener(new OnRatingBarChangeListener()
+		{
+
+			@Override
+			public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser)
+			{
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				{
+
+					new Set_Rating(global.getUser_id(), FbID, rating + "").executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+				}
+				else
+				{
+					new Set_Rating(global.getUser_id(), FbID, rating + "").execute();
+				}
+			}
+		});
+
+		TextView txtV_FB = (TextView) dialog.findViewById(R.id.txtV_FB);
+		txtV_FB.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				startActivity(globalUtills.getOpenFacebookIntent(Chat_OneToOne.this, fb_));
+
+			}
+		});
+
+		Button btnBlock = (Button) dialog.findViewById(R.id.btnBlocked);
+
+		if( blocked.equals("B_other") )
+		{
+			btnBlock.setText("You are Blocked..!");
+			btnBlock.setEnabled(false);
+			txtV_FB.setEnabled(false);
+			tvTel.setEnabled(false);
+			ratingBar.setEnabled(false);
+
+			blockStat = "U";
+		}
+		else if( blocked.equals("B") )
+		{
+			btnBlock.setText("Unblock");
+			blockStat = "U";
+		}
+		else
+		{
+			btnBlock.setText("Block");
+			blockStat = "B";
+		}
+		btnBlock.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				new Block_Unblock(Chat_OneToOne.this, global.getUser_id(), FbID, "" + blockStat, responseHandlerGEtBlocked).execute();
+				dialog.dismiss();
+
+			}
+		});
+
+		Button btnShow_groups = (Button) dialog.findViewById(R.id.btnShow_groups);
+		btnShow_groups.setText(Name + "'s" + " Groups");
+		btnShow_groups.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				Intent gotoHangout_groups = new Intent(Chat_OneToOne.this, Hangout_friendGroup.class);
+				gotoHangout_groups.putExtra("FrndID", fb_ + "");
+				startActivity(gotoHangout_groups);
+
+			}
+		});
+
+		dialog.show();
+
+	}
+
+	// dialog end
+
+	// parse msg data
+
+	class showMsgDataAsyncn extends AsyncTask<String , Void , String>
+	{
+
+		List<Chat_Single>			listChatData;
+		TransparentProgressDialog	Pd;
+
+		public showMsgDataAsyncn(List<Chat_Single> listChatData)
+		{
+			this.listChatData = listChatData;
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			Pd = new TransparentProgressDialog(Chat_OneToOne.this, R.drawable.loading_spinner_icon);
+			Pd.show();
+
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			runOnUiThread(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+
+					parseMSGdata(listChatData, false, true);
+
+				}
+			});
+
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			if( Pd.isShowing() )
+			{
+				Pd.dismiss();
+			}
+
+			super.onPostExecute(result);
+		}
+
+	}
+
+	static String	date_To_match	= "";
+
+	public void parseMSGdata(List<Chat_Single> listChat, boolean loadmore, boolean index)
+	{
+
+		msgOrnot = true;
+
+		date_To_match = DateTemp;
+
+		if( loadmore )
+		{
+			if( GetchatLength() > 40 )
+			{
+				date_To_match = "";
+				Button btnLoadMore = new Button(Chat_OneToOne.this);
+				btnLoadMore.setText("LOAD MORE");
+				btnLoadMore.setTextSize(18);
+				btnLoadMore.setBackgroundColor(Color.parseColor("#3c3c3c"));
+				btnLoadMore.setTextColor(Color.WHITE);
+				btnLoadMore.setAlpha(.40f);
+
+				btnLoadMore.setOnClickListener(new OnClickListener()
+				{
+
+					@Override
+					public void onClick(View v)
+					{
+
+						layoutChat.removeViewAt(0);
+						JSON_to_listLoadMore();
+						Collections.reverse(chatData_list);
+
+						if( chatData_list.size() > 40 )
+						{
+							new showMsgDataAsyncn(chatData_list).execute();
+
+						}
+						else
+						{
+							parseMSGdata(chatData_list, false, true);
+						}
+
+						//
+
+					}
+				});
+
+				layoutChat.addView(btnLoadMore, 0);
+			}
+		}
+
+		for( int chatData = 0; chatData < listChat.size(); chatData++ )
+		{
+
+			String userId = listChat.get(chatData).getUserId();
+			final String message = listChat.get(chatData).getMessage();
+			final String date = listChat.get(chatData).getDate();
+			final String username = listChat.get(chatData).getUsername();
+			final String imgURL = listChat.get(chatData).getImgURL();
+			final String youtube = listChat.get(chatData).getYoutube();
+
+			String formtDate = parseDateToddMMyyyy(date);
+
+			if( formtDate == null || formtDate.equals("") )
+			{
+				SharedPreferences sharedChatDataS = getSharedPreferences("Chat", Context.MODE_PRIVATE);
+				Editor ed = sharedChatDataS.edit();
+				ed.remove(FbID);
+				ed.apply();
+				new RECEIVEMsgAsync_OneToOne().execute();
+				break;
+			}
+
+			if( index && chatData == 0 )
+			{
+				date_To_match = formtDate;
+			}
+
+			if( date_To_match.equalsIgnoreCase(formtDate) )
+			{
+
+			}
+			else
+			{
+
+				if( !index )
+
+				{
+
+					LinearLayout.LayoutParams lpDate = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					lpDate.gravity = Gravity.CENTER;
+
+					TextView tvdate = new TextView(Chat_OneToOne.this);
+					tvdate.setLayoutParams(lpDate);
+					tvdate.setText(formtDate + "");
+					tvdate.setTextColor(Color.DKGRAY);
+					tvdate.setTextSize(18);
+					tvdate.setPadding(5, 5, 5, 5);
+
+					// tvdate.setBackgroundColor(R.drawable.btn_gray_pressed);
+					tvdate.setGravity(Gravity.CENTER);
+
+					layoutChat.addView(tvdate);
+				}
+				else
+				{
+
+					LinearLayout.LayoutParams lpDate = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					lpDate.gravity = Gravity.CENTER;
+
+					TextView tvdate = new TextView(Chat_OneToOne.this);
+					tvdate.setLayoutParams(lpDate);
+					tvdate.setText(date_To_match + "");
+					tvdate.setTextColor(Color.DKGRAY);
+					tvdate.setTextSize(18);
+					tvdate.setPadding(5, 5, 5, 5);
+
+					// tvdate.setBackgroundColor(R.drawable.btn_gray_pressed);
+					tvdate.setGravity(Gravity.CENTER);
+					// layoutChat.addView(tvdate);
+
+					if( chatData == 0 )
+					{
+
+					}
+					else
+					{
+						layoutChat.addView(tvdate, 0);
+					}
+
+				}
+
+			}
+
+			if( index )
+			{
+				date_To_match = formtDate;
+			}
+			else
+			{
+				DateTemp = formtDate;
+				date_To_match = DateTemp;
+			}
+
+			LinearLayout layoutMsgContainer = new LinearLayout(Chat_OneToOne.this);
+
+			if( userId.contains(global.getUser_id()) )
+			{
+				LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+				lp.gravity = Gravity.LEFT;
+				layoutMsgContainer.setLayoutParams(lp);
+
+				View view = LayoutInflater.from(Chat_OneToOne.this).inflate(R.layout.chat_my, layoutMsgContainer);
+
+				EmojiconTextView tvMSG = (EmojiconTextView) view.findViewById(R.id.txtV_MyChatmsg);
+				RoundedCornersGaganImageView imgv = (RoundedCornersGaganImageView) view.findViewById(R.id.imgV_MyChatImage);
+				com.app.messenger.Facebook_ProfilePictureView_rounded DP = (com.app.messenger.Facebook_ProfilePictureView_rounded) view.findViewById(R.id.fb_MyChat);
+				LinearLayout FramemsgLayout = (LinearLayout) view.findViewById(R.id.FrameLayoutMyChat);
+
+				TextView tvTime = (TextView) view.findViewById(R.id.txtV_MyChatDate);
+
+				FrameLayout imageContainer = (FrameLayout) view.findViewById(R.id.FrameLayoutIMAGE);
+
+				ImageButton img_btn_play = (ImageButton) view.findViewById(R.id.img_btn_play_youtube_video);
+
+				// com.google.android.youtube.player.YouTubePlayerView
+				// youVideo = (YouTubePlayerView) view
+				// .findViewById(R.id.youtubeplayerview);
+
+				DP.setProfileId(myFbID);
+				tvTime.setText(globalUtills.parseDateToTime(date));
+
+				if( imgURL.length() > 2 )
+				{
+
+					tvMSG.setVisibility(View.GONE);
+					imageContainer.setVisibility(View.VISIBLE);
+					// youVideo.setVisibility(View.GONE);
+
+					imgv.setImageUrl(Chat_OneToOne.this, imgURL);
+					imgv.bringToFront();
+					// imgv.setScaleType(ScaleType.FIT_XY);
+					imgv.setOnClickListener(new OnClickListener()
+					{
+
+						@Override
+						public void onClick(View v)
+						{
+
+							globalUtills.ViewPhoto(imgURL, Chat_OneToOne.this, "");
+
+						}
+					});
+
+				}
+				else if( youtube.length() > 5 )
+				{
+
+					String youtube_url = youtube.substring(0, youtube.indexOf(","));
+					final String youtube_id = youtube.substring(youtube_url.length() + 1, youtube.length());
+					tvMSG.setVisibility(View.GONE);
+					imageContainer.setVisibility(View.VISIBLE);
+					imgv.setImageUrl(Chat_OneToOne.this, "https://" + youtube_url);
+					imgv.setScaleType(ScaleType.FIT_XY);
+
+					img_btn_play.setOnClickListener(new OnClickListener()
+					{
+
+						@Override
+						public void onClick(View v)
+						{
+
+							// stub
+							Intent intent = new Intent(Chat_OneToOne.this, Play_youtube_video.class);
+							intent.putExtra("video_id", youtube_id);
+							intent.putExtra("preview", false);
+							startActivity(intent);
+						}
+					});
+
+				}
+				else
+				{
+
+					FramemsgLayout.setVisibility(View.VISIBLE);
+					imageContainer.setVisibility(View.GONE);
+					// youVideo.setVisibility(View.GONE);
+
+					tvMSG.setText(message);
+					tvTime.setText(globalUtills.parseDateToTime(date));
+
+					// layoutMsgContainer.addView(imgv);
+				}
+			}
+
+			else
+			{
+				LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+				lp.gravity = Gravity.RIGHT;
+				layoutMsgContainer.setLayoutParams(lp);
+
+				View viewOther = LayoutInflater.from(Chat_OneToOne.this).inflate(R.layout.other_chat, layoutMsgContainer);
+
+				EmojiconTextView tvMSG = (EmojiconTextView) viewOther.findViewById(R.id.txtV_otherChatmsg);
+
+				RoundedCornersGaganImageView imgv = (RoundedCornersGaganImageView) viewOther.findViewById(R.id.imgV_otherChatImage);
+				com.app.messenger.Facebook_ProfilePictureView_rounded DP = (com.app.messenger.Facebook_ProfilePictureView_rounded) viewOther.findViewById(R.id.fb_otherChat);
+				LinearLayout FramemsgLayout = (LinearLayout) viewOther.findViewById(R.id.FrameLayoutotherChat);
+				TextView tvNAme = (TextView) viewOther.findViewById(R.id.txtVChatName);
+				tvNAme.setVisibility(View.GONE);
+				TextView tvTime = (TextView) viewOther.findViewById(R.id.txtV_otherChatDate);
+				FrameLayout imageContainer = (FrameLayout) viewOther.findViewById(R.id.FrameLayoutIMAGE_Other);
+
+				DP.setProfileId(FbID);
+				tvTime.setText(globalUtills.parseDateToTime(date));
+
+				if( imgURL.length() > 2 )
+				{
+
+					tvMSG.setVisibility(View.GONE);
+					imageContainer.setVisibility(View.VISIBLE);
+
+					imgv.setImageUrl(Chat_OneToOne.this, imgURL);
+					imgv.bringToFront();
+					// imgv.setScaleType(ScaleType.FIT_XY);
+					imgv.setOnClickListener(new OnClickListener()
+					{
+
+						@Override
+						public void onClick(View v)
+						{
+
+							globalUtills.ViewPhoto(imgURL, Chat_OneToOne.this, username + globalUtills.parseDateToSAVE(date));
+
+						}
+					});
+
+				}
+				else if( youtube.length() > 5 )
+				{
+					String youtube_url = youtube.substring(0, youtube.indexOf(","));
+					final String youtube_id = youtube.substring(youtube_url.length() + 1, youtube.length());
+					tvMSG.setVisibility(View.GONE);
+					imageContainer.setVisibility(View.VISIBLE);
+					imgv.setImageUrl(Chat_OneToOne.this, "https://" + youtube_url);
+					imgv.setScaleType(ScaleType.FIT_XY);
+
+					ImageButton img_btn_play = (ImageButton) viewOther.findViewById(R.id.img_btn_play_youtube_video_other);
+					img_btn_play.setOnClickListener(new OnClickListener()
+					{
+
+						@Override
+						public void onClick(View v)
+						{
+
+							// stub
+							Intent intent = new Intent(Chat_OneToOne.this, Play_youtube_video.class);
+							intent.putExtra("video_id", youtube_id);
+							intent.putExtra("preview", false);
+							startActivity(intent);
+						}
+					});
+
+				}
+				else
+				{
+
+					FramemsgLayout.setVisibility(View.VISIBLE);
+					imageContainer.setVisibility(View.GONE);
+
+					tvMSG.setText(message);
+					tvTime.setText(globalUtills.parseDateToTime(date));
+
+					// layoutMsgContainer.addView(imgv);
+				}
+			}
+			// layoutChat.requestFocus();
+
+			if( index )
+			{
+				layoutChat.addView(layoutMsgContainer, 0);
+
+				if( chatData == listChat.size() - 1 )
+				{
+					LinearLayout.LayoutParams lpDate = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					lpDate.gravity = Gravity.CENTER;
+
+					TextView tvdate = new TextView(Chat_OneToOne.this);
+					tvdate.setLayoutParams(lpDate);
+					tvdate.setText(formtDate + "");
+					tvdate.setTextColor(Color.DKGRAY);
+					tvdate.setTextSize(18);
+					tvdate.setPadding(5, 5, 5, 5);
+
+					// tvdate.setBackgroundColor(R.drawable.btn_gray_pressed);
+					tvdate.setGravity(Gravity.CENTER);
+					layoutChat.addView(tvdate, 0);
+				}
+
+			}
+			else
+			{
+				layoutChat.addView(layoutMsgContainer);
+
+			}
+
+			layoutMsgContainer.setOnLongClickListener(new OnLongClickListener()
+			{
+
+				@Override
+				public boolean onLongClick(View arg0)
+				{
+					if( !message.isEmpty() )
+					{
+						android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+						android.content.ClipData clip = android.content.ClipData.newPlainText("Copied Text", message);
+						clipboard.setPrimaryClip(clip);
+						GlobalUtills.showToast("Text Copied to clip board", Chat_OneToOne.this);
+					}
+
+					return false;
+				}
+			});
+
+		}
+
+		if( !index )
+		{
+			uiC_scroll.post(new Runnable()
+			{
+
+				@Override
+				public void run()
+				{
+					uiC_scroll.fullScroll(ScrollView.FOCUS_DOWN);
+				}
+			});
+		}
+
+		chatData_list.clear();
+
+	}
+	// end parse msg data
+
+}

@@ -1,0 +1,231 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.util.GlobalUtills;
+import com.app.webserviceshandler.WebServiceHandler;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+//==============================================================================================================================
+public class VerifyCode extends Activity
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public class VerifyUser extends AsyncTask<Void, Void, String>
+    {
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+
+            progressDialog_ = new ProgressDialog(VerifyCode.this);
+
+            progressDialog_.setMessage   ("Verifying...");
+            progressDialog_.setCancelable(false);
+            progressDialog_.show         ();
+
+            if (GlobalUtills.verification_code.equals("") )
+                GlobalUtills.verification_code = GlobalUtills.txt_verify_code.getText().toString();
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected String doInBackground(Void... params)
+        {
+            List<NameValuePair> param = new ArrayList<NameValuePair>();
+
+            param.add(new BasicNameValuePair("post_type",       "post"));
+            param.add(new BasicNameValuePair("mtype",           "verify_user"));
+            param.add(new BasicNameValuePair("registration_id", regID_));
+            param.add(new BasicNameValuePair("secure_code",     GlobalUtills.txt_verify_code.getText().toString()));
+
+            WebServiceHandler web = new WebServiceHandler();
+
+            String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+            Log.e("Response from verify_user ", jsonString);
+
+            return jsonString;
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPostExecute(String result)
+        {
+            super.onPostExecute(result);
+
+            try
+            {
+                JSONObject jsonObject     = new JSONObject(result);
+                String     successMessage = jsonObject.getString("Message");
+
+                if (successMessage.equalsIgnoreCase("Failure") )
+                {
+                    progressDialog_.dismiss();
+
+                    GlobalUtills.showToast("Verification code entered is wrong. \n Please check and try again.", VerifyCode.this);
+                }
+                else if (successMessage.equalsIgnoreCase("Success") )
+                {
+                    GlobalUtills.verification_code = "";
+
+                    progressDialog_.dismiss();
+
+                    if (jsonObject.has("userId") )
+                    {
+                        GlobalUtills.user_id = jsonObject.getString("userId");
+
+                        SharedPreferences sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+                        Editor            editorPref = sharedPref.edit();
+
+                        editorPref.putString("UserID", GlobalUtills.user_id + "");
+                        editorPref.commit   ();
+
+                        intent_ = new Intent(VerifyCode.this, LoginActivity.class);
+
+                        intent_.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                        startActivity(intent_);
+                    }
+                }
+            }
+            catch (JSONException e)
+            {
+                System.out.println("Exception in the main object");
+
+                e.printStackTrace();
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.activity_code_verification_screen);
+
+        bundle_ = getIntent().getExtras();
+        regID_  = bundle_.getString("register_id");
+
+        GlobalUtills.txt_verify_code = (EditText) findViewById(R.id.txtCode1);
+
+        buttonComplete_ = (Button) findViewById(R.id.btn_code_verify_phone_register);
+        globalUtills_   = new GlobalUtills();
+
+        TextView txtVResend = (TextView) findViewById(R.id.txtSendSecure);
+
+        txtVResend.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+            }
+        });
+
+        final Animation an = AnimationUtils.loadAnimation(VerifyCode.this, R.anim.zoom_out);
+
+        an.setFillAfter(true);
+
+        buttonComplete_.setOnTouchListener(new OnTouchListener()
+        {
+            @Override
+            public boolean onTouch(View v, MotionEvent event)
+            {
+                switch (event.getAction())
+                {
+                    case MotionEvent.ACTION_DOWN:
+                        buttonComplete_.setAnimation  (an);
+                        buttonComplete_.startAnimation(an);
+
+                        break;
+
+                    case MotionEvent.ACTION_UP:
+                        final Animation an2 = AnimationUtils.loadAnimation(VerifyCode.this, R.anim.zoom_out_two);
+
+                        an2.setFillAfter        (true);
+                        an2.setAnimationListener(new AnimationListener()
+                        {
+                            @Override
+                            public void onAnimationStart(Animation animation)
+                            {
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(Animation animation)
+                            {
+                            }
+
+                            @Override
+                            public void onAnimationEnd(Animation animation)
+                            {
+                                if (globalUtills_.haveNetworkConnection(VerifyCode.this))
+                                {
+                                    if (GlobalUtills.txt_verify_code.getText().toString().equals(""))
+                                        GlobalUtills.showToast("Cannot move forward without code", VerifyCode.this);
+
+                                    else
+                                        new VerifyUser().execute();
+                                }
+                                else
+                                    GlobalUtills.showToast("No network connection..!", VerifyCode.this);
+                            }
+                        });
+
+                        buttonComplete_.setAnimation  (an2);
+                        buttonComplete_.startAnimation(an2);
+
+                        break;
+                }
+
+                return false;
+            }
+        });
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private Button         buttonComplete_;
+    private ProgressDialog progressDialog_;
+    private Intent         intent_         = null;
+    private Bundle         bundle_         = new Bundle();
+    private String         regID_          = "";
+    private EditText       txt1_;  // TODO:
+    private EditText       txt2_;
+    private EditText       txt3_;
+    private EditText       txt4_;
+    private GlobalUtills   globalUtills_;
+}

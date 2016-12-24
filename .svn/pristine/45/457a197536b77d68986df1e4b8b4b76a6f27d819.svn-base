@@ -1,0 +1,246 @@
+package com.app.adapter;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import android.content.Context;
+import android.graphics.Color;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.RadioButton;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import com.app.messenger.BadgeView;
+import com.app.messenger.Facebook_ProfilePictureView_rounded;
+import com.app.messenger.Global;
+import com.app.messenger.R;
+import com.app.model.FriendInfo;
+
+public class ShowSocialFriends extends BaseAdapter
+{
+	// ArrayList<Integer> photo = new ArrayList<Integer>();
+	int									i					= 0;
+	Boolean								click				= true;
+	Global								global;
+	private ArrayList<FriendInfo>		list_of_allfriend;
+	// ArrayList<String> list_of_ids = new ArrayList<String>();
+	HashMap<Integer , String>			ids_map				= new HashMap<Integer , String>();
+	public static ArrayList<Boolean>	radio_checkGroup	= new ArrayList<Boolean>();
+
+	Context								context;
+
+	boolean								Single_chat			= true;
+	boolean								groupMates			= true;
+
+	Facebook_ProfilePictureView_rounded	freinds_image;
+	TextView							name, Ph_no, distance;
+	RadioButton							check_button;
+	RelativeLayout						paddingLayout;
+	RelativeLayout						badge_layout;
+
+	FriendInfo							friendinfoCurrent;
+
+	public ShowSocialFriends(Context context , ArrayList<FriendInfo> list_of_allfriend , boolean chatORnot , boolean groupMates)
+	{
+		this.context = context;
+		global = new Global();
+
+		this.list_of_allfriend = list_of_allfriend;
+
+		if( !(radio_checkGroup.size() > 0) )
+		{
+
+			for( int i = 0; i < this.list_of_allfriend.size(); i++ )
+			{
+				radio_checkGroup.add(false);
+
+				// GlobalUtills.badgeSenderSingleChat.add(new
+				// BadgeView(context,badge_layout));
+			}
+
+		}
+
+		this.Single_chat = chatORnot;
+		this.groupMates = groupMates;
+
+	}
+
+	@Override
+	public int getCount()
+	{
+		return list_of_allfriend.size();
+	}
+
+	@Override
+	public Object getItem(int arg0)
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getItemId(int arg0)
+	{
+
+		return arg0;
+	}
+
+	@Override
+	public View getView(final int arg0, View view, ViewGroup container)
+
+	{
+
+		try
+		{
+
+			LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			view = inflater.inflate(R.layout.friend_adapter, null);
+
+			friendinfoCurrent = list_of_allfriend.get(arg0);
+
+			// LayoutInflater inflater = (LayoutInflater) context
+			// .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			// view = inflater.inflate(R.layout.friend_adapter, null);
+			distance = (TextView) view.findViewById(R.id.txtV_distance);
+			name = (TextView) view.findViewById(R.id.Friend_name);
+			Ph_no = (TextView) view.findViewById(R.id.txtV_FBphno);
+			freinds_image = (Facebook_ProfilePictureView_rounded) view.findViewById(R.id.friends_title_image);
+			check_button = (RadioButton) view.findViewById(R.id.friend_check_box);
+
+			name.setText(friendinfoCurrent.getName());
+			Ph_no.setText(friendinfoCurrent.getMobile_no());
+
+			freinds_image.setProfileId(friendinfoCurrent.getId());
+
+			if( !groupMates )
+			{
+				check_button.setVisibility(View.GONE);
+
+			}
+			else
+			{
+				check_button.setVisibility(View.VISIBLE);
+				if( radio_checkGroup.get(arg0) )
+				{
+					check_button.setChecked(true);
+				}
+				else
+				{
+					check_button.setChecked(false);
+				}
+			}
+
+			paddingLayout = (RelativeLayout) view.findViewById(R.id.top_container);
+			badge_layout = (RelativeLayout) view.findViewById(R.id.badge_indicator_single_chat);
+
+			check_button.setOnClickListener(new OnClickListener()
+			{
+				@Override
+				public void onClick(View v)
+				{
+
+					friendinfoCurrent = list_of_allfriend.get(arg0);
+
+					if( !radio_checkGroup.get(arg0) )
+					{
+						i++;
+						((RadioButton) v).setChecked(true);
+
+						radio_checkGroup.set(arg0, true);
+						ids_map.put(arg0, friendinfoCurrent.getId());
+
+						global.setHashMapGroupmates(ids_map);
+
+					}
+					else
+					{
+
+						i--;
+						radio_checkGroup.set(arg0, false);
+						((RadioButton) v).setChecked(false);
+
+						if( ids_map.size() > 0 )
+						{
+							ids_map.remove(arg0);
+
+							global.setHashMapGroupmates(ids_map);
+
+						}
+
+						// click_array[arg0] = true;
+					}
+				}
+
+			});
+
+		
+
+			if( Single_chat )
+			{
+				BadgeView bdge;
+				String unread_count = friendinfoCurrent.getUnread_count();
+
+				if( unread_count.equalsIgnoreCase("0") )
+				{
+					bdge = new BadgeView(context, badge_layout);
+					bdge.setBadgePosition(BadgeView.POSITION_TOP_RIGHT);
+
+				}
+				else
+				{
+					bdge = new BadgeView(context, badge_layout);
+
+					bdge.setBadgePosition(BadgeView.POSITION_TOP_RIGHT);
+					bdge.setText(unread_count + "");
+					bdge.show();
+
+				}
+
+				// GlobalUtills.badgeSenderSingleChat.set(arg0, bdge);
+
+			}
+			else
+			{
+				if( !groupMates )
+				{
+
+					if( friendinfoCurrent.getUnread_count().equals("") || friendinfoCurrent.getUnread_count() == null )
+					{
+
+					}
+					else
+					{
+						distance.setVisibility(View.VISIBLE);
+						distance.setText("last seen" + "\n" + friendinfoCurrent.getUnread_count() + " km away");
+					}
+				}
+
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+
+		}
+		catch(Error e)
+		{
+
+		}
+		if( arg0 % 2 != 0 )
+		{
+			view.setBackgroundColor(Color.parseColor("#ebebeb"));
+		}
+		else
+		{
+			view.setBackgroundColor(Color.parseColor("#ffffff"));
+		}
+
+		return view;
+
+	}
+
+}

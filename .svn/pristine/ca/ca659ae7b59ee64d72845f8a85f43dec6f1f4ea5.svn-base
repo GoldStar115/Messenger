@@ -1,0 +1,193 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.Activity;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.ListView;
+
+import com.app.adapter.ShowSocialFriends;
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+
+public class GroupMates extends Activity
+{
+
+	Global								global;
+	String								myFBid			= "";
+	public static ArrayList<FriendInfo>	list_of_users	= new ArrayList<FriendInfo>();
+
+	ListView							listOfGroupMates;
+	GlobalUtills						globalUtills;
+
+	@Override
+	protected void onResume()
+	{
+		SharedPreferences sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+		global.setUser_id(sharedPref.getString("UserID", ""));
+		super.onResume();
+	}
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		setContentView(com.app.messenger.R.layout.activity_group_mates);
+		global = new Global();
+		SharedPreferences sharedPref = getSharedPreferences("fbID", MODE_PRIVATE);
+		myFBid = sharedPref.getString("fb", "");
+
+		listOfGroupMates = (ListView) findViewById(com.app.messenger.R.id.listVgroupMates);
+
+		globalUtills = new GlobalUtills();
+
+		if( globalUtills.haveNetworkConnection(GroupMates.this) )
+		{
+
+			new getGroupMates().execute();
+		}
+		else
+		{
+			GlobalUtills.showToast("No network connection..!", GroupMates.this);
+		}
+
+	}
+
+	class getGroupMates extends AsyncTask<String , Void , String>
+	{
+
+		TransparentProgressDialog	pd;
+
+		String						message	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			// if (list_of_users.size() > 0) {
+			// list_of_users.clear();
+			// }
+			list_of_users.clear();
+			pd = new TransparentProgressDialog(GroupMates.this, com.app.messenger.R.drawable.loading_spinner_icon);
+			pd.show();
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=get_active_members&user_id=71
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "get_active_members"));
+			param.add(new BasicNameValuePair("user_id", global.getUser_id() + ""));
+
+			
+			WebServiceHandler web = new WebServiceHandler();
+
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			if( jsonString.equals("Error! Try Again") )
+			{
+				return jsonString;
+			}
+			else
+			{
+
+				try
+				{
+
+					JSONObject jsonObject = new JSONObject(jsonString);
+					message = jsonObject.getString("Message");
+
+					JSONArray jsonArray_group_list_info = jsonObject.getJSONArray("user_info");
+					Log.e("Length of the userinfo array", "" + jsonArray_group_list_info.length());
+
+					for( int i = 0; i < jsonArray_group_list_info.length(); i++ )
+					{
+
+						FriendInfo friendinfo = new FriendInfo();
+
+						JSONObject json_array_group_info = jsonArray_group_list_info.getJSONObject(i);
+
+						if( myFBid.equals(json_array_group_info.getString("facebook_id")) )
+						{
+
+						}
+						else
+						{
+
+							friendinfo.setId(json_array_group_info.getString("facebook_id") + "");
+							friendinfo.setImage(json_array_group_info.getString("userImage") + "");
+							friendinfo.setName(json_array_group_info.getString("userName") + "");
+							friendinfo.setUnread_count(json_array_group_info.getString("unread_count"));
+
+							list_of_users.add(friendinfo);
+
+						}
+
+					}
+
+				}
+				catch(JSONException e)
+				{
+
+					e.printStackTrace();
+				}
+				catch(Exception e)
+				{
+
+					e.printStackTrace();
+				}
+
+				return message;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			if( result.equalsIgnoreCase("Success") )
+			{
+
+//				Collections.sort(list_of_users, new Comparator<FriendInfo>()
+//				{
+//					@Override
+//					public int compare(FriendInfo text1, FriendInfo text2)
+//					{
+//						return text1.getName().compareToIgnoreCase(text2.getName());
+//					}
+//				});
+
+				ShowSocialFriends socialusers = new ShowSocialFriends(GroupMates.this, list_of_users, false, true);
+				listOfGroupMates.setAdapter(socialusers);
+			}
+			else
+			{
+				listOfGroupMates.setAdapter(null);
+				GlobalUtills.showToast("No Group Mates..!", GroupMates.this);
+			}
+
+			pd.dismiss();
+
+		}
+
+	}
+
+}

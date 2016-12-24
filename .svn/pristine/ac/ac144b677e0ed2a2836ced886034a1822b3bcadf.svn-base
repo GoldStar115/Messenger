@@ -1,0 +1,404 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Locale;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.ToggleButton;
+
+import com.app.util.GlobalUtills;
+import com.app.util.NetworkCheck;
+import com.app.util.loginStatus_notification;
+import com.facebook.widget.LoginButton;
+
+public class SettingActivity extends Activity implements OnItemSelectedListener {
+
+	private static String FACEBOOK_APP_ID = "649385061834207";
+
+	ActionBarCommon actionBarCommon;
+	ImageView open_spiner;
+	Spinner country_spinner;
+	TextView country_selection_txt, tvDistance;
+	RelativeLayout request_layout;
+	private LoginButton logout_button;
+
+	String country_Name, str_spinerValue;
+
+	SeekBar SeekDistance;
+
+	ToggleButton tgbtn_notification;
+
+//	TextView tvlogOut;
+	int distance = 0;
+	boolean click = true;
+	SharedPreferences preferences, sharedPrefNoti;
+	ArrayList<String> countries = new ArrayList<String>();
+
+	boolean Notification_enabled = true;
+
+	Global global;
+
+	@Override
+	public void onBackPressed() {
+		Intent gotoLogin = new Intent(SettingActivity.this, Tab.class);
+		gotoLogin.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+		startActivity(gotoLogin);
+		finish();
+
+	}
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.setting);
+		actionBarCommon = new ActionBarCommon(SettingActivity.this, null);
+		gettingValues();
+
+		getting_allCounteries();
+
+		global = new Global();
+
+		logout_button = (LoginButton) findViewById(R.id.logout_button);
+		logout_button.setApplicationId(FACEBOOK_APP_ID);
+		
+		
+//		logout_button.setOnClickListener( logout_button.new LoginClickListener(){
+//		    @Override
+//		    public void onClick(View v) {
+//
+//				
+//				new loginStatus_notification().execute("N", global.getUser_id());
+//				
+//				
+//				SharedPreferences sharedChatDataS = getSharedPreferences(
+//						"Chat", MODE_PRIVATE);
+//				Editor editorsharedChatDataS = sharedChatDataS.edit();
+//				editorsharedChatDataS.clear();
+//				editorsharedChatDataS.commit();
+//				
+//
+//				logout_button.setVisibility(View.GONE);
+//				SharedPreferences sharedPrefFBFriend = getSharedPreferences(
+//						"FacebookFrnd", MODE_PRIVATE);
+//				Editor editorPrefFBFriend = sharedPrefFBFriend.edit();
+//				editorPrefFBFriend.clear();
+//				editorPrefFBFriend.commit();
+//				GlobalUtills.email_id = "";
+//				SharedPreferences sharedPref = getSharedPreferences("login",
+//						MODE_PRIVATE);
+//				Editor editorPref = sharedPref.edit();
+//				editorPref.clear();
+//				editorPref.commit();
+//
+//			
+//
+//				Intent intent = new Intent(SettingActivity.this,
+//						PhoneNumberRegistertationScreen.class);
+//				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK
+//						| Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+//				startActivity(intent);
+//				SettingActivity.this.finish();
+//			
+//		        super.onClick(v);
+//		    }
+//		});
+		
+		
+		logout_button.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				
+				new loginStatus_notification().execute("N", global.getUser_id());
+				
+				
+				SharedPreferences sharedChatDataS = getSharedPreferences(
+						"Chat", MODE_PRIVATE);
+				Editor editorsharedChatDataS = sharedChatDataS.edit();
+				editorsharedChatDataS.clear();
+				editorsharedChatDataS.commit();
+				
+
+				logout_button.setVisibility(View.GONE);
+				SharedPreferences sharedPrefFBFriend = getSharedPreferences(
+						"FacebookFrnd", MODE_PRIVATE);
+				Editor editorPrefFBFriend = sharedPrefFBFriend.edit();
+				editorPrefFBFriend.clear();
+				editorPrefFBFriend.commit();
+				GlobalUtills.email_id = "";
+				SharedPreferences sharedPref = getSharedPreferences("login",
+						MODE_PRIVATE);
+				Editor editorPref = sharedPref.edit();
+				editorPref.clear();
+				editorPref.commit();
+
+			
+
+				Intent intent = new Intent(SettingActivity.this,
+						PhoneNumberRegistertationScreen.class);
+				intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK
+						| Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+				startActivity(intent);
+				SettingActivity.this.finish();
+			}
+		});
+
+		actionBarCommon.setActionText("Settings");
+
+		actionBarCommon.Right_text.setText("Save");
+		preferences = getSharedPreferences("CountryPreferences",
+				Context.MODE_PRIVATE);
+		country_Name = preferences.getString("CountryNAme", "All");
+		
+		country_selection_txt.setText(country_Name);
+		// -------------- -----ForStoringCurrent -------------------
+
+		request_layout.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(SettingActivity.this,
+						RequestActivity.class);
+				startActivity(intent);
+				finish();
+
+			}
+		});
+		OnClickListener right_ClickListener = new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				if (!NetworkCheck.getConnectivityStatusString(
+						SettingActivity.this).equalsIgnoreCase("true")) {
+					NetworkCheck.openInternetDialog(SettingActivity.this);
+				} else {
+
+					sharedPrefNoti = getSharedPreferences("login", MODE_PRIVATE);
+					Editor editorPref = sharedPrefNoti.edit();
+					editorPref.putBoolean("noti", Notification_enabled);
+					editorPref.commit();
+
+					GlobalUtills.allNotification = Notification_enabled;
+
+					preferences = getSharedPreferences("CountryPreferences",
+							Context.MODE_PRIVATE);
+
+					SharedPreferences.Editor editor = preferences.edit();
+
+					editor.putString("CountryNAme", country_selection_txt
+							.getText().toString());
+
+					editor.putInt("km", distance);
+					editor.commit();
+
+					Toast.makeText(SettingActivity.this,
+							"Settings Saved Successfully", 200).show();
+
+					Intent gotoLogin = new Intent(SettingActivity.this,
+							Tab.class);
+					gotoLogin.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+					startActivity(gotoLogin);
+					finish();
+
+				}
+			}
+
+		};
+
+		actionBarCommon.left_image.setImageResource(R.drawable.icon_back_arrow);
+		// ---------------RightClick-----------------
+		OnClickListener left_ClickListener = new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				Intent gotoLogin = new Intent(SettingActivity.this, Tab.class);
+				gotoLogin.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+				startActivity(gotoLogin);
+				finish();
+			}
+		};
+		
+		actionBarCommon.layoutLeftClick(left_ClickListener);
+		actionBarCommon.layoutRightClick(right_ClickListener);
+
+		// ----------------------------------Counteries-----------------
+
+		
+		ArrayAdapter<String> counteries_adapter = new ArrayAdapter<String>(
+				this, R.drawable.spinner_layout, countries);
+
+		country_spinner.setAdapter(counteries_adapter);
+
+		open_spiner.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+
+				country_spinner.performClick();
+
+			}
+		});
+		country_spinner.setOnItemSelectedListener(this);
+
+		// distance update
+
+		preferences = getSharedPreferences("CountryPreferences",
+				Context.MODE_PRIVATE);
+		if (preferences.contains("km")) {
+			distance = preferences.getInt("km", 100);
+			// tvDistance.setText(""+distance+" km");
+		}
+		else{
+			distance=100;
+		}
+		tvDistance.setText("" + distance + " km");
+		SeekDistance.setProgress(distance);
+
+		SeekDistance.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+
+			}
+
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				
+				tvDistance.setText("" + progress + " km");
+				distance = progress;
+
+			}
+		});
+
+	
+
+		// toggle btn notification
+
+		// boolean notification_all=sharedPrefNoti.getBoolean("noti", true);
+		tgbtn_notification.setChecked(GlobalUtills.allNotification);
+		tgbtn_notification
+				.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
+					@Override
+					public void onCheckedChanged(CompoundButton buttonView,
+							boolean isChecked) {
+
+						Notification_enabled = isChecked;
+
+					}
+				});
+
+		// end toggle btn notification
+
+	}
+
+	public void gettingValues() {
+		actionBarCommon = (ActionBarCommon) findViewById(R.id.action_bar);
+		request_layout = (RelativeLayout) findViewById(R.id.request_container);
+		open_spiner = (ImageView) findViewById(R.id.img_drop_down_group);
+		country_spinner = (Spinner) findViewById(R.id.private_public_spinner);
+		country_selection_txt = (TextView) findViewById(R.id.text_View_group_selection);
+
+		SeekDistance = (SeekBar) findViewById(R.id.seekbarDistance);
+		tvDistance = (TextView) findViewById(R.id.current_seekbar_txt);
+//		tvlogOut = (TextView) findViewById(R.id.tvLogout);
+		tgbtn_notification = (ToggleButton) findViewById(R.id.notification_setting_toggleButton);
+
+		sharedPrefNoti = getSharedPreferences("login", MODE_PRIVATE);
+	}
+
+	// ---------------Implement the listener------------------
+	@SuppressLint("NewApi")
+	@Override
+	public void onItemSelected(AdapterView<?> parent, View view, int position,
+			long id) {
+
+		if (click) {
+			country_selection_txt.setText(country_Name);
+			click = false;
+		} else {
+
+			country_selection_txt.setText(countries.get(position));
+
+		}
+
+	}
+
+	@Override
+	public void onNothingSelected(AdapterView<?> parent) {
+
+	}
+
+	// ------------------------ list of all Counteries
+	// ------------------------------
+
+	public void getting_allCounteries() {
+		countries.add("All");
+		Locale[] locale = Locale.getAvailableLocales();
+
+		String country;
+		for (Locale loc : locale) {
+			country = loc.getDisplayCountry();
+			if (country.length() > 0 && !countries.contains(country)) {
+				countries.add(country);
+			}
+		}
+		Collections.sort(countries, String.CASE_INSENSITIVE_ORDER);
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+}

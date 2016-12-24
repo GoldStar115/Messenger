@@ -1,0 +1,1037 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.text.TextWatcher;
+import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
+import android.widget.Toast;
+
+import com.app.adapter.WorldGroupAdapter;
+import com.app.model.GroupInfo;
+import com.app.util.GPSTracker;
+import com.app.util.GlobalUtills;
+import com.app.util.NetworkCheck;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+
+public class WorldGroupFragment extends Fragment
+{
+	ActionBarCommon						actionBarCommon;
+	ListView							listviewWorldGroup;
+	String								lati, longi;
+	SharedPreferences					preferences;
+	RelativeLayout						remove_text;
+	WorldGroupAdapter					world_adapter;
+	private ArrayList<GroupInfo>		list_of_world_group	= new ArrayList<GroupInfo>();
+	Boolean								IS_CREATE			= true;
+	Global								global;
+	EditText							search_editText;
+	String								search_text			= "";
+	GPSTracker							gps;
+	String								Country_Name;
+	ArrayList<HashMap<String , String>>	list_of_allgroup;
+	AlertDialog.Builder					alertDialogBuilder;
+	Button								btnCreateWOrldGroup;
+
+	GettingWorldGroupList				get_WorldGroupList;
+	float								positionX, endX;
+
+//	LinearLayout						swipeLayout;
+//	ImageView							imgSwipe;
+
+	 GlobalUtills globalUtills;
+	
+	
+	@Override
+	public void onPause()
+	{
+		if( get_WorldGroupList != null )
+		{
+			get_WorldGroupList.cancel(true);
+		}
+
+		super.onPause();
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+	{
+		super.onCreateView(inflater, container, savedInstanceState);
+		if( container == null )
+		{
+			return null;
+		}
+		container = (ViewGroup) inflater.inflate(R.layout.world_group_activity, container, false);
+		actionBarCommon = new ActionBarCommon(getActivity(), null);
+		gettingValues(container);
+
+		actionBarCommon.setActionText("World Groups");
+
+		actionBarCommon.setAction_RightCreate();
+
+		// actionBarCommon.right_image.setImageResource(R.drawable.add_new_img);
+
+		AdView mAdView = (AdView) container.findViewById(R.id.adView);
+		AdRequest adRequest = new AdRequest.Builder().build();
+		mAdView.loadAd(adRequest);
+
+		// -----------------------------------RightClick--------------------------------------------------
+
+		OnClickListener right_click = new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				RotateAnimation anim = new RotateAnimation(0.0f, 360.0f, Animation.RELATIVE_TO_SELF, .5f, Animation.RELATIVE_TO_SELF, .5f);
+				anim.setInterpolator(new LinearInterpolator());
+				anim.setRepeatCount(1);
+				anim.setDuration(1700);
+				actionBarCommon.left_image.setAnimation(anim);
+				actionBarCommon.left_image.startAnimation(anim);
+
+				new CountDownTimer(600, 600)
+				{
+
+					@Override
+					public void onTick(long millisUntilFinished)
+					{
+
+					}
+
+					@Override
+					public void onFinish()
+					{
+						
+						
+						Intent intent = new Intent(getActivity(), SettingActivity.class);
+						intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+						startActivity(intent);
+						getActivity().finish();
+					}
+				}.start();
+
+			}
+		};
+
+		actionBarCommon.left_image.setImageResource(R.drawable.icon_setting);
+		OnClickListener left_click = new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+
+				Intent intent = new Intent(getActivity(), AddGroupActivity.class);
+				startActivity(intent);
+			}
+		};
+		actionBarCommon.layoutLeftClick(right_click);
+		actionBarCommon.layoutRightClick(left_click);
+		// -------------------------------------SearchWorldGroup
+
+		remove_text.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				search_editText.setText("");
+
+				InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(search_editText.getWindowToken(), 0);
+
+				get_WorldGroupList = new GettingWorldGroupList();
+
+				get_WorldGroupList.execute("");
+
+				remove_text.setVisibility(View.INVISIBLE);
+
+			}
+		});
+
+		search_editText.addTextChangedListener(new TextWatcher()
+		{
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count)
+			{
+				remove_text.setVisibility(View.VISIBLE);
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after)
+			{
+				
+
+			}
+
+			@Override
+			public void afterTextChanged(Editable s)
+			{
+				
+
+			}
+		});
+		search_editText.setOnEditorActionListener(new OnEditorActionListener()
+		{
+
+			@Override
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
+			{
+				remove_text.setVisibility(View.VISIBLE);
+				if( actionId == EditorInfo.IME_ACTION_SEARCH )
+				{
+					if( !NetworkCheck.getConnectivityStatusString(getActivity()).equalsIgnoreCase("true") )
+					{
+						NetworkCheck.openInternetDialog(getActivity());
+					}
+					else
+					{
+
+						search_text = search_editText.getText().toString().trim();
+
+						if( search_text.length() > 0 )
+						{
+							InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+							imm.hideSoftInputFromWindow(search_editText.getWindowToken(), 0);
+
+							// get_WorldGroupList=new GettingWorldGroupList();
+							// get_WorldGroupList.execute(search_text);
+
+							new GettingWorldGroupList().execute(search_text);
+
+						}
+						else
+						{
+							GlobalUtills.showToast("Please enter a keyword..!", getActivity());
+						}
+					}
+				}
+
+				return false;
+			}
+		});
+
+		listviewWorldGroup.setOnItemClickListener(new OnItemClickListener()
+		{
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, final int position, long id)
+			{
+
+				if( (list_of_world_group.get(position).getGroupType()).equalsIgnoreCase("PV") && (list_of_world_group.get(position).getUserStatus()).equalsIgnoreCase("N") )
+				{
+					openLogoutAlert(position);
+				}
+
+				else
+				{
+
+					if( list_of_world_group.get(position).getUserStatus().equalsIgnoreCase("Y") )
+					{
+						GlobalUtills.joinORadd_group = true;
+					}
+					else
+					{
+						GlobalUtills.joinORadd_group = false;
+					}
+
+					Intent gotoChatting = new Intent(getActivity(), Group_Chat.class);
+					gotoChatting.putExtra("groupID", list_of_world_group.get(position).getgroupId());
+					gotoChatting.putExtra("groupName", list_of_world_group.get(position).getgroupName());
+
+					gotoChatting.putExtra("groupImage", list_of_world_group.get(position).getgroupImage() + "");
+
+					GlobalUtills.mygroups_savelocal = false;
+					startActivity(gotoChatting);
+				}
+
+			}
+		});
+
+		return container;
+	}
+
+	// -----------------oncreate-------------
+	@Override
+	public void onCreate(Bundle savedInstanceState)
+	{
+		
+		super.onCreate(savedInstanceState);
+		global = new Global();
+		preferences = getActivity().getSharedPreferences("CountryPreferences", Context.MODE_PRIVATE);
+		Country_Name = preferences.getString("CountryNAme", "All");
+
+		// new GettingWorldGroupList().execute();
+
+		gps = new GPSTracker(getActivity());
+		if( gps.canGetLocation() )
+		{
+
+			double latitude = gps.getLatitude();
+			double longitude = gps.getLongitude();
+
+			lati = String.valueOf(latitude);
+			longi = String.valueOf(longitude);
+
+			com.app.util.GlobalConstant.lati = lati;
+			com.app.util.GlobalConstant.longi = longi;
+
+			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+			{
+				new LocationUpdation().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+			}
+			else
+			{
+				new LocationUpdation().execute();
+			}
+
+			/*
+			 * Toast.makeText( getActivity(), "Your Location is - \nLat: " +
+			 * latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
+			 */
+
+		}
+		else
+		{
+			// can't get location
+			// GPS or Network is not enabled
+			// Ask user to enable GPS/network in settings
+			gps.showSettingsAlert();
+		}
+
+	}
+
+	@Override
+	public void onResume()
+	{
+		
+
+		System.gc();
+		  globalUtills=new GlobalUtills();
+
+		// get_WorldGroupList=new GettingWorldGroupList();
+
+		SharedPreferences sharedPref = getActivity().getSharedPreferences("login", Context.MODE_PRIVATE);
+		global.setUser_id(sharedPref.getString("UserID", ""));
+
+		preferences = getActivity().getSharedPreferences("CountryPreferences", Context.MODE_PRIVATE);
+		Country_Name = preferences.getString("CountryNAme", "All");
+		Log.e("On Reume Calling", "Country Name  " + Country_Name);
+
+		search_editText.setText("");
+		remove_text.setVisibility(View.INVISIBLE);
+
+		if( globalUtills.haveNetworkConnection(getActivity()) )
+		{
+
+			if( get_WorldGroupList != null )
+			{
+				get_WorldGroupList.cancel(true);
+			}
+
+			get_WorldGroupList = new GettingWorldGroupList();
+
+			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+			{
+				get_WorldGroupList.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "");
+			}
+
+			else
+			{
+				get_WorldGroupList.execute("");
+			}
+
+		}
+		else
+		{
+			if( list_of_world_group.size() > 0 )
+			{
+				world_adapter = new WorldGroupAdapter(getActivity(), list_of_world_group);
+				listviewWorldGroup.setAdapter(world_adapter);
+			}
+
+			GlobalUtills.showToast("No network connection..!", getActivity());
+		}
+		super.onResume();
+	}
+
+	// -----------------------------------------------GettingValues------------------------------------------
+	float	initialX;
+
+	private void gettingValues(ViewGroup container)
+	{
+		listviewWorldGroup = (ListView) container.findViewById(R.id.list_world_group);
+		listviewWorldGroup.setScrollingCacheEnabled(false);
+		registerForContextMenu(listviewWorldGroup);
+
+		actionBarCommon = (ActionBarCommon) container.findViewById(R.id.action_bar);
+		search_editText = (EditText) container.findViewById(R.id.search_edit_text);
+		remove_text = (RelativeLayout) container.findViewById(R.id.layout_cencel_img);
+
+		// btnCreateWOrldGroup = (Button)
+		// container.findViewById(R.id.btnCreateWOrldGroup);
+
+//		swipeLayout = (LinearLayout) container.findViewById(R.id.swipeLayout);
+//		imgSwipe = (ImageView) container.findViewById(R.id.imgVSwipe);
+//
+//		swipeLayout.setOnTouchListener(new OnTouchListener()
+//		{
+//
+//			@Override
+//			public boolean onTouch(View v, MotionEvent event)
+//			{
+//				int action = event.getAction();
+//				switch (action)
+//				{
+//				case MotionEvent.ACTION_DOWN:
+//					initialX = event.getX();
+//					break;
+//				case MotionEvent.ACTION_MOVE:
+//					float finalX = event.getX();
+//					float diff = finalX - initialX;
+//					if( initialX < finalX && diff > 150 )
+//					{
+//
+//						TranslateAnimation animation = new TranslateAnimation(0.0f, 400.0f, 0.0f, 0.0f);          // new
+//						// TranslateAnimation(xFrom,xTo,
+//						// yFrom,yTo)
+//						animation.setDuration(250);  // animation duration
+//						animation.setRepeatCount(0);  // animation repeat count
+//						animation.setRepeatMode(1);   // repeat animation (left to
+//													// right, right to left )
+//						animation.setFillAfter(true);
+//
+//						animation.setAnimationListener(new AnimationListener()
+//						{
+//
+//							@Override
+//							public void onAnimationEnd(Animation animation)
+//							{
+//								
+//
+//								Intent intent = new Intent(getActivity(), AddGroupActivity.class);
+//								startActivity(intent);
+//								imgSwipe.setAnimation(null);
+//							}
+//
+//							@Override
+//							public void onAnimationStart(Animation animation)
+//							{
+//								
+//
+//							}
+//
+//							@Override
+//							public void onAnimationRepeat(Animation animation)
+//							{
+//								
+//
+//							}
+//						});
+//						imgSwipe.startAnimation(animation);
+//					}
+//					break;
+//				case MotionEvent.ACTION_UP:
+//					break;
+//				case MotionEvent.ACTION_CANCEL:
+//					break;
+//				default:
+//					break;
+//				}
+//				return true;
+//			}
+//		});
+
+	}
+
+	// -------------------------------update the user
+	// location---------------------
+
+	class LocationUpdation extends AsyncTask<String , String , String>
+	{
+
+		String	Location_updationResponse;
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+			ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+			String creat_groupResponse = null;
+			param.add(new BasicNameValuePair(GlobalConstant.Latitude, com.app.util.GlobalConstant.lati));
+			param.add(new BasicNameValuePair(GlobalConstant.Longitude, com.app.util.GlobalConstant.longi));
+			param.add(new BasicNameValuePair(GlobalConstant.Updation_User_id, global.getUser_id()));
+
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE, "ulocation"));
+			// post_type=post&mtype=ulocation&user_id=50&latitude=26.265176&longitude=117.971191
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+
+			try
+			{
+				WebServiceHandler web = new WebServiceHandler();
+				Location_updationResponse = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			}
+			catch(Exception exception)
+			{
+				exception.printStackTrace();
+				System.out.println("Exception calling");
+			}
+
+			return creat_groupResponse;
+
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+		}
+
+		protected void onPostExecute(String result)
+		{
+
+			super.onPostExecute(result);
+
+		}
+
+	}
+
+	// ------------------------------WorldGroupCountry------------------------
+	TransparentProgressDialog	dialog;
+
+	class GettingWorldGroupList extends AsyncTask<String , String , String>
+	{
+
+		String	world_groupResponse;
+		String	messaString;
+		String	search_tag;
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+			search_tag = params[0];
+			ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+
+			param.add(new BasicNameValuePair("country", Country_Name));
+
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE, "filter_country"));
+			param.add(new BasicNameValuePair(GlobalConstant.Search_Keywoard, search_tag));
+			param.add(new BasicNameValuePair("user_id", global.getUser_id()));
+			// post_type=post&mtype=filter_country&country=India
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+
+			try
+			{
+				WebServiceHandler web = new WebServiceHandler();
+				world_groupResponse = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			}
+			catch(Exception exception)
+
+			{
+				if( dialog.isShowing() )
+				{
+					dialog.dismiss();
+				}
+
+				exception.printStackTrace();
+				System.out.println("Exception calling");
+			}
+
+			return world_groupResponse;
+
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+			// list_of_world_group.clear();
+			if( dialog == null )
+			{
+				dialog = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+				if( list_of_world_group.isEmpty() )
+				{
+
+					dialog.show();
+
+				}
+			}
+
+		}
+
+		protected void onPostExecute(String result)
+		{
+
+			super.onPostExecute(result);
+			try
+			{
+				if( result.equals("Error! Try Again") )
+				{
+					if( dialog.isShowing() )
+					{
+						dialog.dismiss();
+					}
+
+					GlobalUtills.showToast("No network connection..!", getActivity());
+				}
+				else if( result.equals("Slow") )
+				{
+					if( dialog.isShowing() )
+					{
+						dialog.dismiss();
+
+						GlobalUtills.showToast("Error in connecting..!", getActivity());
+						// OnClickListener retry=new OnClickListener() {
+						// @Override
+						// public void onClick(View v)
+						// {
+						// GlobalUtills.slow_internetdialog.dismiss();
+						//
+						// get_WorldGroupList.execute("");
+						//
+						//
+						// }
+						// };
+
+						// GlobalUtills.slow_internet_dialog(getActivity(),
+						// retry);
+						// this.cancel(true);
+					}
+					//
+
+				}
+				else
+				{
+
+					JSONObject jsonObject = new JSONObject(result);
+					messaString = jsonObject.getString("Message");
+					if( messaString.equals("Success") )
+					{
+						if( dialog.isShowing() )
+						{
+							dialog.dismiss();
+						}
+
+						list_of_world_group.clear();
+
+						JSONArray array_groupInfo = jsonObject.getJSONArray("groupInfo1");
+						if( array_groupInfo.length() > 0 )
+						{
+
+							for( int i = 0; i < array_groupInfo.length(); i++ )
+							{
+								GroupInfo groupInfo = new GroupInfo();
+
+								JSONObject array_object = array_groupInfo.getJSONObject(i);
+								String group_id = array_object.getString("groupId");
+								groupInfo.setgroupId(group_id);
+
+								String groupName = array_object.getString("groupName");
+								groupInfo.setgroupName(groupName);
+
+								String groupImage = array_object.getString("groupImage");
+								groupInfo.setgroupImage(groupImage);
+
+								String groupTotalMembers = array_object.getString("groupTotalMembers");
+								groupInfo.setgroupTotalMembers(groupTotalMembers);
+
+								String groupType = array_object.getString("groupType");
+								groupInfo.setGroupType(groupType);
+
+								String groupPassword = array_object.getString("groupPassword");
+								groupInfo.setGroupPassword(groupPassword);
+
+								groupInfo.setGroupTotalmsgs(array_object.getString("groupMessageCount"));
+								groupInfo.setGroupTotalnew(array_object.getString("groupLastMessageCount"));
+								groupInfo.setUserStatus(array_object.getString("user_status"));
+
+								list_of_world_group.add(groupInfo);
+							}
+
+							if( world_adapter == null )
+							{
+
+								world_adapter = new WorldGroupAdapter(getActivity(), list_of_world_group);
+
+								listviewWorldGroup.setAdapter(world_adapter);
+
+							}
+							else
+							{
+								listviewWorldGroup.invalidateViews();
+							}
+
+						}
+						else
+						{
+							// Toast.makeText(getActivity(), "No Result Found ",
+							// Toast.LENGTH_SHORT).show();
+
+							if( search_tag.equals("") )
+							{
+
+							}
+							else
+							{
+								list_of_world_group.clear();
+							}
+
+							GlobalUtills.showToast("No New Groups Found..!", getActivity());
+							try
+							{
+								world_adapter = new WorldGroupAdapter(getActivity(), list_of_world_group);
+
+								listviewWorldGroup.setAdapter(world_adapter);
+
+							}
+							catch(Exception e)
+							{
+								e.printStackTrace();
+							}
+
+							//
+						}
+
+					}
+					else
+					{
+						if( dialog.isShowing() )
+						{
+							dialog.dismiss();
+						}
+
+					}
+				}
+			}
+			catch(Exception e)
+			{
+				GlobalUtills.showToast("No New Groups Found..!", getActivity());
+				if( dialog.isShowing() )
+				{
+					dialog.dismiss();
+				}
+
+				e.printStackTrace();
+			}
+
+		}
+		// ----
+
+	}
+
+	class Join_worldGroup_P extends AsyncTask<String , String , String>
+	{
+		TransparentProgressDialog	dialog_join;
+		String						response_JoinWorldGroup;
+		String						messaString;
+		int							position	= 0;
+
+		public Join_worldGroup_P(int position)
+		{
+			this.position = position;
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+			String GroupID = params[0];
+			ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE, "join_group"));
+			param.add(new BasicNameValuePair(GlobalConstant.Join_User_id, global.getUser_id()));
+			param.add(new BasicNameValuePair(GlobalConstant.Group_id, GroupID));
+
+			try
+			{
+				WebServiceHandler web = new WebServiceHandler();
+				response_JoinWorldGroup = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			}
+			catch(Exception exception)
+
+			{
+				exception.printStackTrace();
+				System.out.println("Exception calling");
+			}
+
+			return response_JoinWorldGroup;
+
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+			dialog_join = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+
+			dialog_join.show();
+
+		}
+
+		protected void onPostExecute(String result)
+		{
+
+			dialog_join.dismiss();
+
+			try
+			{
+				JSONObject jsonObject = new JSONObject(result);
+				messaString = jsonObject.getString("Message");
+
+				if( messaString.equalsIgnoreCase("Success") )
+				{
+
+					if( list_of_world_group.get(position).getGroupType().equals("PV") )
+					{
+						globalUtills.DialogOK(getActivity(), "Join request sent", "If members of this group will accept your request,then you will become member of this group.");
+					}
+					else
+					{
+						globalUtills.DialogOK(getActivity(), "Join", "You are now member of this group..!");
+					}
+
+					list_of_world_group.remove(position);
+					listviewWorldGroup.invalidateViews();
+
+				}
+				else
+				{
+					Toast.makeText(getActivity(), messaString, 200).show();
+				}
+
+			}
+			catch(Exception e)
+			{
+				GlobalUtills.showToast("Oops an error has occured..!", getActivity());
+				e.printStackTrace();
+			}
+
+			super.onPostExecute(result);
+		}
+	}
+
+	// join group
+
+	public void EnterpasswordDialog(final int position)
+	{
+		// dialog
+		AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
+		alert.setTitle("Closed Group"); // Set Alert dialog title here
+		alert.setMessage("Enter Password to access this Group"); // Message here
+
+		// Set an EditText view to get user input
+		final EditText input = new EditText(getActivity());
+		input.setHint("Please enter password..");
+		input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+		input.setTransformationMethod(PasswordTransformationMethod.getInstance());
+		int maxLength = 15;
+		InputFilter[] fArray = new InputFilter[1];
+		fArray[0] = new InputFilter.LengthFilter(maxLength);
+		input.setFilters(fArray);
+
+		alert.setView(input);
+
+		alert.setPositiveButton("OK", new DialogInterface.OnClickListener()
+		{
+			public void onClick(DialogInterface dialog, int whichButton)
+			{
+
+				String psd = input.getText().toString().trim();
+
+				InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+
+				if( psd.equals(list_of_world_group.get(position).getGroupPassword()) )
+				{
+
+					GlobalUtills.joinORadd_group = false;
+
+					Intent gotoChatting = new Intent(getActivity(), Group_Chat.class);
+					gotoChatting.putExtra("groupID", list_of_world_group.get(position).getgroupId());
+					gotoChatting.putExtra("groupName", list_of_world_group.get(position).getgroupName());
+
+					gotoChatting.putExtra("groupImage", list_of_world_group.get(position).getgroupImage() + "");
+
+					startActivity(gotoChatting);
+				}
+				else
+				{
+
+					globalUtills.DialogOK(getActivity(), "Warning", "Wrong password..! Please try again..");
+
+					/*
+					 * new AlertDialog.Builder(getActivity())
+					 * .setTitle("Warning")
+					 * .setMessage("Wrong password..! Please try again..")
+					 * .setNeutralButton("Ok", new
+					 * DialogInterface.OnClickListener() {
+					 * 
+					 * @Override public void onClick( DialogInterface dialog,
+					 * int which) {
+					 * 
+					 * dialog.dismiss(); } }).show();
+					 */
+				}
+
+			} // End of onClick(DialogInterface dialog, int whichButton)
+		}); // End of alert.setPositiveButton
+		alert.setNegativeButton("CANCEL", new DialogInterface.OnClickListener()
+		{
+			public void onClick(DialogInterface dialog, int whichButton)
+			{
+				InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+				dialog.cancel();
+			}
+		}); // End of alert.setNegativeButton
+		AlertDialog alertDialog = alert.create();
+		alertDialog.show();
+		// dialog end
+
+	}
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo)
+	{
+		super.onCreateContextMenu(menu, v, menuInfo);
+		getActivity().getMenuInflater().inflate(R.menu.main, menu);
+	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item)
+	{
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+		switch (item.getItemId())
+		{
+		case R.id.itemJoin:
+
+			if( list_of_world_group.get(info.position).getUserStatus().equalsIgnoreCase("N") )
+			{
+				new Join_worldGroup_P(info.position).execute(list_of_world_group.get(info.position).getgroupId());
+			}
+			else
+			{
+				GlobalUtills.showToast("You are already a member..!", getActivity());
+			}
+
+			return true;
+
+		default:
+			return super.onContextItemSelected(item);
+		}
+	}
+
+	void openLogoutAlert(final int positionJ)
+	{
+		final Dialog dialog = globalUtills.prepararDialog(getActivity(), R.layout.dialog_three_options);
+
+		TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+		title.setText("Closed Group");
+
+		TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+		subheading.setText("Its a closed group..!");
+
+		Button btn_Chat = (Button) dialog.findViewById(R.id.btnChat);
+		Button btn_call = (Button) dialog.findViewById(R.id.btncall);
+		Button btn_groups = (Button) dialog.findViewById(R.id.btngroups);
+		ImageButton btn_close = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+		btn_close.setVisibility(View.GONE);
+		btn_groups.setText("Join");
+		btn_call.setText("Enter Password");
+		btn_Chat.setText("Cancel");
+
+		btn_Chat.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+
+				dialog.dismiss();
+
+			}
+		});
+		btn_call.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				EnterpasswordDialog(positionJ);
+				dialog.dismiss();
+
+			}
+		});
+		btn_groups.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				new Join_worldGroup_P(positionJ).execute(list_of_world_group.get(positionJ).getgroupId());
+
+				dialog.dismiss();
+
+			}
+		});
+
+		dialog.show();
+
+	}
+
+}

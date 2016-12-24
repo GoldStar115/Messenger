@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-appindexing\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="f02127a85abd52a2cd526d4c2409f21969f80ee8">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-appindexing-7.5.0_2df95109a30b46ff89fdcba28881746b38b34fe7\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\incremental-classes\debug\instant-run-bootstrap.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="46cd30f39f5d6bcd62332f4f4d38e50fa18aa15a">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\instant-run-bootstrap_bda6ed814bc515523a072207f90fe282713d89b8\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\libs\VideoInterstitialSDK.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="75e6f11507e704d3fb8917e50cb7ee9a87a0c324">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\2\VideoInterstitialSDK_4baf58dbb0976b9c96cede15bf0ea93a80028d35\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-panorama\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="ba207be21987c11b37d9f8faa08ed6e722569f30">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-panorama-7.5.0_cd397c6143666c020140ac03e04bfe1bfa660bfd\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-nearby\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="6440e5e5cfe368f9bff3c537fb8988048069cb33">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-nearby-7.5.0_4788f057ac6165738e2aad3335207f4c1c3c14a7\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\libs\appnextTrackingSDK.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="cbc2566f69c0a2c6e610292aca9a9ea8055af665">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\2\appnextTrackingSDK_3d9b1576c183f5b3cb73559644b9b83dec94c88c\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.android.support\support-v4\22.2.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="1ee588ff2c4daf7b97c1cbf922a6c7f027285c2f">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.android.support-support-v4-22.2.0_46e284bbb4f1bccbff002579ebe63a4d639cc7d3\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-safetynet\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="1a6411087ab88ce5542f593e63a2752b6b0d6f1a">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-safetynet-7.5.0_b3b77638755481d2f45045484b9af69cdfd6f55a\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\libs\appnextAPI.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="b06708856352fc758f5e58ff630cd4c732d4a46e">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\2\appnextAPI_f2cb330e7aa0ee4622e7e668c4eaba374902b262\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-ads\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="29ebc7e04d877062317c8cc0e68b20f0c1fcda66">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-ads-7.5.0_879f443f49c7023f2bfaef93b73ee8f99736c8a3\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-appstate\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="68c140702c7242d914655bcb3164d9e8c45b84cb">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-appstate-7.5.0_f431cd4e75483651ba6b7232c9560be413a229fa\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\libs\gcm.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="a6d7bce795a14c7f86111756c4ceb44b79de14aa">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\2\gcm_919ac7b6371e6c535fd8890ed9d31126d79c8145\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-identity\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="d405025c600055237c171a0bbabaa49d69696573">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-identity-7.5.0_37eb283426e2bf4ec2b54da7f6477473577baaa2\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.android.support\mediarouter-v7\22.0.0\jars\libs\internal_impl-22.0.0.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="ba3df4eb0a630d7de294f0e48d3f9267d279b784">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\internal_impl-22.0.0_780f893256ebed1cc15dbc2480f3ec393c366732\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-wallet\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="6836d188602ec5382d1967c58b00960eb8ff8773">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-wallet-7.5.0_f06849dfd0af054685841b357113fa7982f1cc07\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-base\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="a78183f30e769a98ab4820794f597763088d3065">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-base-7.5.0_d1507e684e9a20533daba93afd29d8d62dfec5b0\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\Messenger\facebookSDK\unspecified\jars\libs\bolts-android-1.1.2.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="ff838e733fa738f436136e04dc486930e9481b28">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\8\bolts-android-1.1.2_a36b52f0fd8e208e0877e853bddbb72927b7be22\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-maps\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="06a42becc33232ec0ee125161da68c1829c9f8fd">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-maps-7.5.0_f068287b915c837fae76ee6d55555fd9a28a99b2\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\libs\YouTubeAndroidPlayerApi.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="78b8f6e37921559ed21c1fae1f30f9f713494db8">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\2\YouTubeAndroidPlayerApi_0eeeb3e82a82cd560396209ec086a28933955e79\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-analytics\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="e7b35244f50663b3f8d150714bca9ecd7a290da1">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-analytics-7.5.0_cc313c3238968088afb5bc90f3eb8cecd3a180bf\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-appinvite\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="63ec6e9f4fe5482a7447d0f3091b8e543a02554c">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-appinvite-7.5.0_28608426754a5723bb7e896a26c3039ad4b75f5c\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.android.support\multidex\1.0.1\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="78ea232052df889856dcb7b7b542707c89bb3bfb">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.android.support-multidex-1.0.1_f765ff06ae538b0aefe2b7e4c0621c5c264af2a2\classes.dex" />
+    </item>
+    <item
+        jar="C:\Users\MyNewPC\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\22.2.0\support-annotations-22.2.0.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="66b42a1f3eb7676070b7ef7f14b603483aecbee1">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\support-annotations-22.2.0_0bc96434373cc752e424edff2921049522c228ba\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\incremental-runtime-classes\debug\instant-run.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="3f5e4494642afed34721471a9c20c65c32636422">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\instant-run_b694b5b7af035e1eddfc81e8f9465d98cfa790f1\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-cast\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="8e3a972f28b8bae817e382257ba177a31bcadbbc">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-cast-7.5.0_e6de066c49fdd3b8dd19aa1fe15c4d2fd38e141c\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-gcm\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="8d736fefa22d896e84a268354b3ed48a42663150">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-gcm-7.5.0_fc07460ca51d703cfc9a82eb42f9cccd6629fb9a\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-wearable\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="69dd177337ead693c408c8dddc9546bb6f1244fa">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-wearable-7.5.0_06d8c3d627f0ae71a420eea1ea4658332d9ed9ab\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-fitness\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="a172852a35ff919e85b9b7f14bbc15c5bee25520">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-fitness-7.5.0_8d95a37b1c5c4052de8b62ed2cc4dfe2b1b4f6c6\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\libs\universal-image-loader-1.9.0.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="f667a2f4f27542fe11a6781f5f7ac572d27afcec">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\2\universal-image-loader-1.9.0_a01c4528cc9c077746b9cea8b21306e4c07305a0\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-games\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="02bac2dc792d78241077861566f2c82da955e7fa">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-games-7.5.0_91f6cc808b63e38d94599911311c1bb92c465380\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\libs\mobilecore_V1.1.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="fc4a185882b0f7d452d5b108de91f77cf3b87e3a">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\2\mobilecore_V1.1_60544487cd51a26c2fec09e1ffa2fc786164efe1\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-drive\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="f44d03c138cb6488fdbaa65e3a7e5878861a56d8">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-drive-7.5.0_4cd89263a0f27cdc0c95dce021cb7cee7c21ea0b\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.android.support\appcompat-v7\22.2.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="73753982da6bde518f3a4c6b372749981d14d1a0">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.android.support-appcompat-v7-22.2.0_aa563a8db86935ef37cc900f154b988afb29ae6f\classes.dex" />
+    </item>
+    <item
+        jar="C:\Users\MyNewPC\.gradle\caches\modules-2\files-2.1\com.squareup.picasso\picasso\2.5.2\7446d06ec8d4f7ffcc53f1da37c95f200dcb9387\picasso-2.5.2.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="7446d06ec8d4f7ffcc53f1da37c95f200dcb9387">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\picasso-2.5.2_e2a629cc2074c84319ce40748ca87ec973ba181d\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.android.support\mediarouter-v7\22.0.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="a1372c17fccacca753d3951d3ad820571cbce075">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.android.support-mediarouter-v7-22.0.0_e7de977f0932739bbd7750c0f9230f1d78215af2\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-plus\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="272bc5d7063f24bc3a33ea1d318cde8f31f5ec4c">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-plus-7.5.0_5fc8d76ec4612ee9bf5ca73ee5e34ccb64980c59\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.android.support\support-v4\22.2.0\jars\libs\internal_impl-22.2.0.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="57f2ab85c164ff1676ec64dee787981c046fab79">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\internal_impl-22.2.0_32dcfea117d675cb5af73b7b27a25fe292c6a0aa\classes.dex" />
+    </item>
+    <item
+        jar="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\exploded-aar\com.google.android.gms\play-services-location\7.5.0\jars\classes.jar"
+        jumboMode="true"
+        revision="22.0.1"
+        sha1="1e98ef3f124bb7a11f8575f9ff5dfea330b61b6f">
+        <dex dex="F:\MyProject\AndroidProject\Messenger\messenger\build\intermediates\transforms\dex\debug\folders\1000\10\com.google.android.gms-play-services-location-7.5.0_bdf9950c4032187a8ea28d1a91ebbb64b2e049ef\classes.dex" />
+    </item>
+
+</items>

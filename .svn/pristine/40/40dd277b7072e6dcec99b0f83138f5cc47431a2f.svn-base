@@ -1,0 +1,87 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.app.Activity;
+
+
+//==============================================================================================================================
+public final class InAppAds
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public enum Provider
+    {
+        UNDEFINED,
+        APPNEXT,
+        MOBILECORE,
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private InAppAds()
+    {
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void setProvider(Provider provider)
+    {
+        if (provider_ != Provider.UNDEFINED || provider == Provider.UNDEFINED)
+            return;
+
+        provider_ = provider;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void init(Activity activity)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.init(activity);
+
+//        else if (provider_ == Provider.MOBILECORE)
+//            MobilecoreAds.init(activity);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void cacheAd(Activity activity)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.cacheAd(activity);
+
+//        else if (provider_ == Provider.MOBILECORE)
+//            MobilecoreAds.cacheAd(activity);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void showAd(Activity activity)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.showAd(activity);
+
+//        else if (provider_ == Provider.MOBILECORE)
+//            MobilecoreAds.showAd(activity);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void refreshOffers(Activity activity)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.refreshOffers(activity);
+
+//        else if (provider_ == Provider.MOBILECORE)
+//            MobilecoreAds.refreshOffers(activity);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void resetCallbacks(AdsProvider.Callbacks callbacks)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.resetCallbacks(callbacks);
+
+//        else if (provider_ == Provider.MOBILECORE)
+//            MobilecoreAds.resetCallbacks(callbacks);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private static Provider provider_ = Provider.UNDEFINED;
+}

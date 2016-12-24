@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+     android:background="@android:color/white" >
+
+    <EditText
+        android:id="@+id/edSearch_youtube"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10" 
+        android:maxLines="2"/>
+ 
+    <Button
+        android:id="@+id/btn_youtube"
+        android:layout_width="fill_parent"
+        android:layout_height="50dp"
+        android:onClick="getUserYouTubeFeed"
+        android:text="Search a Video" 
+        android:background="@drawable/text_view_create_group_bg"
+        android:layout_margin="5dp"
+        android:textColor="@color/white"/>
+ 
+    <com.app.webserviceshandler.VideosListView
+        android:id="@+id/videosListView"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" 
+       />
+ 
+</LinearLayout>

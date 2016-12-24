@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="7dp"
+    android:orientation="horizontal"
+    android:paddingLeft="5dp" >
+
+    <LinearLayout
+        android:id="@+id/FrameLayoutotherChat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|bottom"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_weight="1"
+        android:background="@drawable/other_chat"
+        android:orientation="vertical"
+        android:padding="2dp" >
+
+        <FrameLayout
+            android:id="@+id/FrameLayoutIMAGE_Other"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:layout_gravity="center_horizontal">
+
+            <com.app.util.RoundedCornersGaganImageView
+                android:id="@+id/imgV_otherChatImage"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:paddingBottom="2dp"
+                android:paddingLeft="4dp"
+                android:paddingRight="4dp"
+                android:paddingTop="5dp"
+                android:src="@drawable/no_media" />
+
+            <ImageButton
+                android:id="@+id/img_btn_play_youtube_video_other"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|center"
+                android:background="@null"
+                android:src="@drawable/play" />
+        </FrameLayout>
+
+        <com.rockerhieu.emojicon.EmojiconTextView
+            android:id="@+id/txtV_otherChatmsg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:autoLink="all"
+            android:paddingBottom="2dp"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:paddingTop="4dp"
+            android:text="Msg"
+            android:textColor="@color/gray"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/txtV_otherChatDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:padding="2dp"
+            android:text="Time"
+            android:textColor="@color/gray"
+            android:textSize="10sp"
+            android:textStyle="italic" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|bottom"
+        android:orientation="vertical" >
+
+        <com.app.messenger.Facebook_ProfilePictureView_rounded
+            android:id="@+id/fb_otherChat"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_gravity="center_horizontal" >
+        </com.app.messenger.Facebook_ProfilePictureView_rounded>
+
+        <TextView
+            android:id="@+id/txtVChatName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="@color/pinkNew" />
+    </LinearLayout>
+
+</LinearLayout>

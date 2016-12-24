@@ -1,0 +1,232 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.Collections;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ListView;
+
+import com.app.adapter.RequestAdapter;
+import com.app.model.Request_groupmembers;
+import com.app.util.GlobalUtills;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+
+public class RequestActivity extends Activity {
+	ListView request_list;
+	ActionBarCommon actionBarCommon;
+	public static ArrayList<Request_groupmembers> list_of_request = new ArrayList<Request_groupmembers>();
+	
+	public static RequestAdapter request_adapter ;
+
+	Global global;
+
+	GlobalUtills globalUtills;
+	
+	@Override
+	public void onBackPressed() {
+		
+		Intent gotoSetting=new Intent(RequestActivity.this,SettingActivity.class);
+		startActivity(gotoSetting);
+		finish();
+	}
+	@Override
+	protected void onResume() {
+		
+		try
+		{
+			if (globalUtills.haveNetworkConnection(getApplicationContext())) {
+				new GetRequests().execute();
+			} else {
+				GlobalUtills.showToast("No network connection..!",
+						RequestActivity.this);
+			}
+		}
+		catch(Exception e)
+		{
+			globalUtills=new GlobalUtills();
+		}
+		
+		
+		super.onResume();
+	}
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		// TODO Auto-generated method stub
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.request_activity);
+		actionBarCommon = new ActionBarCommon(RequestActivity.this, null);
+		gettingValues();
+		actionBarCommon.setActionText("Requests");
+		
+		
+		globalUtills=new GlobalUtills();
+		
+		
+		
+		
+		actionBarCommon.left_image.setImageResource(R.drawable.icon_back_arrow);
+		// ---------------RightClick-----------------
+		OnClickListener left_ClickListener = new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				 
+				
+				Intent gotoSetting=new Intent(RequestActivity.this,SettingActivity.class);
+				startActivity(gotoSetting);
+				finish();
+			}
+		};
+
+		actionBarCommon.layoutLeftClick(left_ClickListener);
+
+		
+		
+
+	}
+
+	// ----------------GettingValues-----------------
+	private void gettingValues() {
+		request_list = (ListView) findViewById(R.id.listV_requests);
+		actionBarCommon = (ActionBarCommon) findViewById(R.id.action_bar);
+		global = new Global();
+	}
+
+	// -----------------------------Get request-------------------------
+
+	class GetRequests extends AsyncTask<String, String, String> {
+		TransparentProgressDialog dialog;
+		String response_GetRequests;
+		String messaString;
+
+		@Override
+		protected String doInBackground(String... params) {
+
+			ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+
+			param.add(new BasicNameValuePair("member_Id", global.getUser_id()));
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE,
+					"get_join_request"));
+
+			
+
+			try {
+				WebServiceHandler web=new WebServiceHandler();
+				response_GetRequests = web
+						.makeServiceCall(
+								GlobalConstant.URL,
+								WebServiceHandler.GET, param);
+
+			
+			} catch (Exception exception)
+
+			{
+				exception.printStackTrace();
+				System.out.println("Exception calling");
+			}
+
+			return response_GetRequests;
+
+		}
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			
+			if(list_of_request.size()>0)
+			{
+				list_of_request.clear();
+			}
+			dialog =new TransparentProgressDialog(RequestActivity.this, R.drawable.loading_spinner_icon);
+			dialog.show();
+
+		}
+
+		protected void onPostExecute(String result) {
+
+			try {
+				
+				
+				JSONObject jsonObject = new JSONObject(result);
+				JSONArray array_groupInfo = jsonObject.getJSONArray("requests");
+
+				if (array_groupInfo.length() > 0) {
+
+					for (int i = 0; i < array_groupInfo.length(); i++) {
+						Request_groupmembers requesData = new Request_groupmembers();
+
+						JSONObject request_object = array_groupInfo
+								.getJSONObject(i);
+
+						
+
+						requesData.setGroupID(request_object
+								.getString("groupId"));
+						requesData.setGroupName(request_object
+								.getString("groupName"));
+						requesData.setUserFBid(request_object
+								.getString("facebook_id"));
+						requesData
+								.setUserID(request_object.getString("userId"));
+						requesData.setUserName(request_object
+								.getString("user_name"));
+
+						list_of_request.add(requesData);
+
+					}
+
+					Collections.reverse(list_of_request);
+					 request_adapter = new RequestAdapter(
+								RequestActivity.this, list_of_request, global.getUser_id());
+						request_list.setAdapter(request_adapter);
+
+						
+					
+				}
+				else
+				{
+					GlobalUtills.showToast("No request Found..!", RequestActivity.this);
+				}
+				
+				if(dialog.isShowing())
+				{
+					dialog.dismiss();
+				}
+
+			} catch (Exception e) {
+				if(dialog.isShowing())
+				{
+					dialog.dismiss();
+				}
+				GlobalUtills.showToast("No request Found..!", RequestActivity.this);
+				e.printStackTrace();
+			}catch (Error e) {
+				GlobalUtills.showToast("No request Found..!", RequestActivity.this);
+				if(dialog.isShowing())
+				{
+					dialog.dismiss();
+				}
+			}
+
+			
+
+			super.onPostExecute(result);
+		}
+	}
+
+	// get requests
+
+}

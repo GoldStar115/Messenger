@@ -1,0 +1,136 @@
+package com.app.messenger;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
+
+import com.app.util.GlobalUtills;
+import com.google.android.youtube.player.YouTubeBaseActivity;
+import com.google.android.youtube.player.YouTubeInitializationResult;
+import com.google.android.youtube.player.YouTubePlayer;
+import com.google.android.youtube.player.YouTubePlayer.Provider;
+import com.google.android.youtube.player.YouTubePlayerView;
+
+public class Play_youtube_video extends YouTubeBaseActivity implements YouTubePlayer.OnInitializedListener
+{
+
+	static YouTubePlayerView	video_player;
+	public static String		VIDEO_ID	= "";
+
+	boolean						preview		= false;
+
+	Button						btnSend, btnCancel;
+
+	LinearLayout				LayoutBtns;
+
+	Intent						intent		= null;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		// HIDE THE KEYBOARD
+		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+
+		// TITLE BAR DISABLES AND FULL SCREEN IMPLEMENTATION
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+		setContentView(R.layout.activity_play_youtube_video);
+
+		try
+		{
+
+			intent = getIntent();
+			VIDEO_ID = intent.getStringExtra("video_id");
+
+			preview=intent.getBooleanExtra("preview", false);
+			
+			LayoutBtns=(LinearLayout)findViewById(R.id.PreviewButtons);
+			if(preview)
+			{
+				LayoutBtns.setVisibility(View.VISIBLE);
+			}
+			else
+			{
+				LayoutBtns.setVisibility(View.GONE);
+			}
+			
+
+			System.out.println("youtube----VIDEO_ID---->" + VIDEO_ID);
+
+			video_player = (YouTubePlayerView) findViewById(R.id.youtubeplayerview_full_screen);
+			video_player.initialize(GlobalConstant.YOUTUBE_APIKEY, Play_youtube_video.this);
+
+			// this.setFinishOnTouchOutside(false);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		catch(OutOfMemoryError e)
+		{
+			e.printStackTrace();
+		}
+
+		(btnCancel = (Button) findViewById(R.id.btnCancel_previwe)).setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				Play_youtube_video.this.finish();
+			}
+		});
+
+		(btnSend = (Button) findViewById(R.id.btnSend_previwe)).setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				try
+				{
+					Play_youtube_video.this.finish();
+					((Activity) YouTube_videosList.conYouTube).finish();
+				}
+				catch(Exception e)
+				{
+
+				}
+
+			}
+		});
+
+	}
+
+	@Override
+	public void onInitializationFailure(Provider provider, YouTubeInitializationResult result)
+	{
+		GlobalUtills.showToast("Youtube player not found.", Play_youtube_video.this);
+
+	}
+
+	@Override
+	public void onInitializationSuccess(Provider provider, YouTubePlayer player, boolean wasRestored)
+	{
+		if( !wasRestored )
+		{
+			player.loadVideo(VIDEO_ID);
+			// player.setFullscreen(true);
+			// player.play();
+		}
+
+	}
+
+	public void closeYoutube(View v)
+	{
+		Play_youtube_video.this.finish();
+	}
+
+}

@@ -1,0 +1,700 @@
+package com.app.messenger;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+
+import android.app.ActionBar.LayoutParams;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Environment;
+import android.text.InputType;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.app.adapter.ShowSocialFriends;
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.RoundedCornersGaganImageView;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+
+public class Group_users_info extends Activity
+{
+
+	ActionBarCommon								actionBarCommon;
+	ListView									listvUserinfo;
+	String										GroupID		= "";
+
+	com.app.util.RoundedCornersGaganImageView	GroupImage;
+	TextView									EDGroupName;
+	ImageButton									btnSave;
+
+	String										imgbytes	= "";
+
+	// ArrayList<FriendInfo> list_of_users = new ArrayList<FriendInfo>();
+	String										myFBid		= "";
+	
+	GlobalUtills globalUtills; 
+	
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+		setContentView(R.layout.activity_group_users_info);
+
+		
+		globalUtills=new GlobalUtills();
+		
+		listvUserinfo = (ListView) findViewById(R.id.listVUsersinfo);
+
+		GroupImage = (RoundedCornersGaganImageView) findViewById(R.id.ImgGrupPIc);
+		EDGroupName = (TextView) findViewById(R.id.edGRoupNAme);
+		btnSave = (ImageButton) findViewById(R.id.btnEditPic);
+
+		actionBarCommon = new ActionBarCommon(Group_users_info.this, null);
+		actionBarCommon = (ActionBarCommon) findViewById(R.id.action_barUsersInfo);
+		actionBarCommon.setActionText("Group Info");
+
+		actionBarCommon.left_image.setImageResource(R.drawable.icon_back_arrow);
+		actionBarCommon.layout_left.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				finish();
+			}
+		});
+
+		Intent intentdata = getIntent();
+
+		GroupID = intentdata.getStringExtra("groupID");
+		// Groupimg= intentdata.getStringExtra("groupImage");
+
+		// GroupName=intentdata.getStringExtra("groupName");
+		SharedPreferences sharedPref = getSharedPreferences("fbID", MODE_PRIVATE);
+		myFBid = sharedPref.getString("fb", "");
+		final String userID = intentdata.getStringExtra("uID");
+
+		SharedPreferences preferences = getSharedPreferences("Chat", Context.MODE_PRIVATE);
+		boolean visibility = preferences.getBoolean("V" + GroupID, true);
+		if( visibility )
+		{
+			actionBarCommon.right_image.setImageResource(R.drawable.eyes_groups);
+		}
+		else
+		{
+			actionBarCommon.right_image.setImageResource(R.drawable.eyes_groups_close);
+		}
+
+		actionBarCommon.layout_Right.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				globalUtills.groupVisiblty(GroupID, userID, Group_users_info.this, actionBarCommon.right_image);
+
+			}
+		});
+
+		if( GlobalUtills.list_of_GroupMembers.size() > 0 )
+		{
+
+			Collections.sort(GlobalUtills.list_of_GroupMembers, new Comparator<FriendInfo>(){
+				@Override
+				public int compare(FriendInfo text1, FriendInfo text2)
+				{
+					return text1.getName().compareToIgnoreCase(text2.getName());
+				}
+			});
+
+			ShowSocialFriends socialusers = new ShowSocialFriends(Group_users_info.this, GlobalUtills.list_of_GroupMembers, false, false);
+			listvUserinfo.setAdapter(socialusers);
+		}
+		else
+		{
+			GlobalUtills.showToast("Error..!", Group_users_info.this);
+		}
+
+		listvUserinfo.setOnItemClickListener(new OnItemClickListener()
+		{
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, final int position, long id)
+			{
+
+				if( myFBid.equals(GlobalUtills.list_of_GroupMembers.get(position).getId()) )
+				{
+
+				}
+				else
+				{
+
+					if( globalUtills.haveNetworkConnection(Group_users_info.this) )
+					{
+						Intent gotoChatting = new Intent(Group_users_info.this, Chat_OneToOne.class);
+						gotoChatting.putExtra("name", GlobalUtills.list_of_GroupMembers.get(position).getName() + "");
+						gotoChatting.putExtra("fbID", GlobalUtills.list_of_GroupMembers.get(position).getId() + "");
+						gotoChatting.putExtra("ph", GlobalUtills.list_of_GroupMembers.get(position).getMobile_no() + "");
+						startActivity(gotoChatting);
+					}
+					else
+					{
+						GlobalUtills.showToast("No network connection..!", Group_users_info.this);
+					}
+
+					// openLogoutAlert(position);
+				}
+
+			}
+		});
+
+		if( Group_Chat.groupImage.contains(".png") )
+		{
+			GroupImage.setImageUrl(Group_users_info.this,Group_Chat.groupImage);
+		}
+		else
+		{
+			if(Group_Chat.groupImage.equals(""))
+			{
+				GroupImage.setImageResource(R.drawable.group_image_public);
+			}
+			else
+			{
+				GroupImage.setImageBitmap((globalUtills.StringToBitMap(Group_Chat.groupImage)));
+			}
+			
+		}
+
+		imgbytes = Group_Chat.groupImage;
+
+		GroupImage.setRadius(80);
+		EDGroupName.setText(Group_Chat.GroupName);
+
+		if( GlobalUtills.joinORadd_group )
+		{
+			GroupImage.setEnabled(true);
+			EDGroupName.setEnabled(true);
+			btnSave.setVisibility(View.VISIBLE);
+		}
+		else
+		{
+
+			actionBarCommon.layout_Right.setVisibility(View.INVISIBLE);
+
+			GroupImage.setEnabled(false);
+			EDGroupName.setEnabled(false);
+			btnSave.setVisibility(View.GONE);
+		}
+
+		GroupImage.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				DialogoChoose();
+
+			}
+		});
+
+		btnSave.setOnClickListener(new OnClickListener()
+		{ 
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( globalUtills.haveNetworkConnection(Group_users_info.this) )
+				{
+
+					// if(EDGroupName.getText().toString().trim().equals(""))
+					// {
+					// GlobalUtills.showToast("Please enter group name..!",
+					// Group_users_info.this);
+					// }
+					// else
+					// {
+					// new groupImageEdit().execute(GroupID);
+					// }
+
+					AlertDialog.Builder builder = new AlertDialog.Builder(Group_users_info.this);
+					builder.setTitle("Enter Group Name");
+					builder.setCancelable(false);
+					// Set up the input
+					final EditText input = new EditText(Group_users_info.this);
+
+					input.setText("" + Group_Chat.GroupName);
+					input.post(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							input.setSelection(input.getText().length());
+						}
+					});
+
+					// Specify the type of input expected; this, for example,
+					// sets the input as a password, and will mask the text
+					input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+					builder.setView(input);
+
+					// Set up the buttons
+					builder.setPositiveButton("OK", new DialogInterface.OnClickListener()
+					{
+						@Override
+						public void onClick(DialogInterface dialog, int which)
+						{
+							if( input.getText().toString().trim().equals("") )
+							{
+								input.setText("");
+								input.setHint("Enter Group Name..");
+								input.setHighlightColor(Color.RED);
+
+							}
+							else
+							{
+								EDGroupName.setText(input.getText().toString());
+								Group_Chat.GroupName = input.getText().toString();
+
+								new groupImageEdit().execute(GroupID);
+							}
+
+						}
+					});
+					builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
+					{
+						@Override
+						public void onClick(DialogInterface dialog, int which)
+						{
+							dialog.cancel();
+						}
+					});
+
+					builder.show();
+
+				}
+				else
+				{
+					GlobalUtills.showToast("No network connection..!", Group_users_info.this);
+				}
+
+			}
+		});
+
+	}
+
+	void openLogoutAlert(final int positionGroupinfo)
+	{
+		final Dialog dialog = globalUtills.prepararDialog(Group_users_info.this, R.layout.dialog_three_options);
+
+		TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+		title.setText("Start Chat");
+
+		TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+		subheading.setText("Start private chat with " + GlobalUtills.list_of_GroupMembers.get(positionGroupinfo).getName() + "");
+
+		Button btn_Chat = (Button) dialog.findViewById(R.id.btnChat);
+		Button btn_call = (Button) dialog.findViewById(R.id.btncall);
+		Button btn_groups = (Button) dialog.findViewById(R.id.btngroups);
+		ImageButton btn_close = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+		btn_groups.setVisibility(View.GONE);
+		btn_close.setVisibility(View.GONE);
+		btn_call.setText("Yes");
+		btn_Chat.setText("No");
+
+		btn_Chat.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+
+				dialog.dismiss();
+
+			}
+		});
+		btn_call.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( globalUtills.haveNetworkConnection(Group_users_info.this) )
+				{
+					Intent gotoChatting = new Intent(Group_users_info.this, Chat_OneToOne.class);
+					gotoChatting.putExtra("name", GlobalUtills.list_of_GroupMembers.get(positionGroupinfo).getName() + "");
+					gotoChatting.putExtra("fbID", GlobalUtills.list_of_GroupMembers.get(positionGroupinfo).getId() + "");
+					gotoChatting.putExtra("ph", GlobalUtills.list_of_GroupMembers.get(positionGroupinfo).getMobile_no() + "");
+					startActivity(gotoChatting);
+				}
+				else
+				{
+					GlobalUtills.showToast("No network connection..!", Group_users_info.this);
+				}
+
+				dialog.dismiss();
+
+			}
+		});
+
+		dialog.show();
+
+	}
+
+	// send image
+	class groupImageEdit extends AsyncTask<String , String , String>
+	{
+
+		String						response_sendimage;
+		String						messaString;
+
+		TransparentProgressDialog	pd;
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			String GroupID = params[0];
+
+			ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+			// param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE,
+			// "post"));
+			// param.add(new
+			// BasicNameValuePair(GlobalConstant.U_TYPE,"up_group"));
+
+			param.add(new BasicNameValuePair("group_id", GroupID));
+			param.add(new BasicNameValuePair("gimage", imgbytes));
+
+			try
+			{
+				WebServiceHandler web = new WebServiceHandler();
+
+				if( imgbytes.contains(".") )
+				{
+					param.add(new BasicNameValuePair("gname", EDGroupName.getText().toString().trim() + ""));
+					param.add(new BasicNameValuePair("post_type", "post"));
+					param.add(new BasicNameValuePair("mtype", "up_group"));
+
+					response_sendimage = web.makeServiceCall(GlobalConstant.URL + "", WebServiceHandler.GET, param);
+				}
+				else
+				{
+					response_sendimage = web.makeServiceCall(GlobalConstant.URL + "?post_type=post&mtype=up_group", WebServiceHandler.POST, param);
+				}
+
+				System.out.println("Exception calling" + response_sendimage);
+
+			}
+			catch(Exception exception)
+
+			{
+				exception.printStackTrace();
+				System.out.println("Exception calling");
+			}
+
+			return response_sendimage;
+
+		}
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+			pd = new TransparentProgressDialog(Group_users_info.this, R.drawable.loading_spinner_icon);
+			pd.show();
+
+		}
+
+		protected void onPostExecute(String result)
+		{
+
+			if( pd.isShowing() )
+			{
+				pd.dismiss();
+			}
+
+			if( result.contains("Success") )
+			{
+
+				Group_Chat.GroupName = EDGroupName.getText().toString().trim();
+
+				Group_Chat.groupImage = imgbytes;
+
+				Toast.makeText(getApplicationContext(), "Group info updated..!", 200).show();
+			}
+			else
+			{
+				Toast.makeText(getApplicationContext(), "Error..!", 200).show();
+			}
+
+			// finish();
+
+			super.onPostExecute(result);
+		}
+	}
+
+	// end send imnage
+
+	// image all stuff
+
+	public void DialogoChoose()
+	{
+		final Dialog dialogLoader = new Dialog(this, R.style.Theme_Dialog);
+		dialogLoader.setTitle("Select a Image ");
+		dialogLoader.setContentView(R.layout.dialogo_choose);
+		dialogLoader.getWindow().setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+		ImageButton uiC_imgbtntake_gallery = (ImageButton) dialogLoader.findViewById(R.id.uiC_imgbtntake_gallery);
+		ImageButton uiC_imgbtntake_camera = (ImageButton) dialogLoader.findViewById(R.id.uiC_imgbtntake_camera);
+		ImageButton btnYoutube = (ImageButton) dialogLoader.findViewById(R.id.btn_youTube);
+
+		btnYoutube.setVisibility(View.GONE);
+		uiC_imgbtntake_gallery.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				dialogLoader.dismiss();
+
+				Intent pickPhoto = new Intent(Intent.ACTION_PICK);
+				pickPhoto.setType("image/*");
+				startActivityForResult(pickPhoto, 22);
+
+			}
+		});
+
+		uiC_imgbtntake_camera.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				dialogLoader.dismiss();
+				Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+				cameraIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, getTempUri());
+				cameraIntent.putExtra("return-data", true);
+				startActivityForResult(cameraIntent, 1888);
+
+			}
+		});
+
+		dialogLoader.show();
+	}
+
+	static final String	TEMP_PHOTO_FILE	= "temporary_GroupIMG.jpg";
+
+	private Uri getTempUri()
+	{
+		return Uri.fromFile(getTempFile());
+	}
+
+	private File getTempFile()
+	{
+
+		if( Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED) )
+		{
+
+			File file = new File(Environment.getExternalStorageDirectory(), TEMP_PHOTO_FILE);
+			try
+			{
+				file.createNewFile();
+			}
+			catch(IOException e)
+			{}
+
+			return file;
+		}
+		else
+		{
+
+			return null;
+		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data)
+	{
+		switch (requestCode)
+		{
+		case 22:
+			if( resultCode == Activity.RESULT_OK )
+			{
+				try
+				{
+
+					File tempFile = getTempFile();
+					String filePathG = Environment.getExternalStorageDirectory() + "/" + TEMP_PHOTO_FILE;
+
+					InputStream inputStream = getContentResolver().openInputStream(data.getData());
+					FileOutputStream fileOutputStream = new FileOutputStream(filePathG);
+					globalUtills.copyStream(inputStream, fileOutputStream);
+					fileOutputStream.close();
+					inputStream.close();
+
+					decodeFile(filePathG);
+
+					if( tempFile.exists() )
+					{
+						tempFile.delete();
+					}
+
+				}
+				catch(Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+
+			break;
+
+		case 1888:
+
+			try
+			{
+
+				String filePath = null;
+				File tempFile = getTempFile();
+
+				filePath = Environment.getExternalStorageDirectory() + "/" + TEMP_PHOTO_FILE;
+
+				if( filePath != null )
+				{
+
+					decodeFile(filePath);
+				}
+
+				if( tempFile.exists() )
+				{
+					tempFile.delete();
+				}
+
+			}
+			catch(RuntimeException e)
+			{
+				e.printStackTrace();
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+
+		}
+		super.onActivityResult(requestCode, resultCode, data);
+	}
+
+	public void decodeFile(String filePath)
+	{
+
+		// Decode image size
+		BitmapFactory.Options o = new BitmapFactory.Options();
+		o.inJustDecodeBounds = true;
+		BitmapFactory.decodeFile(filePath, o);
+
+		// The new size we want to scale to
+		final int REQUIRED_SIZE = 1024;
+
+		// Find the correct scale value. It should be the power of 2.
+		int width_tmp = o.outWidth, height_tmp = o.outHeight;
+		int scale = 1;
+		while (true)
+		{
+			if( width_tmp < REQUIRED_SIZE && height_tmp < REQUIRED_SIZE )
+				break;
+			width_tmp /= 2;
+			height_tmp /= 2;
+			scale *= 2;
+		}
+
+		// Decode with inSampleSize
+		BitmapFactory.Options o2 = new BitmapFactory.Options();
+		o2.inSampleSize = scale;
+		Bitmap bitmap = BitmapFactory.decodeFile(filePath, o2);
+
+		try
+		{
+			ExifInterface ei = new ExifInterface(filePath);
+			int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+			Matrix matrix = new Matrix();
+			switch (orientation)
+			{
+			case ExifInterface.ORIENTATION_ROTATE_90:
+				matrix.postRotate(90);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_180:
+				matrix.postRotate(180);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			case ExifInterface.ORIENTATION_ROTATE_270:
+				matrix.postRotate(270);
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			default:
+				bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+				break;
+			}
+		}
+		catch(Throwable e)
+		{
+			e.printStackTrace();
+		}
+
+		System.out.println(filePath.toString() + "filepath is");
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		bitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+
+		GroupImage.setImageBitmap(bitmap);
+		GroupImage.setRadius(80);
+
+		imgbytes = globalUtills.BitMapToString(bitmap);
+
+		new groupImageEdit().execute(GroupID);
+
+		// uiC_imgV_DP.setImageBitmap(bitmap);
+
+	}
+	// image all stuff end
+
+}

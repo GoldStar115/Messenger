@@ -1,0 +1,182 @@
+//==============================================================================================================================
+package com.app.adapter;
+
+
+//==============================================================================================================================
+import android.content.Context;
+import android.graphics.Color;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.TextView;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.messenger.Facebook_ProfilePictureView_rounded;
+import com.app.messenger.Global;
+import com.app.messenger.GlobalConstant;
+import com.app.messenger.R;
+import com.app.model.FriendInfo;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.HashMap;
+
+
+//==============================================================================================================================
+public class AddSocialFriendAdapter extends BaseAdapter
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public AddSocialFriendAdapter(Context context, ArrayList<FriendInfo> allFriendList)
+    {
+        this.context_       = context;
+        global_             = new Global();
+        this.allFriendList_ = allFriendList;
+
+        if (radioCheckContacts_.size() <= 0)
+            for (int i = 0; i < allFriendList.size(); ++i)
+                radioCheckContacts_.add(false);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static ArrayList<Boolean> radioCheckContacts()
+    {
+        return radioCheckContacts_;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public int getCount()
+    {
+        return allFriendList_.size();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public Object getItem(int arg0)
+    {
+        return null;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public long getItemId(int arg0)
+    {
+        return arg0;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public View getView(final int arg0, View view, ViewGroup container)
+    {
+        LayoutInflater inflater = (LayoutInflater) context_.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+        view          = inflater.inflate(R.layout.friend_adapter, null);
+        name_         = (TextView)    view.findViewById(R.id.Friend_name);
+        phoneNumber_  = (TextView)    view.findViewById(R.id.txtV_FBphno);
+        freindsImage_ = (Facebook_ProfilePictureView_rounded)
+                                      view.findViewById(R.id.friends_title_image);
+        checkButton_  = (RadioButton) view.findViewById(R.id.friend_check_box);
+        imgViewPhFb_  = (ImageView)   view.findViewById(R.id.imgV_ph_FB);
+
+        if (radioCheckContacts_.get(arg0))
+            checkButton_.setChecked(true);
+
+        else
+            checkButton_.setChecked(false);
+
+        if (allFriendList_.get(arg0).getId().equals(""))
+        {
+            freindsImage_.setVisibility(View.GONE);
+
+            name_.setText(allFriendList_.get(arg0).getName());
+            phoneNumber_.setText("" + allFriendList_.get(arg0).getMobile_no());
+        }
+        else
+        {
+            freindsImage_.setVisibility(View.VISIBLE);
+
+            name_.setText(allFriendList_.get(arg0).getName());
+
+            freindsImage_.setProfileId(allFriendList_.get(arg0).getId());
+
+            imgViewPhFb_.setImageResource(R.drawable.app_icon_g);
+        }
+
+        checkButton_.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                if (!radioCheckContacts_.get(arg0))
+                {
+                    ((RadioButton) v).setChecked(true);
+
+                    radioCheckContacts_.set(arg0, true);
+
+                    if (!allFriendList_.get(arg0).getId().equals(""))
+                    {
+                        idsMap_.put(arg0, allFriendList_.get(arg0).getId());
+
+                        global_.setHashMap(idsMap_);
+                    }
+                    else
+                    {
+                        idsMapPh_.put(arg0, allFriendList_.get(arg0).getMobile_no());
+
+                        global_.setHashMap_ph(idsMapPh_);
+                    }
+                }
+                else
+                {
+                    ((RadioButton) v).setChecked(false);
+
+                    radioCheckContacts_.set(arg0, false);
+
+                    if (!allFriendList_.get(arg0).getId().equals(""))
+                    {
+                        if (idsMap_.size() > 0)
+                        {
+                            idsMap_.remove(arg0);
+
+                            global_.setHashMap(idsMap_);
+                        }
+                    }
+                    else
+                    {
+                        if (idsMapPh_.size() > 0)
+                        {
+                            idsMapPh_.remove(arg0);
+
+                            global_.setHashMap_ph(idsMapPh_);
+                        }
+                    }
+                }
+            }
+        });
+
+        view.setBackgroundColor(arg0 % 2 != 0 ? GlobalConstant.COLOR_GREY : GlobalConstant.COLOR_WHITE);
+
+        return view;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private static ArrayList<Boolean> radioCheckContacts_ = new ArrayList<Boolean>();
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private Global                              global_;
+    private ArrayList<FriendInfo>               allFriendList_ = new ArrayList<FriendInfo>();
+    private HashMap<Integer, String>            idsMap_        = new HashMap<Integer, String>();
+    private HashMap<Integer, String>            idsMapPh_      = new HashMap<Integer, String>();
+    private Context context_;
+    private RadioButton                         checkButton_;
+    private Facebook_ProfilePictureView_rounded freindsImage_;
+    private TextView                            name_;
+    private TextView                            phoneNumber_;
+    private ImageView                           imgViewPhFb_;
+
+}

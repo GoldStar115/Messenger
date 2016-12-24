@@ -1,0 +1,6 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android" android:visible="true">
+
+    <item android:drawable="@drawable/icon_sel_mygroup" android:state_selected="true"/>
+    <item android:drawable="@drawable/icon_group" android:state_selected="false"/>
+
+</selector>

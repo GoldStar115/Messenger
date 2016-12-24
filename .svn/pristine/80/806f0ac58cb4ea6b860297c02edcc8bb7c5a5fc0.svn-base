@@ -1,0 +1,396 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.telephony.TelephonyManager;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Spinner;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+import com.facebook.android.Facebook;
+import com.google.android.gcm.GCMRegistrar;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+//==============================================================================================================================
+public class PhoneNumberRegistertationScreen extends Activity
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public class RegisterUser extends AsyncTask<Void, Void, String>
+    {
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+
+            progressDialog_ = new TransparentProgressDialog(PhoneNumberRegistertationScreen.this,
+                                                            R.drawable.loading_spinner_icon);
+
+            progressDialog_.show();
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected String doInBackground(Void... params)
+        {
+            String phoneNumber = txtPhoneNumber_.getText().toString();
+
+            if (phoneNumber.startsWith("0"))
+                phoneNumber = phoneNumber.substring(1);
+
+            List<NameValuePair> param = new ArrayList<NameValuePair>();
+
+            param.add(new BasicNameValuePair("post_type",  "post"));
+            param.add(new BasicNameValuePair("mtype",      "registerup"));
+            param.add(new BasicNameValuePair("country_id", String.valueOf(countryId_)));
+            param.add(new BasicNameValuePair("device_id",  googleRegId_));
+            param.add(new BasicNameValuePair("phone_no",   phoneNumber));
+            param.add(new BasicNameValuePair("devicetype", "A"));
+
+            WebServiceHandler web = new WebServiceHandler();
+
+            String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+            return jsonString;  // TODO:
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPostExecute(String result)
+        {
+            super.onPostExecute(result);
+
+            try
+            {
+                JSONObject jsonObject           = new JSONObject(result);
+                String     successMessageString = jsonObject.getString("Message");
+
+                if (successMessageString.equalsIgnoreCase("Failure"))
+                {
+                    progressDialog_.dismiss();
+
+                    GlobalUtills.showToast("Unable to register...\ntry again...", PhoneNumberRegistertationScreen.this);
+                }
+                else if (successMessageString.equalsIgnoreCase("Success"))
+                {
+                    progressDialog_.dismiss();
+
+
+
+                    if (jsonObject.has("user_id"))
+                    {
+                        GlobalUtills.user_id  = jsonObject.getString("user_id");
+                        GlobalUtills.email_id = jsonObject.getString("user_email");
+
+                        global_.setUser_id(jsonObject.getString("user_id"));
+
+                        SharedPreferences sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+                        Editor            editorPref = sharedPref.edit();
+
+                        editorPref.putString("UserID",  GlobalUtills.user_id + "");
+                        editorPref.putString("ph_no",   txtPhoneNumber_.getText().toString());
+                        editorPref.putString("country", String.valueOf(countryId_));
+                        editorPref.putString("code",    countryCode_);
+                        editorPref.commit   ();
+
+                        intent_ = new Intent(PhoneNumberRegistertationScreen.this, LoginActivity.class);
+
+                        intent_.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                        startActivity(intent_);
+                    }
+                    else
+                    {
+                        SharedPreferences sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+                        Editor            editorPref = sharedPref.edit();
+
+                        editorPref.putString("ph_no",   txtPhoneNumber_.getText().toString());
+                        editorPref.putString("country", String.valueOf(countryId_));
+                        editorPref.putString("code",    countryCode_);
+                        editorPref.commit   ();
+
+                        regId_            = jsonObject.getString("register_id");
+                        verificationCode_ = jsonObject.getString("secure_code");
+                        intent_           = new Intent(PhoneNumberRegistertationScreen.this, CodeVerificationScreen.class);
+
+                        bundle_.putString("register_id",       regId_);
+                        bundle_.putString("verification_code", verificationCode_);
+                        intent_.putExtras(bundle_);
+
+                        startActivity(intent_);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                if (progressDialog_.isShowing())
+                    progressDialog_.dismiss();
+
+                GlobalUtills.showToast("Unable to register...\ntry again...", PhoneNumberRegistertationScreen.this);
+
+                System.out.println("Exception in the main object");
+
+                e.printStackTrace();
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public void registerClient()
+    {
+        try
+        {
+            GCMRegistrar.checkDevice  (this);
+            GCMRegistrar.checkManifest(this);
+
+            googleRegId_ = GCMRegistrar.getRegistrationId(this);
+
+
+
+            if (googleRegId_.equals(""))
+            {
+                GCMRegistrar.register(this, CommonUtilities.SENDER_ID);
+
+                googleRegId_ = GCMRegistrar.getRegistrationId(this);
+            }
+            else
+            {
+                GCMRegistrar.register(this, CommonUtilities.SENDER_ID);
+
+                googleRegId_ = GCMRegistrar.getRegistrationId(this);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.e("Dashboard", "Exception -> " + e.toString());
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    // TODO: c/p
+    public void setFriendInfoJson()
+    {
+        try
+        {
+            if (!friendInfoList_.isEmpty())
+                friendInfoList_.clear();
+
+            ArrayList<HashMap<String, String>> friendListArray = new ArrayList<HashMap<String, String>>();
+            SharedPreferences                  sharedPref      = getSharedPreferences("FacebookFrnd", MODE_PRIVATE);
+            String                             friendList      = sharedPref.getString("FriendList", "");
+            JSONArray                          jsonArr         = new JSONArray();
+            JSONArray                          jArr            = new JSONArray(friendList);
+
+            for (int i = 0; i < jArr.length(); ++i)
+            {
+                JSONObject obj           = jArr.getJSONObject(i);
+                JSONObject picture       = obj.getJSONObject("picture");
+                JSONObject jsonObjectURL = picture.getJSONObject("data");
+                String     id            = obj.getString("id");
+
+                friendInfo_ = new FriendInfo();
+
+                String imageURL = jsonObjectURL.getString("url");
+
+                Log.e("Friend ID", id);
+
+                friendInfo_.setId(id);
+
+                String name = obj.getString("name");
+
+                friendInfo_.setImage(imageURL);
+
+                HashMap<String, String> map = new HashMap<String, String>();
+
+                map.put("id", id);
+
+                friendListArray.add(map);
+
+                JSONObject pnObj = new JSONObject();
+
+                pnObj.put("userid", id);
+
+
+
+                jsonArr.put(pnObj);
+
+                friendInfo_.setName(name);
+
+                friendInfoList_.add(friendInfo_);
+            }
+        }
+        catch (JSONException e)
+        {
+            e.printStackTrace();
+        }
+
+        global_.setFriend_info_list(friendInfoList_);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.activity_phone_number_registertation_screen);
+
+        txtCountryCode_     = (EditText)  findViewById(R.id.text_view_country_code);
+        txtPhoneNumber_     = (EditText)  findViewById(R.id.edit_text_phone_number);
+        buttonLogin_        = (Button)    findViewById(R.id.btn_login_phone_register);
+        spnCountryName      = (Spinner)   findViewById(R.id.spn_country_name);
+        imgViewCountryName_ = (ImageView) findViewById(R.id.img_view_spn_country_name);
+        global_             = new Global();
+        globalUtills_       = new GlobalUtills();
+        facebook_           = new Facebook(FACEBOOK_APP_ID);
+
+        registerClient();
+
+        imgViewCountryName_.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                spnCountryName.performClick();
+            }
+        });
+
+        buttonLogin_.setOnClickListener(new OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                if (globalUtills_.haveNetworkConnection(PhoneNumberRegistertationScreen.this))
+                {
+                    registerClient();
+
+                    if (txtPhoneNumber_.getText().toString().equals(""))
+                        GlobalUtills.showToast("Please Enter Your Phone No.", PhoneNumberRegistertationScreen.this);
+
+                    else if (txtPhoneNumber_.getText().toString().length() < 7)  // TODO:
+                        GlobalUtills.showToast("Phone number should be minimum 7 digits.", PhoneNumberRegistertationScreen.this);
+
+                    else
+                    {
+                        if (googleRegId_.toString().equals(""))
+                        {
+                            GlobalUtills.showToast("Please try again.", PhoneNumberRegistertationScreen.this);
+                            registerClient();
+                        }
+                        else  // TODO:
+                            new RegisterUser().execute();
+                    }
+                }
+                else  // TODO:
+                    GlobalUtills.showToast("No network connection..!", PhoneNumberRegistertationScreen.this);
+            }
+        });
+
+        TelephonyManager tm = (TelephonyManager) getSystemService(PhoneNumberRegistertationScreen.this.TELEPHONY_SERVICE);
+
+        countryName_                  = tm.getSimCountryIso();
+        GlobalUtills.country_iso_code = countryName_;
+
+
+        if (GlobalUtills.country_iso_code.equals(""))
+            GlobalUtills.country_iso_code = "IL";
+
+        for (int i = 0; i < GlobalUtills.country_code_list.size(); ++i)
+        {
+            listCountryName_.add(GlobalUtills.country_code_list.get(i).getName());
+
+            if (countryName_.equalsIgnoreCase(GlobalUtills.country_code_list.get(i).getShort_name()))
+            {
+                countryCode_ = GlobalUtills.country_code_list.get(i).getCountry_code();
+                countryId_   = GlobalUtills.country_code_list.get(i).getCountry_id  ();
+
+                txtCountryCode_.setText(countryCode_);
+            }
+        }
+
+        spnCountryName.setAdapter(new ArrayAdapter<String>(PhoneNumberRegistertationScreen.this, R.drawable.spinner_layout,
+                                                           listCountryName_));
+        spnCountryName.setPressed(false);
+
+        for (int i = 0; i < listCountryName_.size(); ++i)
+        {
+            if (countryName_.equalsIgnoreCase(GlobalUtills.country_code_list.get(i).getShort_name()))
+                spnCountryName.setSelection(i);
+        }
+
+        spnCountryName.setOnItemSelectedListener(new OnItemSelectedListener()
+        {
+            @Override
+            public void onItemSelected(AdapterView<?> arg0, View v, int position, long id)
+            {
+                countryCode_ = GlobalUtills.country_code_list.get(position).getCountry_code();
+                countryId_   = GlobalUtills.country_code_list.get(position).getCountry_id  ();
+
+                txtCountryCode_.setText(countryCode_);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0)
+            {
+            }
+        });
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private final static String FACEBOOK_APP_ID = "328101867374398";  // TODO: c/p
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private EditText                  txtCountryCode_;
+    private EditText                  txtPhoneNumber_;
+    private Button                    buttonLogin_;
+    private TransparentProgressDialog progressDialog_;
+    private Spinner                   spnCountryName;
+    private ImageView                 imgViewCountryName_;
+    private String                    googleRegId_        = "";
+    private FriendInfo                friendInfo_;
+    private Intent                    intent_             = null;
+    private Bundle                    bundle_             = new Bundle();
+    private Global                    global_;
+    private ArrayList<FriendInfo>     friendInfoList_     = new ArrayList<FriendInfo>();
+    private List<String>              listCountryName_    = new ArrayList<String>();
+    private String                    countryName_        = "";
+    private String                    countryCode_        = "";
+    private String                    regId_              = "";
+    private String                    verificationCode_   = "";
+    private int                       countryId_          = 0;
+    private Facebook                  facebook_;
+    private GlobalUtills              globalUtills_;
+}

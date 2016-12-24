@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:weightSum="100" >
+
+    <com.app.messenger.ActionBarCommon
+        android:id="@+id/action_bar"
+        android:layout_width="fill_parent"
+        android:layout_height="45dp" >
+    </com.app.messenger.ActionBarCommon>
+
+    <LinearLayout
+        android:id="@+id/freinds_main_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="40dp"
+        android:background="#ccc"
+        android:gravity="center"
+        android:padding="2dp" >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
+            android:background="@drawable/white_corners"
+            android:gravity="center"
+            android:padding="5dp"
+            android:paddingLeft="7dp" >
+
+            <RelativeLayout
+                android:id="@+id/layout_search_img"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@color/white"
+                android:paddingTop="3dp" >
+
+                <ImageView
+                    android:id="@+id/icon_search_img_chat_activity"
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/serch_icon" />
+            </RelativeLayout>
+
+            <EditText
+                android:id="@+id/search_edit_text_chat_activity"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="2dp"
+                android:layout_toLeftOf="@+id/layout_cencel_img"
+                android:layout_toRightOf="@+id/layout_search_img"
+                android:background="@color/white"
+                android:descendantFocusability="beforeDescendants"
+                android:hint="Search..."
+                android:imeOptions="actionSearch"
+                android:padding="2dp"
+                android:singleLine="true"
+                android:textColorHint="@color/gray"
+                android:textSize="13sp" />
+
+            <RelativeLayout
+                android:id="@+id/layout_cencel_img_chat_activity"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:background="@color/white"
+                android:paddingTop="3dp"
+                android:visibility="invisible" >
+
+                <ImageView
+                    android:id="@+id/imgV_CloseSearch_chat_activity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_delete" />
+            </RelativeLayout>
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="#ccc"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:orientation="vertical" 
+            >
+
+            <Button
+                android:id="@+id/btnChats_recent"
+                 android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:padding="10dp"
+                android:text="Chats" />
+
+            <View
+                android:id="@+id/viewChats_recent"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_gravity="center_vertical"
+                android:background="@color/pinkNew" />
+        </LinearLayout>
+
+        <View
+            android:id="@+id/divider_view"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:background="@color/white"
+           />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:orientation="vertical" >
+
+            <Button
+                android:id="@+id/btnContacts"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:padding="10dp"
+                android:text="Contacts" />
+
+            <View
+                android:id="@+id/viewbtncontact"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_gravity="center_vertical"
+                android:background="@color/pinkNew"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+        <View
+            android:id="@+id/divider_view2"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:background="@color/white" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:orientation="vertical" >
+
+            <Button
+                android:id="@+id/btnFbGroupmembers"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:padding="10dp"
+                android:text="Group Mates" />
+
+            <View
+                android:id="@+id/viewbtnFBgroupmember"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_gravity="center_vertical"
+                android:background="@color/pinkNew"
+                android:visibility="invisible" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <ListView
+            android:id="@+id/ListVChats_recent"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:divider="@android:color/white"
+            android:listSelector="#00000000"
+           >
+        </ListView>
+
+        <ListView
+            android:id="@+id/list_chat"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:divider="@android:color/white"
+            android:listSelector="#00000000" 
+             android:visibility="gone" >
+        </ListView>
+
+        <ListView
+            android:id="@+id/list_chatGmember"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:divider="@android:color/white"
+            android:listSelector="#00000000"
+            android:visibility="gone" >
+        </ListView>
+    </FrameLayout>
+
+</LinearLayout>

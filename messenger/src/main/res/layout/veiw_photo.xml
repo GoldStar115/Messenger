@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical" >
+
+     <com.app.util.RoundedCornersGaganImageView
+        android:id="@+id/imgV_ViewPhoto"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:src="@drawable/no_media"
+       android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="40dp">
+
+        <Button
+            android:id="@+id/btn_ok_ViewPhoto"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="7dp"
+            android:layout_weight="1"
+            android:background="@drawable/text_view_create_group_bg"
+            android:padding="10dp"
+            android:text="Ok"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/btn_cancel_ViewPhoto"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="7dp"
+            android:layout_weight="1"
+            android:background="@drawable/text_view_create_group_bg"
+            android:padding="10dp"
+            android:text="Cancel"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+</LinearLayout>

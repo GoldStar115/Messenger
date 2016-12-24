@@ -1,0 +1,503 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.telephony.TelephonyManager;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Spinner;
+
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+import com.facebook.android.Facebook;
+import com.google.android.gcm.GCMRegistrar;
+
+public class PhoneNumberRegistertationScreen extends Activity
+{
+
+	EditText					txt_country_code;
+	EditText					et_phone_numbrt;
+	Button						btn_login;
+	TransparentProgressDialog	pd;
+	Spinner						spn_country_name;
+	ImageView					img_view_spn_country_name;
+	String						google_reg_id		= "";
+	String						registrationStatus;
+	FriendInfo					friendInfo;
+	Intent						intent				= null;
+	Bundle						bundle				= new Bundle();
+	Global						global;
+	ArrayList<FriendInfo>		friend_info_list	= new ArrayList<FriendInfo>();
+	List<String>				list_country_name	= new ArrayList<String>();
+
+	String						country_name		= "", country_code = "", user_id = "", reg_id = "", verification_code = "";
+	int							country_id			= 0;
+
+	Facebook					facebook;
+	private static String		FACEBOOK_APP_ID		= "328101867374398";
+
+	GlobalUtills				globalUtills;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_phone_number_registertation_screen);
+
+		txt_country_code = (EditText) findViewById(R.id.text_view_country_code);
+		et_phone_numbrt = (EditText) findViewById(R.id.edit_text_phone_number);
+		btn_login = (Button) findViewById(R.id.btn_login_phone_register);
+		spn_country_name = (Spinner) findViewById(R.id.spn_country_name);
+		img_view_spn_country_name = (ImageView) findViewById(R.id.img_view_spn_country_name);
+		global = new Global();
+		globalUtills = new GlobalUtills();
+
+		facebook = new Facebook(FACEBOOK_APP_ID);
+
+		registerClient();
+
+		img_view_spn_country_name.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				// TODO Auto-generated method stub
+				spn_country_name.performClick();
+			}
+		});
+
+		// final Animation
+		// an=AnimationUtils.loadAnimation(PhoneNumberRegistertationScreen.this,
+		// R.anim.zoom_out);
+		// an.setFillAfter(true);
+
+		btn_login.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				// TODO Auto-generated method stub
+
+				if( globalUtills.haveNetworkConnection(PhoneNumberRegistertationScreen.this) )
+				{
+					registerClient();
+
+					if( et_phone_numbrt.getText().toString().equals("") )
+					{
+						GlobalUtills.showToast("Please Enter Your Phone No.", PhoneNumberRegistertationScreen.this);
+					}
+					else if( et_phone_numbrt.getText().toString().length() < 7 )
+					{
+						GlobalUtills.showToast("Phone number should be minimum 7 digits.", PhoneNumberRegistertationScreen.this);
+					}
+					else
+					{
+						if( google_reg_id.toString().equals("") )
+						{
+							GlobalUtills.showToast("Please try again.", PhoneNumberRegistertationScreen.this);
+							registerClient();
+						}
+						else
+						{
+
+							new RegisterUser().execute();
+						}
+					}
+
+				}
+				else
+				{
+					GlobalUtills.showToast("No network connection..!", PhoneNumberRegistertationScreen.this);
+				}
+
+			}
+		});
+
+		// btn_login.setOnTouchListener(new OnTouchListener() {
+		//
+		// @Override
+		// public boolean onTouch(View v, MotionEvent event) {
+		// switch (event.getAction()) {
+		// case MotionEvent.ACTION_DOWN:
+		// // start your first zoom out Animation here
+		//
+		// btn_login.setAnimation(an);
+		//
+		// btn_login.startAnimation(an);
+		// break;
+		//
+		// case MotionEvent.ACTION_UP:
+		// final Animation
+		// an2=AnimationUtils.loadAnimation(PhoneNumberRegistertationScreen.this,
+		// R.anim.zoom_out_two);
+		// an2.setFillAfter(true);
+		//
+		// an2.setAnimationListener(new AnimationListener() {
+		//
+		// @Override
+		// public void onAnimationStart(Animation animation) {
+		// // TODO Auto-generated method stub
+		//
+		// }
+		//
+		// @Override
+		// public void onAnimationRepeat(Animation animation) {
+		// // TODO Auto-generated method stub
+		//
+		// }
+		//
+		// @Override
+		// public void onAnimationEnd(Animation animation) {
+		//
+		//
+		// }
+		// });
+		//
+		// btn_login.setAnimation(an2);
+		//
+		// btn_login.startAnimation(an2);
+		//
+		//
+		//
+		// break;
+		// }
+		// return false;
+		// }
+		// });
+
+		// btn_login.setOnClickListener(new OnClickListener() {
+		//
+		// @Override
+		// public void onClick(View v) {
+		//
+		// btn_login.setAnimation(animate);
+		// btn_login.startAnimation(animate);
+		//
+		// if (GlobalUtills
+		// .haveNetworkConnection(PhoneNumberRegistertationScreen.this)) {
+		// registerClient();
+		//
+		// if (et_phone_numbrt.getText().toString().equals("")) {
+		// GlobalUtills.showToast("Please Enter Your Phone No.",
+		// PhoneNumberRegistertationScreen.this);
+		// } else if (et_phone_numbrt.getText().toString().length() < 7) {
+		// GlobalUtills.showToast(
+		// "Phone number should be minimum 7 digits.",
+		// PhoneNumberRegistertationScreen.this);
+		// } else {
+		// if (google_reg_id.toString().equals("")) {
+		// GlobalUtills.showToast("Please try again.",
+		// PhoneNumberRegistertationScreen.this);
+		// registerClient();
+		// } else {
+		//
+		// new RegisterUser().execute();
+		// }
+		// }
+		//
+		// } else {
+		// GlobalUtills.showToast("No network connection..!",
+		// PhoneNumberRegistertationScreen.this);
+		// }
+		// }
+		// });
+
+		// country_name = PhoneNumberRegistertationScreen.this.getResources()
+		// .getConfiguration().locale.getDisplayCountry();
+
+		TelephonyManager tm = (TelephonyManager) getSystemService(PhoneNumberRegistertationScreen.this.TELEPHONY_SERVICE);
+		country_name = tm.getSimCountryIso();
+		GlobalUtills.country_iso_code = country_name;
+		Log.i("country----->", country_name);
+		if( GlobalUtills.country_iso_code.equals("") )
+		{
+			GlobalUtills.country_iso_code = "IL";
+		}
+		for( int i = 0; i < GlobalUtills.country_code_list.size(); i++ )
+		{
+			list_country_name.add(GlobalUtills.country_code_list.get(i).getName());
+			if( country_name.equalsIgnoreCase(GlobalUtills.country_code_list.get(i).getShort_name()) )
+			{
+				country_code = GlobalUtills.country_code_list.get(i).getCountry_code();
+				country_id = GlobalUtills.country_code_list.get(i).getCountry_id();
+				txt_country_code.setText(country_code);
+			}
+		}
+		spn_country_name.setAdapter(new ArrayAdapter<String>(PhoneNumberRegistertationScreen.this, R.drawable.spinner_layout, list_country_name));
+		spn_country_name.setPressed(false);
+		// spn_country_name.setEnabled(false);
+
+		for( int i = 0; i < list_country_name.size(); i++ )
+		{
+			if( country_name.equalsIgnoreCase(GlobalUtills.country_code_list.get(i).getShort_name()) )
+			{
+				spn_country_name.setSelection(i);
+			}
+		}
+
+		spn_country_name.setOnItemSelectedListener(new OnItemSelectedListener()
+		{
+
+			@Override
+			public void onItemSelected(AdapterView<?> arg0, View v, int position, long id)
+			{
+				// TODO Auto-generated method stub
+				country_code = GlobalUtills.country_code_list.get(position).getCountry_code();
+				country_id = GlobalUtills.country_code_list.get(position).getCountry_id();
+				txt_country_code.setText(country_code);
+
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> arg0)
+			{
+				// TODO Auto-generated method stub
+
+			}
+		});
+
+	}
+
+	public class RegisterUser extends AsyncTask<Void , Void , String>
+	{
+		String	message;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+			pd = new TransparentProgressDialog(PhoneNumberRegistertationScreen.this, R.drawable.loading_spinner_icon);
+			pd.show();
+		}
+
+		@Override
+		protected String doInBackground(Void... params)
+		{
+
+			String phoneNumber = et_phone_numbrt.getText().toString();
+
+			if( phoneNumber.startsWith("0") )
+			{
+				
+				phoneNumber = phoneNumber.substring(1);
+			}
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair("post_type", "post"));
+			param.add(new BasicNameValuePair("mtype", "registerup"));
+			param.add(new BasicNameValuePair("country_id", String.valueOf(country_id)));
+			param.add(new BasicNameValuePair("device_id", google_reg_id));
+			param.add(new BasicNameValuePair("phone_no", phoneNumber));
+			param.add(new BasicNameValuePair("devicetype", "A"));
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			try
+			{
+				JSONObject jsonObject = new JSONObject(result);
+				String success_message_string = jsonObject.getString("Message");
+
+				if( success_message_string.equalsIgnoreCase("Failure") )
+				{
+					pd.dismiss();
+					GlobalUtills.showToast("Unable to register...\ntry again...", PhoneNumberRegistertationScreen.this);
+				}
+				else if( success_message_string.equalsIgnoreCase("Success") )
+				{
+
+					pd.dismiss();
+
+					Log.d("success_message_string=========", "" + success_message_string);
+					if( jsonObject.has("user_id") )
+					{
+
+						GlobalUtills.user_id = jsonObject.getString("user_id");
+						GlobalUtills.email_id = jsonObject.getString("user_email");
+						global.setUser_id(jsonObject.getString("user_id"));
+						
+						SharedPreferences sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+						Editor editorPref = sharedPref.edit();
+						editorPref.putString("UserID", GlobalUtills.user_id + "");
+						editorPref.putString("ph_no", et_phone_numbrt.getText().toString());
+						editorPref.putString("country", String.valueOf(country_id));
+						editorPref.putString("code", country_code);
+						editorPref.commit();
+
+						intent = new Intent(PhoneNumberRegistertationScreen.this, LoginActivity.class);
+						intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+						startActivity(intent);
+
+					}
+					else
+					{
+
+						SharedPreferences sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+						Editor editorPref = sharedPref.edit();
+						editorPref.putString("ph_no", et_phone_numbrt.getText().toString());
+						editorPref.putString("country", String.valueOf(country_id));
+						editorPref.putString("code", country_code);
+						editorPref.commit();
+
+						reg_id = jsonObject.getString("register_id");
+						verification_code = jsonObject.getString("secure_code");
+						intent = new Intent(PhoneNumberRegistertationScreen.this, CodeVerificationScreen.class);
+						bundle.putString("register_id", reg_id);
+						bundle.putString("verification_code", verification_code);
+						intent.putExtras(bundle);
+						startActivity(intent);
+					}
+
+				}
+
+			}
+			catch(Exception e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+				GlobalUtills.showToast("Unable to register...\ntry again...", PhoneNumberRegistertationScreen.this);
+				System.out.println("Exception in the main object");
+				e.printStackTrace();
+			}
+
+		}
+	}
+
+	public void registerClient()
+	{
+		try
+		{
+			// Check that the device supports GCM (should be in a try / catch)
+			GCMRegistrar.checkDevice(this);
+
+			// Check the manifest to be sure this app has all the required
+			// permissions.
+			GCMRegistrar.checkManifest(this);
+
+			// Get the existing registration id, if it exists.
+			google_reg_id = GCMRegistrar.getRegistrationId(this);
+
+			System.out.println("******************************************************************");
+			Log.v("Dashboard", "Device Id -> " + google_reg_id);
+			System.out.println("******************************************************************");
+			if( google_reg_id.equals("") )
+			{
+
+				registrationStatus = "Registering...";
+
+				// register this device for this project
+				GCMRegistrar.register(this, CommonUtilities.SENDER_ID);
+				google_reg_id = GCMRegistrar.getRegistrationId(this);
+
+				registrationStatus = "Registration Acquired";
+			}
+			else
+			{
+				GCMRegistrar.register(this, CommonUtilities.SENDER_ID);
+				google_reg_id = GCMRegistrar.getRegistrationId(this);
+				registrationStatus = "Already registered";
+			}
+
+		}
+		catch(Exception e)
+		{
+			Log.e("Dashboard", "Exception -> " + e.toString());
+			registrationStatus = e.getMessage();
+		}
+	}
+
+	// gagan
+	public void SetFriendInfo_Json()
+	{
+		try
+		{
+			// creating JSONaqDa
+
+			if( !friend_info_list.isEmpty() )
+			{
+				friend_info_list.clear();
+			}
+
+			ArrayList<HashMap<String , String>> friend_list_array = new ArrayList<HashMap<String , String>>();
+
+			SharedPreferences sharedPref = getSharedPreferences("FacebookFrnd", MODE_PRIVATE);
+			String friend_list = sharedPref.getString("FriendList", "");
+
+			JSONArray jSonArr = new JSONArray();
+			JSONArray jarr = new JSONArray(friend_list);
+			for( int i = 0; i < jarr.length(); i++ )
+			{
+				JSONObject obj = jarr.getJSONObject(i);
+				JSONObject picture = obj.getJSONObject("picture");
+				JSONObject jsonObject_url = picture.getJSONObject("data");
+
+				String id = obj.getString("id");
+				friendInfo = new FriendInfo();
+				String IMAGE_URL = jsonObject_url.getString("url");
+
+				Log.e("Friend ID", id);
+				friendInfo.setId(id);
+				String name = obj.getString("name");
+				friendInfo.setImage(IMAGE_URL);
+
+				HashMap<String , String> map = new HashMap<String , String>();
+				map.put("id", id);
+				friend_list_array.add(map);
+				JSONObject pnObj = new JSONObject();
+				pnObj.put("userid", id);
+				Log.e("list of friends ", "" + friend_list_array.size());
+				Log.e("Friends Detail  ", "" + friend_list_array.toString());
+				jSonArr.put(pnObj);
+
+				friendInfo.setName(name);
+				friend_info_list.add(friendInfo);
+
+			}
+
+		}
+		catch(JSONException e)
+		{
+			e.printStackTrace();
+		}
+		global.setFriend_info_list(friend_info_list);
+
+	}
+
+}

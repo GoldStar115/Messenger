@@ -1,0 +1,22 @@
+[
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\drawable-tvdpi-v4\\ic_plusone_small_off_client.png",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.google.android.gms\\play-services-base\\7.5.0\\res\\drawable-tvdpi\\ic_plusone_small_off_client.png"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\drawable-tvdpi-v4\\ic_plusone_standard_off_client.png",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.google.android.gms\\play-services-base\\7.5.0\\res\\drawable-tvdpi\\ic_plusone_standard_off_client.png"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\drawable-tvdpi-v4\\ic_plusone_tall_off_client.png",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.google.android.gms\\play-services-base\\7.5.0\\res\\drawable-tvdpi\\ic_plusone_tall_off_client.png"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\drawable-tvdpi-v4\\common_full_open_on_phone.png",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.google.android.gms\\play-services-base\\7.5.0\\res\\drawable-tvdpi\\common_full_open_on_phone.png"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\drawable-tvdpi-v4\\ic_plusone_medium_off_client.png",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.google.android.gms\\play-services-base\\7.5.0\\res\\drawable-tvdpi\\ic_plusone_medium_off_client.png"
+    }
+]

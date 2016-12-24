@@ -1,0 +1,87 @@
+package com.app.messenger;
+
+public class GlobalConstant {
+	
+	
+	
+
+	public static final String YOUTUBE_APIKEY="AIzaSyCd5MQ2Xqmy2xWsFqs-Uvj5ZPcjxCiRf44";
+	
+//	public static final String URL = "http://messenger.amebasoftware.com/webservice/get_posts/";
+//	public static final String URLF = "http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=register";
+//	public static final String URLSendMSG = "http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=save_single_chat";
+//	public static final String URLSendMSGGroup = "http://messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=mychat";
+	
+	
+//	http://messenger.amebasoftware.com
+
+//	public static final String URL = "http://groupylive.ebsbon.com/webservice/get_posts/";
+//	public static final String URLF = "http://groupylive.ebsbon.com/webservice/get_posts/?post_type=post&mtype=register";
+//	public static final String URLSendMSG = "http://groupylive.ebsbon.com/webservice/get_posts/?post_type=post&mtype=save_single_chat";
+//	public static final String URLSendMSGGroup = "http://groupylive.ebsbon.com/webservice/get_posts/?post_type=post&mtype=mychat";
+	
+	public static final String URL = "http://groupylive.amebasoftware.com/webservice/get_posts/";
+	public static final String URLF = "http://groupylive.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=register";
+	public static final String URLSendMSG = "http://groupylive.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=save_single_chat";
+	public static final String URLSendMSGGroup = "http://groupylive.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=mychat";
+	
+	
+//	public static final String URL = "http://ameba.get-groupy.com/webservice/get_posts/";
+//	public static final String URLF = "http://ameba.get-groupy.com/webservice/get_posts/?post_type=post&mtype=register";
+//	public static final String URLSendMSG = "http://ameba.get-groupy.com/webservice/get_posts/?post_type=post&mtype=save_single_chat";
+//	public static final String URLSendMSGGroup = "http://ameba.get-groupy.com/webservice/get_posts/?post_type=post&mtype=mychat";
+	
+
+	
+	public static final String SUCCESS = "Success";
+	public static final String FAILURE = "Failure";
+	public static final String USERID = "userId";
+	public static final String NAME = "uname";
+	public static final String ISEMAIL = "email";
+
+	public static final String UEMAIL = "uemail";
+	public static final String IS_SOCIAL = "issocial";
+	
+ //----------------RegistrationParameter---------------------------//
+
+	public static final String POST_TYPE = "post_type";
+	public static final String U_TYPE = "mtype";
+	public static final String MESSAGE = "Message";
+	public static final String EMAIL = "uemail";
+	public static final String COUNTRY = "ucountry";
+	public static final String Image_url = "img";
+	public static final String FirstName = "uname";
+	public static final String FACE_BOOK_ID= "facebook_id";
+    public static final String PHONE_NUMBER = "ph";
+	
+ //----------------CreateGroup---------------------------//
+ 
+    public static final String GROUP_NAME = "gname";
+	public static final String GROUP_IMAGE = "gimage";
+	public static final String GROUP_TYPE =  "gtype";
+    public static final String GROUP_Users_ID = "users";	
+    public static final String SEARCH_KEYWOARD = "keyword";	
+
+    
+    
+    //---------------CreateGroupACtivity--------------
+   public static final String Group_USERID = "uid";
+
+//---------------userUpdationLocation------------------------
+   
+   public static final String Latitude= "latitude";
+   public static final String Longitude= "longitude";
+   public static final String Updation_User_id= "user_id";
+   
+   //-------------------JoinGroupParameter-------------------------
+
+   public static final String Group_id= "group_id";
+   public static final String Join_User_id= "user_id";
+  
+   //-----------------SearchKeywoard----------------
+   public static final String Search_Keywoard= "keyword";
+  
+
+
+
+}

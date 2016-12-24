@@ -1,0 +1,110 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/back"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context="com.app.messenger.PhoneNumberRegistertationScreen" >
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="350dp"
+                android:padding="25dip"
+                android:layout_gravity="center_horizontal"
+                android:src="@drawable/logo_get_groupy" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="10dip"
+                android:text="A message has been sent to your phone with a 4 digit code"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="10dip"
+                android:text="Please enter the code below to complete\nyour phone number verification."
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white" />
+            
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@android:color/transparent"
+                android:orientation="vertical" >
+
+                <EditText
+                    android:id="@+id/txt_verification_code"
+                    android:layout_width="60dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:gravity="center"
+                    android:inputType="number"
+                    android:hint="####"
+                    android:padding="8dip"
+                    android:maxLength="4"
+                    android:textColor="@color/white" />
+
+              
+                <View   
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:background="@color/light_grey"/>
+                
+                
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+
+                <Button
+                    android:id="@+id/btn_code_verify_phone_register"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="15dip"
+                    android:text="Done"
+                    android:padding="10dp"
+                    android:layout_marginLeft="40dp"
+                    android:layout_marginRight="40dp"
+                    android:background="@drawable/text_view_create_group_bg"
+                    android:gravity="center"
+                    android:textColor="@color/white"/>
+
+                <TextView
+                    android:id="@+id/txtSendSecure"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Recieve SMS via Call" 
+                    android:textColor="@color/pinkNew"
+                    android:textStyle="italic"
+                    android:clickable="true"
+                    android:textSize="22sp"
+                    android:visibility="gone"/>
+                
+              
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

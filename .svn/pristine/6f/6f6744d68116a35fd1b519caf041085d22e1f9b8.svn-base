@@ -1,0 +1,58 @@
+package com.app.util;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+
+import android.os.AsyncTask;
+
+import com.app.messenger.GlobalConstant;
+import com.app.webserviceshandler.WebServiceHandler;
+
+public class loginStatus_notification extends AsyncTask<String, Void, String> {
+
+	
+	
+	
+	@Override
+	protected String doInBackground(String... params) {
+		
+		String status=params[0];
+		String id=params[1];
+		
+//		http://Messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=logout&user_id=1&notification_status=Y
+
+		List<NameValuePair> param = new ArrayList<NameValuePair>();
+		param.add(new BasicNameValuePair("post_type", "post"));
+		param.add(new BasicNameValuePair("mtype", "logout"));
+//		param.add(new BasicNameValuePair("notification_status",status));
+		param.add(new BasicNameValuePair("user_id",id ));
+
+	
+		WebServiceHandler web=new WebServiceHandler();
+		String jsonString = web.makeServiceCall(
+				GlobalConstant.URL,
+				WebServiceHandler.GET, param);
+
+		
+		return jsonString;
+
+	}
+	@Override
+	protected void onPostExecute(String result) {
+		
+		
+		
+		super.onPostExecute(result);
+	}
+	
+	
+	
+	
+	
+	
+	
+
+}

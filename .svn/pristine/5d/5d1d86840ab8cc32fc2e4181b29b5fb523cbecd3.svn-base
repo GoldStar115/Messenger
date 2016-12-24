@@ -1,0 +1,42 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+//==============================================================================================================================
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+
+//==============================================================================================================================
+public class AroundMeFragment extends Fragment
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+    {
+        if (container == null)
+            return null;
+
+        super.onCreateView(inflater, container, savedInstanceState);
+
+        container        = (ViewGroup) inflater.inflate(R.layout.chat_activity, container ,false);
+        actionBarCommon_ = new ActionBarCommon(getActivity(), null);
+
+        gettingValues(container);
+        actionBarCommon_.setActionText("Around ME");
+
+        return container;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private void gettingValues(ViewGroup container)
+    {
+        actionBarCommon_ = (ActionBarCommon) container.findViewById(R.id.action_bar);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private ActionBarCommon actionBarCommon_;
+}

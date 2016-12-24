@@ -1,0 +1,3 @@
+include ':emojicon', ':ShortcutBadger'
+include ':facebookSDK'
+include ':messenger'

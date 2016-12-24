@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="45dp" >
+
+    <RelativeLayout
+        android:id="@+id/action_bar_layout_left"
+        android:layout_width="wrap_content"
+        android:layout_height="45dp"
+        android:background="@drawable/top_bar"
+        android:gravity="center"
+        android:paddingLeft="1dp"
+        android:paddingRight="1dp" >
+
+        <RelativeLayout
+            android:id="@+id/action_bar_layout_leftbutton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+              android:layout_alignParentLeft="true"
+            android:gravity="center" >
+
+            <ImageView
+                android:id="@+id/left_button"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="2dp"
+                android:layout_marginTop="5dp"
+                android:background="@null"
+                 android:scaleType="centerInside"
+                 />
+
+            <TextView
+                android:id="@+id/left_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/screen__center_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:textColor="@android:color/white" >
+
+            <TextView
+                android:id="@+id/screen_title"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:maxWidth="175dp"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" 
+                 android:ellipsize="marquee"
+                   android:marqueeRepeatLimit="marquee_forever"/>
+
+            <TextView
+                android:id="@+id/txtVgroupmembers"
+                android:layout_width="170dp"
+                android:layout_height="wrap_content"
+                android:ellipsize="marquee"
+                android:gravity="center_horizontal"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/action_bar_layout_Rightbutton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true" 
+              android:gravity="center">
+
+            <ImageView
+                android:id="@+id/right_button"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="5dp"
+                android:layout_marginTop="5dp"
+                android:background="#00000000"
+                android:scaleType="centerInside"
+               />
+
+            <TextView
+                android:id="@+id/right_text"
+                   android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:singleLine="true"
+                android:textColor="@color/pinkNew"
+                android:textSize="18sp" 
+                android:layout_margin="7dp"
+                />
+        </RelativeLayout>
+    </RelativeLayout>
+
+</RelativeLayout>

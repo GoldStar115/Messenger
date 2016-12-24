@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="blue">#0084FF</color>
+    <color name="login_pink">#f77184</color>
+    <color name="lightblue">#69B5FD</color>
+    <color name="gray">#2C2C2C</color>
+    <color name="divider_color">#D2D2D2</color>
+    <color name="white">#ffffff</color>
+     <color name="black">#000000</color>
+
+    <color name="red">#CCFF0000</color>
+
+    <color name="setting_bg_gray">#F3F3F3</color>
+    
+    
+    
+     <color name="pinkNew">#eb4b89</color>
+      <color name="otherChatcolor">#70d9e3</color>
+      
+      <color name="theme_colo">#90e7ee</color>
+
+      <color name="light_grey">#ccc</color>
+   
+
+</resources>

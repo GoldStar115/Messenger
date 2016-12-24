@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\res\\merged\\androidTest\\debug\\drawable\\ic_emoji_objects_light.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\bundles\\debug\\res\\drawable\\ic_emoji_objects_light.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\res\\merged\\androidTest\\debug\\drawable\\ic_emoji_people_light.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\bundles\\debug\\res\\drawable\\ic_emoji_people_light.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\res\\merged\\androidTest\\debug\\drawable\\ic_emoji_recent_light.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\bundles\\debug\\res\\drawable\\ic_emoji_recent_light.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\res\\merged\\androidTest\\debug\\drawable\\ic_emoji_symbols_light.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\bundles\\debug\\res\\drawable\\ic_emoji_symbols_light.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\res\\merged\\androidTest\\debug\\drawable\\ic_emoji_places_light.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\bundles\\debug\\res\\drawable\\ic_emoji_places_light.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\res\\merged\\androidTest\\debug\\drawable\\ic_emoji_nature_light.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\emojicon\\build\\intermediates\\bundles\\debug\\res\\drawable\\ic_emoji_nature_light.xml"
+    }
+]

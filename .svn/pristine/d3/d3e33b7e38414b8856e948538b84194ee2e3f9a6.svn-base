@@ -1,0 +1,707 @@
+package com.app.util;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.http.ParseException;
+
+import android.app.ActionBar.LayoutParams;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningTaskInfo;
+import android.app.Dialog;
+import android.app.Notification;
+import android.app.Notification.Builder;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.media.RingtoneManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.Handler;
+import android.util.Base64;
+import android.view.Gravity;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TabWidget;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.app.messenger.BadgeView;
+import com.app.messenger.R;
+import com.app.model.CountryCodeDetail;
+import com.app.model.FriendInfo;
+import com.app.webserviceshandler.Group_visibility;
+
+public class GlobalUtills
+{
+
+	public static boolean					worldGroup					= false;
+	public static boolean					joinORadd_group				= true;
+	public static String					user_id						= "";
+	public static String					verification_code			= "";
+	public String							facebook_id					= "";
+	public static String					email_id					= "";
+	public static String					country_iso_code			= "IN";
+	public static  Toast						toast;
+	public static  EditText					txt_verify_code;
+	public static TabWidget					tabWidget;
+	public static ListView					list_chat;
+	public static List<CountryCodeDetail>	country_code_list			= new ArrayList<CountryCodeDetail>();
+
+	public static BadgeView					badge1;
+	public static BadgeView					badgeGroup;
+	// public static List<BadgeView> badgeSenderSingleChat=new
+	// ArrayList<BadgeView>();
+
+	public static BadgeView					badgeSenderGroupChat;
+
+	public static String					YouTube_URL					= "";
+	public static String					YouTube_VIdeoID				= "";
+	public static String					youtubeTitile				= "";
+
+	public static boolean					SingleChat_noti				= true;
+	public static String					SingleChat_Sender			= "";
+	public static String					GroupChat_Sender			= "";
+
+	public static boolean					groupChat_noti				= true;
+	public static boolean					allNotification				= true;
+	public static boolean					delete_chat_notification	= true;
+	public static int						IntentWHeretoGo				= 0;
+
+	public static String					msgCountSingle				= "";
+	public static String					msgCountGroup				= "";
+
+	public static List<String>				single_msg_sender			= new ArrayList<String>();
+	public static List<String>				group_msg_sender			= new ArrayList<String>();
+
+	// public static String temp_sender_single = "";
+	public static String					temp_sender_group			= "";
+
+	public static String					JsonGroupMembers			= "";
+	public static ArrayList<FriendInfo>		list_of_GroupMembers		= new ArrayList<FriendInfo>();
+
+	public static boolean					mygroups_savelocal			= true;
+
+	public static void showToast(String msg, Context context)
+	{
+		if( toast != null )
+		{
+			toast.cancel();
+		}
+		toast = Toast.makeText(context, msg, Toast.LENGTH_SHORT);
+		toast.setGravity(Gravity.CENTER, 0, 0);
+		toast.show();
+
+	}
+
+	/*
+	 * class ConnectionDetector { private Context _context;
+	 * 
+	 * public ConnectionDetector(Context context){ this._context = context; }
+	 * 
+	 * public boolean isConnectingToInternet(){ ConnectivityManager connectivity
+	 * = (ConnectivityManager)
+	 * _context.getSystemService(Context.CONNECTIVITY_SERVICE); if (connectivity
+	 * != null) { NetworkInfo[] info = connectivity.getAllNetworkInfo(); if
+	 * (info != null) for (int i = 0; i < info.length; i++) if
+	 * (info[i].getState() == NetworkInfo.State.CONNECTED) { return true; }
+	 * 
+	 * } return false; } }
+	 */
+
+	public boolean haveNetworkConnection(Context con)
+	{
+		ConnectivityManager connectivity = (ConnectivityManager) con.getSystemService(Context.CONNECTIVITY_SERVICE);
+		if( connectivity != null )
+		{
+			NetworkInfo[] info = connectivity.getAllNetworkInfo();
+			if( info != null )
+				for( int i = 0; i < info.length; i++ )
+					if( info[i].getState() == NetworkInfo.State.CONNECTED )
+					{
+						return true;
+					}
+
+		}
+		return false;
+	}
+
+	public String BitMapToString(Bitmap bitmap)
+	{
+
+		String temp = "";
+		try
+		{
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+
+			byte[] b = baos.toByteArray();
+
+			baos.close();
+
+			baos = null;
+			temp = Base64.encodeToString(b, Base64.DEFAULT);
+
+		}
+		catch(IOException e)
+		{
+
+			e.printStackTrace();
+		}
+
+		return temp;
+	}
+
+	public Dialog prepararDialog(Context contexto, int layout)
+	{
+		final Dialog dialog = new Dialog(contexto, R.style.Theme_Dialog);
+		dialog.setContentView(layout);
+		// dialog.setCancelable(false);
+
+		Window window = dialog.getWindow();
+		window.setLayout(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+		if( layout == R.layout.profile_info_other )
+		{
+			window.setGravity(Gravity.TOP);
+			// dialog.setCancelable(true);
+		}
+		else
+		{
+			window.setGravity(Gravity.CENTER);
+		}
+
+		return dialog;
+	}
+
+	public Bitmap StringToBitMap(String encodedString)
+	{
+		try
+		{
+			byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
+			Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0, encodeByte.length);
+			return bitmap;
+		}
+		catch(Exception e)
+		{
+			e.getMessage();
+			return null;
+		}
+	}
+
+	public String convertToString(InputStream inputStream) throws IOException
+	{
+		if( inputStream != null )
+		{
+			Writer writer = new StringWriter();
+
+			char[] buffer = new char[1024];
+			try
+			{
+				Reader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"), 1024);
+				int n;
+				while ((n = reader.read(buffer)) != -1)
+				{
+					writer.write(buffer, 0, n);
+				}
+			}
+			finally
+			{
+				inputStream.close();
+			}
+			return writer.toString();
+		}
+		else
+		{
+			return "";
+		}
+	}
+
+	// veiw photo
+	boolean	download	= true;
+
+	public void ViewPhoto(final String URL, final Context con, final String Imagename)
+	{
+		final Dialog dialogLoader = new Dialog(con, R.style.Theme_Viewphoto);
+		dialogLoader.setTitle("Image");
+		dialogLoader.setContentView(R.layout.veiw_photo);
+		dialogLoader.getWindow().setLayout(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+
+		Button btnOK = (Button) dialogLoader.findViewById(R.id.btn_ok_ViewPhoto);
+		Button btnCancel = (Button) dialogLoader.findViewById(R.id.btn_cancel_ViewPhoto);
+
+		RoundedCornersGaganImageView imgVPhoto = (RoundedCornersGaganImageView) dialogLoader.findViewById(R.id.imgV_ViewPhoto);
+
+		imgVPhoto.setImageUrl(con, URL);
+
+		final File f = new File("mnt/sdcard/Get-groupy/" + Imagename + ".jpg");
+
+		if( Imagename.equals("") || (f.length() != 0) )
+		{
+			btnOK.setText("Ok");
+			download = false;
+		}
+		else
+		{
+			download = true;
+			btnOK.setText("Save");
+		}
+
+		btnOK.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( download )
+				{
+					DLManager.useDownloadManager(URL, Imagename, con);
+				}
+
+				dialogLoader.dismiss();
+
+			}
+		});
+
+		btnCancel.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				dialogLoader.dismiss();
+
+			}
+		});
+
+		dialogLoader.show();
+	}
+
+	public String parseDateToSAVE(String time)
+	{
+		String inputPattern = "yyyy-MM-dd HH:mm:ss";
+		String outputPattern = "yyyyMMdd_HHmmss";
+		SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
+		SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);
+
+		Date date = null;
+		String str = null;
+
+		try
+		{
+			date = inputFormat.parse(time);
+			str = outputFormat.format(date);
+
+		}
+		catch(ParseException e)
+		{
+			e.printStackTrace();
+		}
+		catch(java.text.ParseException e)
+		{
+
+			e.printStackTrace();
+		}
+		return str;
+	}
+
+	// end view photo
+
+	// format to time
+
+	public String parseDateToTime(String time)
+	{
+		String inputPattern = "yyyy-MM-dd HH:mm:ss";
+		String outputPattern = "hh:mm a";
+		SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
+		SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);
+
+		Date date = null;
+		String str = null;
+
+		try
+		{
+			date = inputFormat.parse(time);
+			str = outputFormat.format(date);
+
+		}
+		catch(ParseException e)
+		{
+			e.printStackTrace();
+		}
+		catch(java.text.ParseException e)
+		{
+
+			e.printStackTrace();
+		}
+		return str;
+	}
+
+	// end formatt time
+	// format to time
+
+	public String parseDateMYgroups(String time)
+	{
+		String inputPattern = "yyyy-MM-dd HH:mm:ss";
+		String outputPattern = "dd-MM-yyyy hh:mm a";
+		SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
+		SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);
+
+		Date date = null;
+		String str = null;
+
+		try
+		{
+			date = inputFormat.parse(time);
+			str = outputFormat.format(date);
+
+		}
+		catch(ParseException e)
+		{
+			e.printStackTrace();
+		}
+		catch(java.text.ParseException e)
+		{
+
+			e.printStackTrace();
+		}
+		return str;
+	}
+
+	// end formatt time
+
+	// get you tube video id
+	public String getYoutubeVideoId(String youtubeUrl)
+	{
+		// String video_id = "";
+		int endLength = 0;;
+		// String url = "https://www.youtube.com/watch?v=wZZ7oFKsKzY";
+		if( youtubeUrl.indexOf("v=") == -1 ) // there's no video id
+			return "";
+		String id = youtubeUrl.split("v=")[1]; // everything before the first
+												// 'v=' will be the first
+												// element, i.e. [0]
+		int start_of_id = youtubeUrl.indexOf("=") + 1;
+		int end_of_id = youtubeUrl.indexOf("&"); // if there are other
+													// parameters in the url,
+													// get only the id's value
+		if( end_of_id > 2 )
+		{
+			endLength = end_of_id;
+		}
+		else
+		{
+			endLength = youtubeUrl.length();
+		}
+
+		if( youtubeUrl.length() != -1 )
+			id = youtubeUrl.substring(start_of_id, endLength);
+		return id;
+
+	}
+
+	// gallery imnage get
+	public void copyStream(InputStream input, OutputStream output) throws IOException
+	{
+
+		byte[] buffer = new byte[1024];
+		int bytesRead;
+		while ((bytesRead = input.read(buffer)) != -1)
+		{
+			output.write(buffer, 0, bytesRead);
+		}
+	}
+
+	//
+
+	// one button dialog
+	public void DialogOK(Context con, String heading, String subhead)
+	{
+
+		final Dialog dialog = prepararDialog(con, R.layout.dialog_three_options);
+
+		TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+		title.setText("" + heading);
+
+		TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+		subheading.setTextSize(15);
+		subheading.setText("" + subhead);
+
+		Button btn_Chat = (Button) dialog.findViewById(R.id.btnChat);
+		Button btn_call = (Button) dialog.findViewById(R.id.btncall);
+		Button btn_groups = (Button) dialog.findViewById(R.id.btngroups);
+		ImageButton btn_close = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+		btn_groups.setVisibility(View.GONE);
+		btn_close.setVisibility(View.GONE);
+		btn_call.setVisibility(View.GONE);
+		btn_Chat.setText("Ok");
+
+		btn_Chat.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+				dialog.dismiss();
+			}
+		});
+
+		dialog.show();
+	}
+
+	// end dialog
+
+	// dialog visibilty show hide
+
+	String	viisible	= "";
+
+	public void groupVisiblty(final String gID, final String uID, final Context c, final ImageView img)
+	{
+		SharedPreferences preferences = c.getSharedPreferences("Chat", Context.MODE_PRIVATE);
+		final boolean visibility = preferences.getBoolean("V" + gID, true);
+
+		final Dialog dialog = prepararDialog(c, R.layout.dialog_three_options);
+
+		TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+		title.setText("Set Visibility");
+
+		TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+		subheading.setTextSize(15);
+		subheading.setText("Set Your Visibilty for this group..");
+
+		Button btn_Chat = (Button) dialog.findViewById(R.id.btnChat);
+		Button btn_call = (Button) dialog.findViewById(R.id.btncall);
+		Button btn_groups = (Button) dialog.findViewById(R.id.btngroups);
+		ImageButton btn_close = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+		btn_groups.setVisibility(View.GONE);
+		btn_close.setVisibility(View.GONE);
+		// btn_call.setVisibility(View.GONE);
+		final int draw;
+		if( visibility )
+		{
+			btn_call.setText("Set Hidden");
+			draw = R.drawable.eyes_groups_close;
+		}
+		else
+		{
+			btn_call.setText("Set Visible");
+			draw = R.drawable.eyes_groups;
+		}
+
+		btn_Chat.setText("Cancel");
+
+		btn_call.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+
+				img.setImageResource(draw);
+
+				new Group_visibility(c, uID, gID, visibility).execute();
+				dialog.dismiss();
+			}
+		});
+
+		btn_Chat.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+				dialog.dismiss();
+			}
+		});
+
+		dialog.show();
+
+	}
+
+	// end dialog visibilty show hide
+
+	// notification local after getunread
+
+	public void generateNotification_local(final Context context, String message, final int flag)
+	{
+
+		try
+		{
+
+			int icon = R.drawable.app_icon_g;
+
+			NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+			String title = "Get Groupy" + "";
+
+			PendingIntent intent;
+
+			Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+			context.sendBroadcast(it);
+
+			intent = PendingIntent.getActivity(context, 0, it, PendingIntent.FLAG_UPDATE_CURRENT);
+
+			Uri defaultSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+			if( defaultSound == null )
+			{
+				defaultSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+				if( defaultSound == null )
+				{
+					defaultSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+				}
+			}
+
+			Builder builder = new Notification.Builder(context).setContentTitle(title).setContentText(message).setContentIntent(intent).setSmallIcon(icon).setLights(Color.GREEN, 1, 7)
+					.setAutoCancel(true).setSound(defaultSound);
+
+			Notification not = new Notification.BigTextStyle(builder).bigText(message).build();
+
+			// builder.setStyle(new
+			// Notification.BigTextStyle().bigText(message)) ;
+
+			not.defaults |= Notification.DEFAULT_VIBRATE;
+			not.defaults |= Notification.DEFAULT_SOUND;
+
+			notificationManager.notify(flag, not);
+
+			new Handler().postDelayed(new Runnable()
+			{
+
+				@Override
+				public void run()
+				{
+					NotificationManager notifManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+					notifManager.cancel(flag);
+				}
+			}, 2000);
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+
+	}
+
+	// end notification
+
+	// application is active or not
+	public static boolean isApplicationRunningBackground(final Context context)
+	{
+		ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+		List<RunningTaskInfo> tasks = am.getRunningTasks(am.getRunningAppProcesses().size());
+		for( RunningTaskInfo runningTaskInfo : tasks )
+		{
+			if( runningTaskInfo.topActivity.getPackageName().equals(context.getPackageName()) )
+			{
+
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// end application active or not
+
+	//
+	// // slow network
+	// public static Dialog slow_internetdialog;
+	// public static void slow_internet_dialog(final Context con,
+	// OnClickListener ret)
+	// {
+	//
+	// slow_internetdialog = GlobalUtills.prepararDialog(con,
+	// R.layout.dialog_three_options);
+	//
+	//
+	//
+	// TextView title = (TextView) slow_internetdialog
+	// .findViewById(R.id.txtVmainTitle);
+	// title.setText("Error..!");
+	//
+	// TextView subheading = (TextView) slow_internetdialog
+	// .findViewById(R.id.txtVsubheading);
+	// subheading.setTextSize(15);
+	// subheading.setText("Unable to connect.....!");
+	//
+	//
+	//
+	// Button btn_Chat = (Button)
+	// slow_internetdialog.findViewById(R.id.btnChat);
+	// Button btn_call = (Button)
+	// slow_internetdialog.findViewById(R.id.btncall);
+	// Button btn_groups = (Button)
+	// slow_internetdialog.findViewById(R.id.btngroups);
+	// ImageButton btn_close = (ImageButton)
+	// slow_internetdialog.findViewById(R.id.btnCloseDialog);
+	//
+	// btn_groups.setVisibility(View.GONE);
+	// btn_close.setVisibility(View.GONE);
+	//
+	// btn_call.setText("Retry");
+	// btn_Chat.setText("Cancel");
+	//
+	// btn_call.setOnClickListener(ret);
+	//
+	//
+	// btn_Chat.setOnClickListener(new OnClickListener() {
+	// @Override
+	// public void onClick(View v) {
+	// slow_internetdialog.dismiss();
+	// }
+	// });
+	//
+	// slow_internetdialog.show();
+	//
+	//
+	//
+	// }
+	// // slow network end
+	//
+	//
+
+	public Intent getOpenFacebookIntent(Context context, String Fid)
+	{
+
+		try
+		{
+
+			// context.getPackageManager().getPackageInfo("com.facebook.katana",
+			// 0);
+			// return new Intent(Intent.ACTION_VIEW,
+			// Uri.parse("fb://pages/"+Fid)).addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+
+			return new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.facebook.com/" + Fid));
+
+		}
+		catch(Exception e)
+		{
+			return new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.facebook.com/" + Fid));
+		}
+	}
+
+}

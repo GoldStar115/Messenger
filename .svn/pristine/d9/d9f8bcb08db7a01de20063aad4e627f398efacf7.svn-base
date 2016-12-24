@@ -1,0 +1,95 @@
+package com.app.messenger;
+
+import android.content.Context;
+import android.util.AttributeSet;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+public class ActionBarCommon extends RelativeLayout
+{
+	private Context	mContext;
+	public TextView	text, left_text, textGroupmembers;
+	TextView		Right_text;
+	ImageView		left_image, right_image;
+	RelativeLayout	layout_left, layout_Right;
+	LinearLayout	Layoutscreen__center;
+	LayoutParams	layoutParams_text, layoutParams_text1;
+
+	public ActionBarCommon(Context context , AttributeSet attrs)
+
+	{
+
+		super(context, attrs);
+		mContext = context;
+		LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		RelativeLayout rlayout = (RelativeLayout) inflater.inflate(R.layout.actionbar, null);
+		addView(rlayout);
+		layoutParams_text = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+		layoutParams_text1 = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+
+		text = (TextView) rlayout.findViewById(R.id.screen_title);
+		textGroupmembers = (TextView) rlayout.findViewById(R.id.txtVgroupmembers);
+
+		Right_text = (TextView) rlayout.findViewById(R.id.right_text);
+
+		left_text = (TextView) rlayout.findViewById(R.id.left_text);
+		left_image = (ImageView) rlayout.findViewById(R.id.left_button);
+		right_image = (ImageView) rlayout.findViewById(R.id.right_button);
+		layout_left = (RelativeLayout) findViewById(R.id.action_bar_layout_leftbutton);
+		layout_Right = (RelativeLayout) findViewById(R.id.action_bar_layout_Rightbutton);
+		Layoutscreen__center = (LinearLayout) findViewById(R.id.screen__center_layout);
+	}
+
+	public void setActionText(String title)
+	{
+		this.text.setText(title);
+		this.text.setSelected(true);
+	}
+
+	public void setActionTextMembersName(String title)
+	{
+		this.textGroupmembers.setVisibility(View.VISIBLE);
+		this.textGroupmembers.setSelected(true);
+		this.textGroupmembers.setText(title);
+	}
+
+	public void setActionText_left(String title)
+	{
+
+		this.left_text.setText(title);
+	}
+
+	public void setAction_Right(String title)
+	{
+		this.Right_text.setText(title);
+	}
+
+	public void setAction_RightCreate()
+	{
+		this.Right_text.setBackgroundResource(R.drawable.add_newgroup);
+		this.Right_text.setGravity(Gravity.CENTER);
+		// this.Right_text.setTextSize(12);
+		// this.Right_text.setText(title);
+	}
+
+	public void layoutRightClick(OnClickListener leftclick)
+	{
+		this.layout_Right.setOnClickListener(leftclick);
+	}
+
+	public void layoutLeftClick(OnClickListener leftclick)
+	{
+		this.layout_left.setOnClickListener(leftclick);
+	}
+
+	public void layoutCenterclick(OnClickListener centerclick)
+	{
+		this.Layoutscreen__center.setOnClickListener(centerclick);
+	}
+
+}

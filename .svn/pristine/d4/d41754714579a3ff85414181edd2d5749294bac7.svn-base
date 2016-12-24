@@ -1,0 +1,199 @@
+//==============================================================================================================================
+package com.app.adapter;
+
+
+//==============================================================================================================================
+import android.content.Context;
+import android.graphics.Color;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.RadioButton;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.messenger.BadgeView;
+import com.app.messenger.Facebook_ProfilePictureView_rounded;
+import com.app.messenger.Global;
+import com.app.messenger.GlobalConstant;
+import com.app.messenger.R;
+import com.app.model.FriendInfo;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.HashMap;
+
+
+//==============================================================================================================================
+public class ShowSocialFriends extends BaseAdapter
+{
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static ArrayList<Boolean> radioCheckGroup()
+    {
+        return radioCheckGroup_;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public ShowSocialFriends(Context context, ArrayList<FriendInfo> allFriendList, boolean chatOrNot, boolean groupMates)
+    {
+        this.context_       = context;
+        global_             = new Global();
+        this.allFriendList_ = allFriendList;
+
+        if (!(radioCheckGroup_.size() > 0))
+        {
+            for (int i = 0; i < this.allFriendList_.size(); ++i)
+                radioCheckGroup_.add(false);
+        }
+
+        this.singleChat_ = chatOrNot;
+        this.groupMates_ = groupMates;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public int getCount()
+    {
+        return allFriendList_.size();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public Object getItem(int arg0)
+    {
+        return null;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public long getItemId(int arg0)
+    {
+        return arg0;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public View getView(final int arg0, View view, ViewGroup container)
+    {
+        try
+        {
+            LayoutInflater inflater = (LayoutInflater) context_.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+            view = inflater.inflate(R.layout.friend_adapter, null);
+
+            friendInfoCurrent_ = allFriendList_.get(arg0);
+            distance_          = (TextView)    view.findViewById(R.id.txtV_distance);
+            name_              = (TextView)    view.findViewById(R.id.Friend_name);
+            PhoneNumber_       = (TextView)    view.findViewById(R.id.txtV_FBphno);
+            freindsImage_      = (Facebook_ProfilePictureView_rounded)
+                                               view.findViewById(R.id.friends_title_image);
+            checkButton_       = (RadioButton) view.findViewById(R.id.friend_check_box);
+
+            name_.setText(friendInfoCurrent_.getName());
+            PhoneNumber_.setText(friendInfoCurrent_.getMobile_no());
+
+            freindsImage_.setProfileId(friendInfoCurrent_.getId());
+
+            if (!groupMates_)
+                checkButton_.setVisibility(View.GONE);
+
+            else
+            {
+                checkButton_.setVisibility(View.VISIBLE);
+                checkButton_.setChecked   (radioCheckGroup_.get(arg0));
+            }
+
+            paddingLayout_ = (RelativeLayout) view.findViewById(R.id.top_container);
+            badgeLayout_   = (RelativeLayout) view.findViewById(R.id.badge_indicator_single_chat);
+
+            checkButton_.setOnClickListener(new OnClickListener()
+            {
+                @Override
+                public void onClick(View v)
+                {
+                    friendInfoCurrent_ = allFriendList_.get(arg0);
+
+                    if (!radioCheckGroup_.get(arg0))
+                    {
+                        ((RadioButton) v).setChecked(true);
+
+                        radioCheckGroup_.set(arg0, true);
+
+                        idsMap_.put(arg0, friendInfoCurrent_.getId());
+
+                        global_.setHashMapGroupmates(idsMap_);
+                    }
+                    else
+                    {
+                        radioCheckGroup_.set(arg0, false);
+
+                        ((RadioButton) v).setChecked(false);
+
+                        if (idsMap_.size() > 0)
+                        {
+                            idsMap_.remove(arg0);
+
+                            global_.setHashMapGroupmates(idsMap_);
+                        }
+                    }
+                }
+            });
+
+            if (singleChat_)
+            {
+                BadgeView badge = new BadgeView(context_, badgeLayout_);
+
+                String unreadCount = friendInfoCurrent_.getUnread_count();
+
+                if (unreadCount.equalsIgnoreCase("0"))
+                    badge.setBadgePosition(BadgeView.POSITION_TOP_RIGHT);
+
+                else
+                {
+                    badge.setBadgePosition(BadgeView.POSITION_TOP_RIGHT);
+                    badge.setText         (unreadCount + "");
+                    badge.show            ();
+                }
+            }
+            else if (!groupMates_ && !friendInfoCurrent_.getUnread_count().equals("") &&
+                     friendInfoCurrent_.getUnread_count() != null)
+            {
+                distance_.setVisibility(View.VISIBLE);
+                distance_.setText      ("last seen" + "\n" + friendInfoCurrent_.getUnread_count() + " km away");
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        catch (Error e)
+        {
+        }
+
+        view.setBackgroundColor(arg0 % 2 != 0 ? GlobalConstant.COLOR_GREY : GlobalConstant.COLOR_WHITE);
+
+        return view;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private static ArrayList<Boolean> radioCheckGroup_ = new ArrayList<Boolean>();
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private Global                              global_;
+    private ArrayList<FriendInfo>               allFriendList_;
+    private HashMap<Integer, String>            idsMap_        = new HashMap<Integer, String>();
+    private Context                             context_;
+    private boolean                             singleChat_    = true;
+    private boolean                             groupMates_    = true;
+    private Facebook_ProfilePictureView_rounded freindsImage_;
+    private TextView                            name_;
+    private TextView                            PhoneNumber_;
+    private TextView                            distance_;
+    private RadioButton                         checkButton_;
+    private RelativeLayout                      paddingLayout_;
+    private RelativeLayout                      badgeLayout_;
+    private FriendInfo                          friendInfoCurrent_;
+}

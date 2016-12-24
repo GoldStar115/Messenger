@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:background="@color/white"
+    android:orientation="horizontal" 
+    android:paddingTop="5dp"
+    android:paddingBottom="5dp">
+
+    <com.app.messenger.Facebook_ProfilePictureView_rounded
+        android:id="@+id/friends_title_image"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_margin="3dp" >
+    </com.app.messenger.Facebook_ProfilePictureView_rounded>
+
+    <RelativeLayout
+        android:layout_width="0dp"
+        android:layout_height="70dp"
+        android:layout_marginLeft="15dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical|left" >
+
+        <TextView
+            android:id="@+id/Friend_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:singleLine="true"
+            android:text=""
+            android:textColor="@color/pinkNew"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/txtV_FBphno"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/Friend_name"
+            android:singleLine="true"
+            android:textColor="#000000" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/badge_indicator_single_chat"
+        android:layout_width="wrap_content"
+        android:layout_height="70dp"
+        android:gravity="center_vertical" >
+        
+         <TextView
+            android:id="@+id/txtV_distance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="2"
+            android:textColor="#000000"
+            android:visibility="gone"
+            android:textSize="10sp"
+            android:textStyle="italic" 
+            android:gravity="top"
+            />
+        
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/imgV_ph_FB"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_gravity="center_vertical"
+        android:layout_marginRight="7dp" />
+
+    <RadioButton
+        android:id="@+id/friend_check_box"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center_vertical"
+        android:layout_marginRight="6sp"
+        android:background="@drawable/check_box_addfrnd"
+        android:button="@null" />
+
+</LinearLayout>

@@ -1,0 +1,656 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
+import android.widget.Toast;
+
+import com.app.adapter.MyGroupAdapter;
+import com.app.model.ListALLGroups;
+import com.app.util.GlobalUtills;
+import com.app.util.NetworkCheck;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+
+public class GroupsFragment extends Fragment
+{
+	ActionBarCommon							actionBarCommon;
+	Global									global;
+	ListView								listviewWorldGroup;
+	RelativeLayout							remove_text;
+	EditText								search_editText;
+	AlertDialog								alertDialog			= null;
+
+	String									search_text			= "";
+	public static ArrayList<ListALLGroups>	list_of_allgroup	= new ArrayList<ListALLGroups>();
+
+	public static boolean					newgroup_msg		= false;
+
+	public static MyGroupAdapter			groupAdapter;
+
+	String									visibility			= "Y";
+
+	MyGroupsAsync							getGroup;
+
+	BadgeView								bdgeEYE;
+	GlobalUtills							globalUtills;
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+	{
+		super.onCreateView(inflater, container, savedInstanceState);
+		container = (ViewGroup) inflater.inflate(R.layout.my_group_activity, container, false);
+		actionBarCommon = new ActionBarCommon(getActivity(), null);
+		gettingValues(container);
+		actionBarCommon.setActionText("My Groups");
+
+		actionBarCommon.layoutLeftClick(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+
+				if( globalUtills.haveNetworkConnection(getActivity()) )
+				{
+
+					if( bdgeEYE != null )
+					{
+						bdgeEYE.hide();
+					}
+
+					if( visibility.equals("Y") )
+					{
+						visibility = "N";
+						actionBarCommon.left_image.setImageResource(R.drawable.eyes_groups_close);
+					}
+					else
+					{
+						visibility = "Y";
+						actionBarCommon.left_image.setImageResource(R.drawable.eyes_groups);
+					}
+
+					list_of_allgroup.clear();
+					getGroup = new MyGroupsAsync();
+
+					if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+					{
+						getGroup.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "");
+					}
+					else
+					{
+						getGroup.execute("");
+					}
+
+				}
+				else
+				{
+					GlobalUtills.showToast("No network connection..!", getActivity());
+				}
+
+			}
+		});
+
+		// actionBarCommon.right_image.setImageResource(R.drawable.icon_plus);
+		actionBarCommon.setAction_RightCreate();
+
+		// ---------------RightClick-----------------
+		OnClickListener right_ClickListener = new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				newgroup_msg = false;
+
+				Intent intent = new Intent(getActivity(), AddGroupActivity.class);
+				startActivity(intent);
+			}
+		};
+
+		actionBarCommon.layoutRightClick(right_ClickListener);
+		// --------------SearchFunctionaliy--------------------
+
+		remove_text.setOnClickListener(new OnClickListener()
+		{
+
+			@Override
+			public void onClick(View v)
+			{
+				search_editText.setText("");
+
+				InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(search_editText.getWindowToken(), 0);
+
+				getGroup = new MyGroupsAsync();
+				if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+				{
+					getGroup.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "");
+				}
+				else
+				{
+					getGroup.execute("");
+				}
+				remove_text.setVisibility(View.INVISIBLE);
+
+			}
+		});
+
+		search_editText.addTextChangedListener(new TextWatcher()
+		{
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count)
+			{
+				remove_text.setVisibility(View.VISIBLE);
+
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after)
+			{
+
+			}
+
+			@Override
+			public void afterTextChanged(Editable s)
+			{
+
+			}
+		});
+		search_editText.setOnEditorActionListener(new OnEditorActionListener()
+		{
+
+			@Override
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
+			{
+				remove_text.setVisibility(View.VISIBLE);
+				if( actionId == EditorInfo.IME_ACTION_SEARCH )
+				{
+					if( !NetworkCheck.getConnectivityStatusString(getActivity()).equalsIgnoreCase("true") )
+					{
+						NetworkCheck.openInternetDialog(getActivity());
+					}
+					else
+					{
+
+						search_text = search_editText.getText().toString().trim();
+
+						if( search_text.length() > 0 )
+						{
+
+							InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+							imm.hideSoftInputFromWindow(search_editText.getWindowToken(), 0);
+							getGroup = new MyGroupsAsync();
+							if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+							{
+								getGroup.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, search_text);
+							}
+							else
+							{
+								getGroup.execute(search_text);
+							}
+						}
+						else
+						{
+							GlobalUtills.showToast("Please enter a keyword..!", getActivity());
+						}
+					}
+				}
+
+				if( !globalUtills.haveNetworkConnection(getActivity()) )
+				{
+					GlobalUtills.showToast("No network connection..!", getActivity());
+
+				}
+
+				return false;
+			}
+		});
+
+		// --------------------------Set Adapter ------------------
+
+		return container;
+
+	}
+
+	// ----------------GettingValues-----------------
+	private void gettingValues(ViewGroup container)
+	{
+
+		newgroup_msg = true;
+
+		listviewWorldGroup = (ListView) container.findViewById(R.id.list_my_group);
+		listviewWorldGroup.setScrollingCacheEnabled(false);
+
+		actionBarCommon = (ActionBarCommon) container.findViewById(R.id.action_bar);
+		search_editText = (EditText) container.findViewById(R.id.search_edit_text);
+		remove_text = (RelativeLayout) container.findViewById(R.id.layout_cencel_img);
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState)
+	{
+
+		super.onCreate(savedInstanceState);
+		global = new Global();
+
+	}
+
+	@Override
+	public void onResume()
+	{
+
+		super.onResume();
+
+		globalUtills = new GlobalUtills();
+
+		newgroup_msg = true;
+
+		search_editText.setText("");
+		remove_text.setVisibility(View.INVISIBLE);
+
+		GlobalUtills.joinORadd_group = true;
+
+		new CountDownTimer(1500, 300)
+		{
+
+			String	visibilityTemp	= "Y";
+
+			@Override
+			public void onTick(long millisUntilFinished)
+			{
+
+				if( visibilityTemp.equals("Y") )
+				{
+					visibilityTemp = "N";
+					actionBarCommon.left_image.setImageResource(R.drawable.eyes_groups_close);
+				}
+				else
+				{
+					visibilityTemp = "Y";
+					actionBarCommon.left_image.setImageResource(R.drawable.eyes_groups);
+				}
+			}
+
+			@Override
+			public void onFinish()
+			{
+
+				if( visibility.equals("Y") )
+				{
+					actionBarCommon.left_image.setImageResource(R.drawable.eyes_groups);
+				}
+				else
+				{
+					actionBarCommon.left_image.setImageResource(R.drawable.eyes_groups_close);
+				}
+			}
+		}.start();
+
+		if( globalUtills.haveNetworkConnection(getActivity()) )
+		{
+
+			getGroup = new MyGroupsAsync();
+			if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB )
+			{
+				getGroup.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "");
+			}
+			else
+			{
+				getGroup.execute("");
+			}
+
+		}
+
+		if( GlobalUtills.badgeGroup != null )
+		{
+			if( GlobalUtills.badgeGroup.isShown() )
+			{
+				GlobalUtills.badgeGroup.toggle();
+				SharedPreferences sharedPref = getActivity().getSharedPreferences("login", Context.MODE_PRIVATE);
+				Editor editorPref = sharedPref.edit();
+				editorPref.remove("notification_flag_mychat");
+				editorPref.commit();
+			}
+
+		}
+
+	}
+
+	@Override
+	public void onPause()
+	{
+		newgroup_msg = false;
+
+		getGroup = new MyGroupsAsync();
+
+		getGroup.cancel(true);
+
+		super.onPause();
+	}
+
+	@Override
+	public void onDestroy()
+	{
+		newgroup_msg = false;
+		super.onDestroy();
+	}
+
+	// ------------Asynchronous Class ----------------------//
+	public class MyGroupsAsync extends AsyncTask<String , Void , String>
+	{
+		String						message;
+		String						email_id;
+		TransparentProgressDialog	pd;
+		String						search_tag, pointer = "";
+
+		boolean						running	= true;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+			pd = new TransparentProgressDialog(getActivity(), R.drawable.loading_spinner_icon);
+
+			if( list_of_allgroup.isEmpty() )
+			{
+				pd.show();
+
+			}
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			if( !running )
+			{
+				return "";
+			}
+
+			search_tag = params[0];
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE, "ingroup"));
+
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair(GlobalConstant.Search_Keywoard, search_tag));
+			param.add(new BasicNameValuePair("timezone", com.app.util.GlobalConstant.time_zone));
+
+			param.add(new BasicNameValuePair(GlobalConstant.Group_USERID, global.getUser_id()));
+
+			param.add(new BasicNameValuePair("visibility", visibility));
+
+			// http://Messenger.amebasoftware.com/webservice/get_posts/?post_type=post&mtype=mygroupinfo&post_type=post&userid=27
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+			if( jsonString.equalsIgnoreCase("Error! Try Again") || jsonString.equals("Slow") )
+			{
+
+				return jsonString;
+			}
+			else
+			{
+				try
+				{
+
+					JSONObject jsonObject = new JSONObject(jsonString);
+					message = jsonObject.getString("Message");
+
+					if( message.equals("Success") )
+					{
+
+						pointer = jsonObject.getString("countvisibilitymsg");
+
+						list_of_allgroup.clear();
+
+						JSONArray jsonArray_group_list_info = jsonObject.getJSONArray("info");
+
+						if( jsonArray_group_list_info.length() > 0 )
+						{
+
+							for( int i = 0; i < jsonArray_group_list_info.length(); i++ )
+							{
+								ListALLGroups allGroups = new ListALLGroups();
+								JSONObject json_array_object_info = jsonArray_group_list_info.getJSONObject(i);
+
+								allGroups.setTotalmembers(json_array_object_info.getString("totalMembers"));
+
+								allGroups.setTotalmsgs(json_array_object_info.getString("groupMessageCount"));
+								allGroups.setTotalnew(json_array_object_info.getString("groupLastMessageCount"));
+
+								String group_id = json_array_object_info.getString("groupId");
+								allGroups.setGroupId(group_id);
+
+								String userId_Admin = json_array_object_info.getString("groupAdminId");
+								allGroups.setUserId(userId_Admin);
+								String Group_name = json_array_object_info.getString("groupName");
+								allGroups.setName(Group_name);
+
+								String Group_image = json_array_object_info.getString("groupImage");
+								allGroups.setImage(Group_image);
+								String addedDate = json_array_object_info.getString("groupAddedDate");
+								allGroups.setAddedDate(addedDate);
+
+								allGroups.setUnread(json_array_object_info.getString("groupUnreadMessageCount"));
+
+								allGroups.setType(json_array_object_info.getString("groupType"));
+
+								/*
+								 * String Group_type = json_array_object_info
+								 * .getString("type");
+								 * allGroups.setType(Group_type);
+								 */
+								/*
+								 * String status =json_array_object_info
+								 * .getString("status");
+								 * allGroups.setStatus(status);
+								 */
+								list_of_allgroup.add(allGroups);
+							}
+						}
+
+					}
+					else
+					{
+						return message;
+
+					}
+
+				}
+				catch(JSONException e)
+				{
+					System.out.println("Exception in the main object of grouplist");
+					e.printStackTrace();
+				}
+
+				return message;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			try
+			{
+
+				if( result.equals("Error! Try Again") )
+				{
+					if( pd.isShowing() )
+					{
+						pd.dismiss();
+					}
+
+					Log.e("post of group", "" + result);
+					GlobalUtills.showToast("No network connection..!", getActivity());
+					// Toast.makeText(getActivity(), result,
+					// Toast.LENGTH_LONG).show();
+				}
+				else if( result.equals("Slow") )
+				{
+					if( pd.isShowing() )
+					{
+						pd.dismiss();
+					}
+					GlobalUtills.showToast("Error in connecting..!", getActivity());
+				}
+				else
+				{
+
+					if( message.equals("Success") )
+					{
+						if( pd.isShowing() )
+						{
+							pd.dismiss();
+						}
+
+						if( bdgeEYE == null )
+						{
+							bdgeEYE = new BadgeView(getActivity(), actionBarCommon.layout_left);
+						}
+
+						if( pointer.equals("0") || pointer.equals("") )
+						{
+
+							bdgeEYE.hide();
+
+						}
+						else
+						{
+
+							bdgeEYE.setBadgePosition(BadgeView.POSITION_TOP_RIGHT);
+							bdgeEYE.setText("" + pointer);
+							bdgeEYE.show();
+
+						}
+
+						if( list_of_allgroup.size() > 0 )
+						{
+
+							/*
+							 * Collections.sort(list_of_allgroup, new
+							 * Comparator<ListALLGroups>() {
+							 * 
+							 * @Override public int compare(ListALLGroups text1,
+							 * ListALLGroups text2) { return
+							 * text1.getUnread().compareToIgnoreCase
+							 * (text2.getUnread()); } });
+							 * 
+							 * Collections.reverse(list_of_allgroup);
+							 */
+
+							if( groupAdapter == null )
+							{
+
+								groupAdapter = new MyGroupAdapter(getActivity(), list_of_allgroup);
+								listviewWorldGroup.setAdapter(groupAdapter);
+
+							}
+							else if( listviewWorldGroup.getAdapter() != groupAdapter )
+							{
+								listviewWorldGroup.setAdapter(groupAdapter);
+							}
+							else
+							{
+								listviewWorldGroup.invalidateViews();
+							}
+
+						}
+						else
+						{
+							// groupAdapter.notifyDataSetChanged();
+
+							if( search_tag.equals("") )
+							{
+
+							}
+							else
+							{
+								list_of_allgroup.clear();
+							}
+
+							Toast.makeText(getActivity(), "No New Groups Found..!", Toast.LENGTH_LONG).show();
+
+							try
+							{
+								groupAdapter = new MyGroupAdapter(getActivity(), list_of_allgroup);
+								listviewWorldGroup.setAdapter(groupAdapter);
+
+							}
+							catch(Exception e)
+							{
+								e.printStackTrace();
+							}
+						}
+
+					}
+					else
+					{
+
+						GlobalUtills.showToast("No Result Found..!", getActivity());
+
+						if( pd.isShowing() )
+						{
+							pd.dismiss();
+						}
+
+					}
+
+				}
+			}
+			catch(Exception e)
+			{
+				if( pd.isShowing() )
+				{
+					pd.dismiss();
+				}
+				e.printStackTrace();
+			}
+		}
+
+		@Override
+		protected void onCancelled()
+		{
+
+			running = false;;
+			super.onCancelled();
+		}
+
+	}
+
+}

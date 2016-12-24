@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical" >
+
+    <com.app.messenger.ActionBarCommon
+        android:id="@+id/action_bar"
+        android:layout_width="fill_parent"
+        android:layout_height="45dp" >
+    </com.app.messenger.ActionBarCommon>
+
+    <LinearLayout
+        android:id="@+id/freinds_main_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="40dp"
+        android:background="#ccc"
+        android:gravity="center"
+        android:padding="3dp" >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
+            android:background="@drawable/white_corners"
+            android:gravity="center"
+            android:paddingLeft="7dp" >
+
+            <RelativeLayout
+                android:id="@+id/layout_search_img"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@color/white"
+                android:paddingTop="2dp" >
+
+                <ImageView
+                    android:id="@+id/icon_search_img"
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/serch_icon" />
+            </RelativeLayout>
+
+            <EditText
+                android:id="@+id/search_edit_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="2dp"
+                android:layout_toLeftOf="@+id/layout_cencel_img"
+                android:layout_toRightOf="@+id/layout_search_img"
+                android:background="@color/white"
+                android:descendantFocusability="beforeDescendants"
+                android:hint="Search Group"
+                android:imeOptions="actionSearch"
+                android:padding="2dp"
+                android:singleLine="true"
+                android:textColorHint="@color/gray"
+                android:textSize="13sp" />
+
+            <RelativeLayout
+                android:id="@+id/layout_cencel_img"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:background="@color/white"
+                android:paddingTop="3dp"
+                android:visibility="invisible" >
+
+                <ImageView
+                    android:id="@+id/imgV_CloseSearch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_delete" />
+            </RelativeLayout>
+        </RelativeLayout>
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/list_my_group"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:divider="@android:color/white"
+         android:drawSelectorOnTop="true"
+        android:listSelector="@color/blue"
+        android:choiceMode="singleChoice"
+ >
+    </ListView>
+
+</LinearLayout>

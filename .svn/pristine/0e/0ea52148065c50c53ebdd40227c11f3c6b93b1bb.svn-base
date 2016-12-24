@@ -1,0 +1,583 @@
+package com.app.messenger;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.animation.Animator;
+import android.animation.Animator.AnimatorListener;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.content.pm.PackageManager;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.telephony.TelephonyManager;
+import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.ImageView;
+
+import com.app.model.CountryCodeDetail;
+import com.app.model.FriendInfo;
+import com.app.util.GlobalConstant;
+import com.app.util.GlobalUtills;
+import com.app.util.NetworkCheck;
+import com.app.webserviceshandler.WebServiceHandler;
+import com.appnext.appnextsdk.AppnextTrack;
+
+public class SplashActivity extends Activity
+{
+
+	Global					global;
+
+	ArrayList<FriendInfo>	friend_info_list		= new ArrayList<FriendInfo>();
+	FriendInfo				friendInfo;
+
+	SharedPreferences		sharedPref;
+
+	String					FBID_checkValidation	= "";
+
+	ImageView				splash_logo, Splash_icon;
+
+	// com.app.util.GifAnimationDrawable splashAnimated;
+
+	@Override
+	protected void onResume()
+	{
+		// ScaleAnimation animate1 = new ScaleAnimation(0, 1, 0, 1, 0, 0);
+		// animate1.setDuration(1200);
+		//
+		// Splash_icon.setAnimation(animate1);
+		// Splash_icon.startAnimation(animate1);
+		super.onResume();
+	}
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		setContentView(R.layout.splash);
+
+		try
+		{
+
+			AppnextTrack.track(this);
+
+		}
+		catch(Exception e)
+		{}
+
+		splash_logo = (ImageView) findViewById(R.id.splash_logo);
+		Splash_icon = (ImageView) findViewById(R.id.Splash_icon);
+
+		PlayANim(splash_logo);
+
+		try
+		{
+
+			sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+
+			
+
+			global = new Global();
+
+			TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+			GlobalUtills.country_iso_code = tm.getSimCountryIso();
+			if( GlobalUtills.country_iso_code.equals("") )
+			{
+				GlobalUtills.country_iso_code = "IL";
+			}
+
+			if( NetworkCheck.isNetworkConnection(SplashActivity.this) )
+			{
+				new GetCountryCodes().execute();
+			}
+			else
+			{
+				GlobalUtills.showToast("No network connection..!", SplashActivity.this);
+			}
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		
+		if( sharedPref.contains("icon") )
+		{
+			
+			
+			ChangeAppIcon();
+			
+			NotificationManager notifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			notifManager.cancel(sharedPref.getInt("icon", 0));
+		}
+
+	}
+
+	private void PlayANim(final View target)
+	{
+
+		final AnimatorSet mAnimatorSet = new AnimatorSet();
+		mAnimatorSet.playTogether(ObjectAnimator.ofFloat(target, "scaleX", 1, 0.9f, 0.9f, 1.1f, 1.1f, 1), ObjectAnimator.ofFloat(target, "scaleY", 1, 0.9f, 0.9f, 1.1f, 1.1f, 1),
+				ObjectAnimator.ofFloat(target, "rotation", 0, -3, -3, 3, -3, 3, -3, 3, -3, 3, -3, 0));
+
+		mAnimatorSet.setDuration(2000);
+		mAnimatorSet.start();
+		mAnimatorSet.addListener(new AnimatorListener()
+		{
+
+			@Override
+			public void onAnimationEnd(Animator animation)
+			{
+
+				PlayANim(target);
+			}
+
+			@Override
+			public void onAnimationStart(Animator animation)
+			{
+
+			}
+
+			@Override
+			public void onAnimationCancel(Animator animation)
+			{
+
+			}
+
+			@Override
+			public void onAnimationRepeat(Animator animation)
+			{
+
+			}
+
+		});
+
+		// FALLING FROM TOP ANIMATION
+		// ObjectAnimator animY = ObjectAnimator.ofFloat(button, "translationY",
+		// -100f, 0f);
+		// animY.setDuration(1000);//1sec
+		// animY.setInterpolator(new BounceInterpolator());
+		// animY.setRepeatCount(numRepeats);
+		// animY.start();
+
+		// final AnimatorSet mAnimatorSet_icon = new AnimatorSet();
+		// mAnimatorSet_icon.playTogether(
+		// ObjectAnimator.ofFloat(Splash_icon,"scaleX",1,1f,1f,1f,1f,1),
+		// ObjectAnimator.ofFloat(Splash_icon,"scaleY",1,1f,1f,1f,1f,1),
+		// ObjectAnimator.ofFloat(Splash_icon,"rotation",0 ,-3 , -3, 3,0)
+		// );
+		// mAnimatorSet_icon.setDuration(2000);
+		// mAnimatorSet_icon.start();
+
+	}
+
+	public void SetFriendInfo_Json()
+	{
+		try
+		{
+			// creating JSONaqDa
+
+			if( !friend_info_list.isEmpty() )
+			{
+				friend_info_list.clear();
+			}
+
+			ArrayList<HashMap<String , String>> friend_list_array = new ArrayList<HashMap<String , String>>();
+
+			SharedPreferences sharedPref = getSharedPreferences("FacebookFrnd", MODE_PRIVATE);
+			String friend_list = sharedPref.getString("FriendList", "");
+
+			JSONArray jSonArr = new JSONArray();
+			JSONArray jarr = new JSONArray(friend_list);
+			for( int i = 0; i < jarr.length(); i++ )
+			{
+				JSONObject obj = jarr.getJSONObject(i);
+				JSONObject picture = obj.getJSONObject("picture");
+				JSONObject jsonObject_url = picture.getJSONObject("data");
+
+				String id = obj.getString("id");
+				friendInfo = new FriendInfo();
+				String IMAGE_URL = jsonObject_url.getString("url");
+
+				Log.e("Friend ID", id);
+				friendInfo.setId(id);
+				String name = obj.getString("name");
+				friendInfo.setImage(IMAGE_URL);
+
+				HashMap<String , String> map = new HashMap<String , String>();
+				map.put("id", id);
+				friend_list_array.add(map);
+				JSONObject pnObj = new JSONObject();
+				pnObj.put("userid", id);
+				Log.e("list of friends ", "" + friend_list_array.size());
+				Log.e("Friends Detail  ", "" + friend_list_array.toString());
+				jSonArr.put(pnObj);
+
+				friendInfo.setName(name);
+				// friend_info_list.add(friendInfo);
+
+				if( FBID_checkValidation.equals("") )
+				{
+					FBID_checkValidation = id + "";
+				}
+				else
+				{
+					FBID_checkValidation = FBID_checkValidation + "," + id;
+				}
+
+			}
+
+		}
+		catch(JSONException e)
+		{
+			e.printStackTrace();
+		}
+
+		// global.setFriend_info_list(friend_info_list);
+		new Getvalid_frnds().execute();
+
+	}
+
+	public class GetCountryCodes extends AsyncTask<Void , Void , String>
+	{
+		String	message;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+			// pd.setMessage("Loading...");
+
+		}
+
+		@Override
+		protected String doInBackground(Void... params)
+		{
+
+			String jsonString = "";
+			SharedPreferences countries = getSharedPreferences("country", MODE_PRIVATE);
+			if( countries.contains("data") )
+			{
+				jsonString = countries.getString("data", "");
+			}
+			else
+			{
+
+				List<NameValuePair> param = new ArrayList<NameValuePair>();
+				param.add(new BasicNameValuePair("post_type", "post"));
+				param.add(new BasicNameValuePair("mtype", "get_countries"));
+
+				Log.e("Param get_countries: ", "> " + param);
+
+				WebServiceHandler web = new WebServiceHandler();
+				jsonString = web.makeServiceCall(com.app.messenger.GlobalConstant.URL, WebServiceHandler.GET, param);
+
+				Log.e("Response from get_countries ", jsonString);
+			}
+
+			return jsonString;
+
+		}
+
+		@SuppressWarnings("deprecation")
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+
+			if( result.equals("Error! Try Again") )
+			{
+
+				GlobalUtills.showToast("try again..!", SplashActivity.this);
+				finish();
+				// new GetCountryCodes().execute();
+			}
+			else
+			{
+
+				try
+				{
+
+					JSONObject jsonObject = new JSONObject(result);
+					String success_message_string = jsonObject.getString("Message");
+
+					if( success_message_string.contains("Failure") )
+					{
+						final AlertDialog alertDialog = new AlertDialog.Builder(SplashActivity.this).create();
+
+						// Setting Dialog Title
+						alertDialog.setTitle("Information");
+
+						// Setting Dialog Message
+						alertDialog.setMessage("unable to get data\ntrying again...");
+
+						// Setting Icon to Dialog
+						// alertDialog.setIcon(R.drawable.tick);
+
+						// Setting OK Button
+						alertDialog.setButton("OK", new DialogInterface.OnClickListener()
+						{
+							public void onClick(DialogInterface dialog, int which)
+							{
+								// Write your code here to execute after
+								// dialog closed
+								alertDialog.dismiss();
+								new GetCountryCodes().execute();
+							}
+						});
+
+						// Showing Alert Message[
+						alertDialog.show();
+
+					}
+					else if( success_message_string.equalsIgnoreCase("Success") )
+					{
+
+						Log.d("success_message_string=========", "" + success_message_string);
+						// json parsing of all client response
+						JSONArray json_array = jsonObject.getJSONArray("countries");
+
+						if( GlobalUtills.country_code_list.size() < 1 )
+						{
+							SharedPreferences countries = getSharedPreferences("country", MODE_PRIVATE);
+							Editor editcountry = countries.edit();
+							editcountry.putString("data", result);
+							editcountry.commit();
+						}
+
+						// GlobalUtills.country_code_list = new
+						// ArrayList<CountryCodeDetail>();
+						// Util.machine_class_list.clear();
+						for( int i = 0; i < json_array.length(); i++ )
+						{
+							JSONObject json_obj_temp = json_array.getJSONObject(i);
+							CountryCodeDetail country_detail_object = new CountryCodeDetail(json_obj_temp.getInt("country_id"), json_obj_temp.getString("name"),
+									json_obj_temp.getString("country_code"), json_obj_temp.getString("iso_code"));
+
+							GlobalUtills.country_code_list.add(country_detail_object);
+
+						}
+						Log.d("country_code_list List Size", "" + GlobalUtills.country_code_list.size());
+						Thread thread = new Thread(new Runnable()
+						{
+
+							@Override
+							public void run()
+							{
+								try
+								{
+									Thread.sleep(2500);
+
+									Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"), Locale.getDefault());
+									Date currentLocalTime = calendar.getTime();
+									SimpleDateFormat date = new SimpleDateFormat("Z");
+									String localTime = date.format(currentLocalTime);
+
+									GlobalConstant.time_zone = localTime + "";
+
+									System.out.println(GlobalConstant.time_zone + "<--TimeZone----->");
+
+									if( sharedPref.contains("UserID") )
+									{
+
+										if( sharedPref.contains("FbID") )
+										{
+
+											global.setUser_id(sharedPref.getString("UserID", ""));
+
+											GlobalUtills.allNotification = sharedPref.getBoolean("noti", true);
+
+											SetFriendInfo_Json();
+
+											Intent face_book_register = new Intent(SplashActivity.this, Tab.class);
+											startActivity(face_book_register);
+											finish();
+
+										}
+										else
+										{
+											global.setUser_id(sharedPref.getString("UserID", ""));
+											Intent face_book_register = new Intent(SplashActivity.this, PhoneNumberRegistertationScreen.class);
+											startActivity(face_book_register);
+											finish();
+
+										}
+
+									}
+									else
+									{
+
+										Intent Login_intent = new Intent(SplashActivity.this, PhoneNumberRegistertationScreen.class);
+										startActivity(Login_intent);
+										finish();
+
+									}
+								}
+								catch(InterruptedException e)
+								{
+
+									e.printStackTrace();
+								}
+								catch(Exception e)
+								{
+									e.printStackTrace();
+								}
+
+							}
+						});
+						thread.start();
+
+					}
+					Log.e("message", success_message_string.toString());
+				}
+				catch(JSONException e)
+				{
+					System.out.println("Exception in the main object");
+					e.printStackTrace();
+				}
+			}
+
+		}
+
+	}
+
+	// get valid friends from fb
+	public class Getvalid_frnds extends AsyncTask<Void , Void , String>
+	{
+		String	message;
+
+		@Override
+		protected void onPreExecute()
+		{
+			super.onPreExecute();
+
+		}
+
+		@Override
+		protected String doInBackground(Void... params)
+		{
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair("post_type", "post"));
+			param.add(new BasicNameValuePair("mtype", "get_valid_fb_users"));
+			param.add(new BasicNameValuePair("users", FBID_checkValidation));
+
+			Log.e("Param Getvalid_frnds: ", "> " + param);
+
+			WebServiceHandler web = new WebServiceHandler();
+			String jsonString = web.makeServiceCall(com.app.messenger.GlobalConstant.URL, WebServiceHandler.GET, param);
+
+			Log.e("Response from get_countries ", jsonString);
+			return jsonString;
+
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+
+			try
+			{
+
+				if( !friend_info_list.isEmpty() )
+				{
+					friend_info_list.clear();
+				}
+
+				// {"Message":"Success","users":[]}
+
+				if( result.equals("Error! Try Again") || result.equals("Slow") )
+				{
+
+				}
+				else
+				{
+
+					JSONObject jsonResponse = new JSONObject(result);
+
+					if( jsonResponse.getString("Message").equalsIgnoreCase("Success") )
+					{
+						JSONArray jsonArr = jsonResponse.getJSONArray("users");
+
+						for( int g = 0; g < jsonArr.length(); g++ )
+						{
+
+							FriendInfo friend = new FriendInfo();
+							JSONObject innerJson = jsonArr.getJSONObject(g);
+							friend.setId(innerJson.getString("facebook_id"));
+							friend.setName(innerJson.getString("user_name"));
+							friend.setMobile_no(innerJson.getString("user_telephone"));
+
+							friend_info_list.add(friend);
+						}
+
+						global.setFriend_info_list(friend_info_list);
+
+						// [{"facebook_id":"1556725111207534","user_name":"Kumar"},{"facebook_id":"1505284763054326","user_name":"Ameba"},{"facebook_id":"761027393946902","user_name":"Nishant"},{"facebook_id":"741075119312114","user_name":"Mandeep"}]}
+					}
+
+				}
+
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+
+			super.onPostExecute(result);
+		}
+	}
+
+	// end get valid friends from fb
+
+	private void ChangeAppIcon()
+	{
+		// SharedPreferences sharedPref_ICON = getSharedPreferences("login",
+		// MODE_PRIVATE);
+
+		Editor ed = sharedPref.edit();
+		ed.remove("icon");
+		ed.apply();
+
+		PackageManager pm = getApplicationContext().getPackageManager();
+
+		String lastEnabled = ""; // Getting last enabled from shared preference
+
+		lastEnabled = "com.app.messenger.Splash2";
+
+		ComponentName componentName = new ComponentName("com.app.messenger", lastEnabled);
+		pm.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+
+		lastEnabled = "com.app.messenger.SplashActivity";
+
+		componentName = new ComponentName("com.app.messenger", lastEnabled);
+		pm.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+
+	}
+
+}

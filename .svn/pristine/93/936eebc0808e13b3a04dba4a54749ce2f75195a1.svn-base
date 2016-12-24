@@ -1,0 +1,324 @@
+package com.app.webserviceshandler;
+
+import android.app.ActionBar;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.view.View;
+import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
+import com.app.adapter.ShowSocialFriends;
+import com.app.messenger.ActionBarCommon;
+import com.app.messenger.ChatOneToOne;
+import com.app.messenger.GlobalConstant;
+import com.app.messenger.R;
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+/** Created by Gagan on 7/23/2015. */
+public class GetUserGroup extends AsyncTask<String, Void, Void>
+{
+
+	//----------------------------------------------------------------------------------------------------------------------
+	private String jsonString_ = "", groupId, myFbId_;
+	private ActionBarCommon actionBarCommon_ = null;
+
+	private Context  con;
+	private ListView listViewUserInfo_;
+	ShowSocialFriends socialusers;
+	String userID;
+
+	public GetUserGroup(String groupId, String myFbId_, Context con, ListView listViewUserInfo_)
+	{
+		this.groupId = groupId;
+		this.con = con;
+		this.myFbId_ = myFbId_;
+		this.listViewUserInfo_ = listViewUserInfo_;
+
+		SharedPreferences sharedPrefUsrID = con.getSharedPreferences("login", Context.MODE_PRIVATE);
+
+		userID = sharedPrefUsrID.getString("UserID", "");
+	}
+
+	public GetUserGroup(String groupId, ActionBarCommon actionBarCommon_)
+	{
+		this.groupId = groupId;
+		this.actionBarCommon_ = actionBarCommon_;
+	}
+
+	//----------------------------------------------------------------------------------------------------------------------
+	@Override
+	protected void onPreExecute()
+	{
+
+		super.onPreExecute();
+	}
+
+	//----------------------------------------------------------------------------------------------------------------------
+	@Override
+	protected Void doInBackground(String... params)
+	{
+		try
+		{
+			List<NameValuePair> param = new ArrayList<>();
+
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair(GlobalConstant.U_TYPE, "get_user_group"));
+			param.add(new BasicNameValuePair(GlobalConstant.GROUP_ID, groupId));
+
+			jsonString_ = (new WebServiceHandler()).makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	//----------------------------------------------------------------------------------------------------------------------
+	@Override
+	protected void onPostExecute(Void result)
+	{
+		super.onPostExecute(result);
+
+		GlobalUtills.JsonGroupMembers = jsonString_ + "";
+
+		allGroupMembers(jsonString_);
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------
+	public void allGroupMembers(String JsonGroup_members)
+	{
+		try
+		{
+			GlobalUtills.list_of_GroupMembers.clear();
+
+			JSONObject jsonObject = new JSONObject(JsonGroup_members);
+			String message = jsonObject.getString(GlobalConstant.MESSAGE);
+
+			if (message.equalsIgnoreCase(GlobalConstant.SUCCESS))
+			{
+				String adminFbID = jsonObject.getString("admin_facebook_id");
+				JSONArray groupListInfo = jsonObject.getJSONArray("user_info");
+
+				for (int i = 0; i < groupListInfo.length(); ++i)
+				{
+					FriendInfo friendInfo = new FriendInfo();
+					JSONObject groupInfo = groupListInfo.getJSONObject(i);
+
+					if (adminFbID.equals(groupInfo.getString(GlobalConstant.FACE_BOOK_ID)))
+					{
+						friendInfo.setId(groupInfo.getString(GlobalConstant.FACE_BOOK_ID) );
+						friendInfo.setImage(groupInfo.getString("userImage"));
+						friendInfo.setName(groupInfo.getString("userName") + " (Admin)");
+						friendInfo.setMobileNumber(groupInfo.getString("telephones"));
+						friendInfo.setUnread_count("");
+						friendInfo.setUserId(groupInfo.getString("userId"));
+
+						GlobalUtills.list_of_GroupMembers.add(friendInfo);
+					}
+					else
+					{
+						friendInfo.setId(groupInfo.getString(GlobalConstant.FACE_BOOK_ID) + "");
+						friendInfo.setImage(groupInfo.getString("userImage") + "");
+						friendInfo.setName(groupInfo.getString("userName") + "");
+						friendInfo.setMobileNumber(groupInfo.getString("telephones") + "");
+						friendInfo.setUnread_count("");
+						friendInfo.setUserId(groupInfo.getString("userId"));
+
+						GlobalUtills.list_of_GroupMembers.add(friendInfo);
+					}
+				}
+			}
+
+
+			if (actionBarCommon_!=null)
+			{
+				showMemebers();
+			}
+			else
+			{
+				Collections.sort(GlobalUtills.list_of_GroupMembers, new Comparator<FriendInfo>()
+				{
+					@Override
+					public int compare(FriendInfo text1, FriendInfo text2)
+					{
+						return text1.getName().compareToIgnoreCase(text2.getName());
+					}
+				});
+
+				 socialusers = new ShowSocialFriends(con, GlobalUtills.list_of_GroupMembers,
+						false, false);
+
+				listViewUserInfo_.setAdapter(socialusers);
+				listViewUserInfo_.setOnItemClickListener(new AdapterView.OnItemClickListener()
+				{
+					@Override
+					public void onItemClick(AdapterView<?> parent, View view, final int position, long id)
+					{
+						if (!myFbId_.equals(GlobalUtills.list_of_GroupMembers.get(position).getId()))
+						{
+							Intent gotoChatting = new Intent(con, ChatOneToOne.class);
+
+							gotoChatting.putExtra("name", GlobalUtills.list_of_GroupMembers.get(position).getName() + "");
+							gotoChatting.putExtra("fbID", GlobalUtills.list_of_GroupMembers.get(position).getId() + "");
+							gotoChatting.putExtra("ph", GlobalUtills.list_of_GroupMembers.get(position).getMobile_no() + "");
+
+							con.startActivity(gotoChatting);
+
+						}
+
+					}
+				});
+
+
+				listViewUserInfo_.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener()
+				{
+					@Override
+					public boolean onItemLongClick(AdapterView<?> parent, View view,final int position, long id)
+					{
+
+						if (!myFbId_.equals(GlobalUtills.list_of_GroupMembers.get(position).getId()))
+						{
+							if(!userID.equals(GlobalUtills.list_of_GroupMembers.get(position).getUserId()))
+							{
+
+
+								View.OnClickListener onclick=new View.OnClickListener()
+								{
+									@Override
+									public void onClick(View v)
+									{
+										dialog.dismiss();
+										new DropGroupUser(GlobalUtills.list_of_GroupMembers.get(position),groupId,con,socialusers).execute();
+									}
+								};
+
+
+								dialogRemoveUser(con,onclick);
+
+
+							}
+
+						}
+						return false;
+					}
+				});
+
+
+
+
+
+
+
+
+
+
+			}
+
+
+
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+
+	}
+
+	private void showMemebers()
+	{
+		if (GlobalUtills.list_of_GroupMembers.size() > 0)
+		{
+			String Membersname = "";
+
+			for (int j = 0; j < GlobalUtills.list_of_GroupMembers.size(); ++j)
+			{
+				if (j == 0)
+					Membersname = GlobalUtills.list_of_GroupMembers.get(j).getName();
+
+				else
+					Membersname = Membersname + "," + GlobalUtills.list_of_GroupMembers.get(j).getName();
+			}
+
+			actionBarCommon_.setActionTextMembersNameAndShow(Membersname);
+		}
+	}
+
+
+
+
+
+	private Dialog dialog;
+	public void dialogRemoveUser(Context con,View.OnClickListener onclick)
+	{
+		  dialog = new Dialog(con, R.style.Theme_Dialog);
+		dialog.setContentView(R.layout.dialog_three_options);
+		Window window = dialog.getWindow();
+		window.setLayout(ActionBar.LayoutParams.MATCH_PARENT, ActionBar.LayoutParams.WRAP_CONTENT);
+
+		TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+		title.setText("Remove user");
+
+		TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+		subheading.setTextSize(15);
+		subheading.setText("Are you sure you want to remove user from group.?");
+
+		Button      btn_Chat = (Button) dialog.findViewById(R.id.btnChat);
+		Button btn_call = (Button) dialog.findViewById(R.id.btncall);
+		Button btn_groups = (Button) dialog.findViewById(R.id.btngroups);
+		ImageButton btn_close = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+		btn_groups.setVisibility(View.GONE);
+		btn_close.setVisibility(View.GONE);
+		btn_call.setText("Cancel");
+		btn_Chat.setText("Ok");
+
+		btn_Chat.setOnClickListener(onclick);
+
+
+		btn_call.setOnClickListener(new View.OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+				dialog.dismiss();
+			}
+		});
+
+		dialog.show();
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+

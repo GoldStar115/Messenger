@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/white"
+    android:orientation="vertical" >
+
+    <com.app.messenger.ActionBarCommon
+        android:id="@+id/action_barC"
+        android:layout_width="fill_parent"
+        android:layout_height="45dp"
+        android:layout_alignParentTop="true" >
+    </com.app.messenger.ActionBarCommon>
+
+    <ScrollView
+        android:id="@+id/uiC_scrllView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" >
+
+        <LinearLayout
+            android:id="@+id/layoutChat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:orientation="vertical"
+            android:paddingBottom="40dp" >
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="10" 
+        android:background="@drawable/menu_popup_panel_holo_light"  >
+
+        <ProgressBar
+            android:id="@+id/uiC_progressBSendMsgGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <FrameLayout
+            android:id="@+id/linear_layout_smily_group"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginRight="5dp" 
+            android:layout_marginLeft="10dp">
+
+            <ImageView
+                android:id="@+id/img_view_smily_group"
+                android:layout_width="25dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/smily" />
+
+            <ImageView
+                android:id="@+id/img_view_keyboard_group"
+                android:layout_width="25dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/keyborad"
+                android:visibility="invisible" />
+        </FrameLayout>
+
+        <com.rockerhieu.emojicon.EmojiconEditText
+            android:id="@+id/edMsg"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="8"
+            android:hint="Type message.."
+            android:maxLines="7"
+            android:paddingLeft="5dp"
+            android:paddingRight="7dp"
+            android:textSize="20dp" 
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"/>
+
+        <FrameLayout
+            android:id="@+id/framelayout_send"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="2dp"
+            android:layout_weight="2" >
+
+            <ImageButton
+                android:id="@+id/btnSentChat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="2dp"
+                android:background="@null"
+                android:src="@drawable/send_btn"
+                android:textColor="@android:color/white"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/uiC_imgVtakePicG"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_menu_attachment" />
+        </FrameLayout>
+
+        <ToggleButton
+            android:id="@+id/toggleButtonVisibility"
+            android:layout_width="25dip"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:background="@drawable/eyes"
+            android:text="ToggleButton"
+            android:textOff=""
+            android:textOn=""
+            android:layout_marginRight="10dp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/emojiconsG"
+        android:layout_width="match_parent"
+        android:layout_height="250dip"
+        android:visibility="gone" />
+
+</LinearLayout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Messenger.iml" filepath="$PROJECT_DIR$/Messenger.iml" />
+      <module fileurl="file://$PROJECT_DIR$/emojicon/emojicon.iml" filepath="$PROJECT_DIR$/emojicon/emojicon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/facebookSDK/facebookSDK.iml" filepath="$PROJECT_DIR$/facebookSDK/facebookSDK.iml" />
+      <module fileurl="file://$PROJECT_DIR$/messenger/messenger.iml" filepath="$PROJECT_DIR$/messenger/messenger.iml" />
+    </modules>
+  </component>
+</project>

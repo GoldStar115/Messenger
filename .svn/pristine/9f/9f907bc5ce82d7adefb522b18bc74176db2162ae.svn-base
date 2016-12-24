@@ -1,0 +1,120 @@
+//==============================================================================================================================
+package com.app.messenger;
+
+
+//==============================================================================================================================
+import android.app.Activity;
+import android.widget.ListView;
+
+
+//==============================================================================================================================
+public final class InAppAds
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public enum Provider
+    {
+        UNDEFINED,
+        APPNEXT,
+        MOBILECORE,
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void setProvider(Provider provider)
+    {
+        if (provider_ != Provider.UNDEFINED || provider == Provider.UNDEFINED)
+            return;
+
+        provider_ = provider;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void init(Activity activity, boolean needNativeAds)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.init(activity, needNativeAds);
+
+        else if (provider_ == Provider.MOBILECORE)
+            MobilecoreAds.init(activity, needNativeAds);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void cacheInterstitialAd(Activity activity)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.cacheInterstitialAd(activity);
+
+        else if (provider_ == Provider.MOBILECORE)
+            MobilecoreAds.cacheInterstitialAd();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void showInterstitialAd(Activity activity)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.showInterstitialAd(activity);
+
+        else if (provider_ == Provider.MOBILECORE)
+            MobilecoreAds.showInterstitialAd(activity);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void refreshInterstitialOffers()
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.refreshInterstitialOffers();
+
+        else if (provider_ == Provider.MOBILECORE)
+            MobilecoreAds.refreshInterstitialOffers();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void resetCallbacks(AdsProvider.Callbacks callbacks)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.resetCallbacks(callbacks);
+
+        else if (provider_ == Provider.MOBILECORE)
+            MobilecoreAds.resetCallbacks(callbacks);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void showNativeAds(Activity activity, ListView listView, int inflaterID)
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.showNativeAds(activity, listView, inflaterID);
+
+        else if (provider_ == Provider.MOBILECORE)
+            MobilecoreAds.showNativeAds(activity, listView, inflaterID);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static void resumeToNativeAds()
+    {
+        if (provider_ == Provider.APPNEXT)
+            AppnextAds.resumeToNativeAds();
+
+        else if (provider_ == Provider.MOBILECORE)
+            MobilecoreAds.resumeToNativeAds();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static AdsProvider.NativeAdsStatus nativeAdsStatus()
+    {
+        if (provider_ == Provider.APPNEXT)
+            return AppnextAds.nativeAdsStatus();
+
+        else if (provider_ == Provider.MOBILECORE)
+            return MobilecoreAds.nativeAdsStatus();
+
+        return AdsProvider.NativeAdsStatus.UNDEFINED;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private InAppAds()
+    {
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private static Provider provider_ = Provider.UNDEFINED;
+}

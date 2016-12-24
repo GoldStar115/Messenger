@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<instant-run
+    abi="x86"
+    api-level="23"
+    density="xxhdpi"
+    format="7"
+    timestamp="313232876049391"
+    token="-1304366907515087379" >
+
+    <task
+        name="javac"
+        duration="56864" />
+    <task
+        name="instant-run-dex"
+        duration="0" />
+    <task
+        name="instant-run-transform"
+        duration="4507" />
+    <task
+        name="verifier"
+        duration="16268" />
+
+    <artifact
+        location="F:\MyProject\AndroidProject\Messenger\messenger\build\outputs\apk\messenger-debug.apk"
+        type="MAIN" />
+
+    <build timestamp="313232876049391" >
+        <artifact
+            location="F:\MyProject\AndroidProject\Messenger\messenger\build\outputs\apk\messenger-debug.apk"
+            type="MAIN" />
+    </build>
+
+</instant-run>

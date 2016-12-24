@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Get Groupy</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="btn_revoke_access">Revoke Access</string>
+    <string name="app_id">1409731509334926</string>
+    <string name="title_activity_hangout_friend_group">Hangout_friendGroup</string>
+    <string name="title_activity_chat__one_to_one">Chat_OneToOne</string>
+    <string name="title_activity_group_users_info">Group_users_info</string>
+    <string name="title_activity_facebook_invites">FacebookInvites</string>
+    <string name="title_activity_phone_number_registertation_screen">PhoneNumberRegistertationScreen</string>
+    <string name="title_activity_code_verification_screen">CodeVerificationScreen</string>
+    <string name="gcm_deleted">From GCM: server deleted %1$d pending messages!</string>
+    <string name="server_registered">From Demo Server: successfully added device!</string>
+    <string name="server_unregistered">From Demo Server: successfully removed device!</string>
+    <string name="server_register_error">Could not register device on Demo Server after %1$d attempts.</string>
+    <string name="server_unregister_error">Could not unregister device on Demo Server (%1$s).</string>
+    <string name="title_activity_you_tube_videos_list">YouTube_videosList</string>
+    <string name="title_activity_play_youtube_video">Play_youtube_video</string>
+    <string name="no_records">No records found!!!</string>
+    <string name="title_activity_group_mates">GroupMates</string>
+    <string name="title_activity_chat_fragment_tab">Chat_fragment_tab</string>
+    <string name="title_activity_tab_chat_fragment">Tab_chat_fragment</string>
+    <string name="title_activity_aroundme_users">Aroundme_users</string>
+    <string name="title_activity_test">Test</string>
+    <string name="title_activity_blank_activity">Blank_activity</string>
+    <string name="adIDWorldGroup">ca-app-pub-8601880842629182/6760314137</string>
+    <string name="title_activity_splash_bro">GetGroupy</string>
+    <string name="title_activity_verify_code">VerifyCode</string>
+
+</resources>

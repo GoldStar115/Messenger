@@ -1,0 +1,367 @@
+//==============================================================================================================================
+package com.app.adapter;
+
+
+//==============================================================================================================================
+import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.graphics.Color;
+import android.os.AsyncTask;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import com.app.messenger.BadgeView;
+import com.app.messenger.Global;
+import com.app.messenger.GlobalConstant;
+import com.app.messenger.GroupChat;
+import com.app.messenger.GroupsFragment;
+import com.app.messenger.R;
+import com.app.model.ListALLGroups;
+import com.app.util.GlobalUtills;
+import com.app.webserviceshandler.WebServiceHandler;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import java.util.ArrayList;
+
+//------------------------------------------------------------------------------------------------------------------------------
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+//==============================================================================================================================
+public class MyGroupAdapter extends BaseAdapter
+{
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    class RemoveGroup extends AsyncTask<String, String, String>
+    {
+
+        //----------------------------------------------------------------------------------------------------------------------
+        public RemoveGroup(String group_id , int index)
+        {
+            this.groupId_ = group_id;
+            index_        = index;
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected String doInBackground(String... params)
+        {
+            ArrayList<NameValuePair> param = new ArrayList<NameValuePair>();
+
+            param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+            param.add(new BasicNameValuePair(GlobalConstant.U_TYPE,    "remove_group_user"));
+            param.add(new BasicNameValuePair("userid",                 global_.getUser_id()));
+            param.add(new BasicNameValuePair("groupid",                this.groupId_));
+
+            Log.e("parametersValue of  world Group" + "", params.toString());
+
+            try
+            {
+                responseRemoveGroup_ = (new WebServiceHandler()).makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET,
+                                                                                 param);
+            }
+            catch (Exception exception)
+            {
+                exception.printStackTrace();
+            }
+
+            return responseRemoveGroup_;
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+
+            dialog_ = new ProgressDialog(context_);
+
+            dialog_.setMessage("Deleting...");
+            dialog_.show      ();
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        protected void onPostExecute(String result)
+        {
+            try
+            {
+                JSONObject jsonObject = new JSONObject(result);
+
+                messageString_ = jsonObject.getString(GlobalConstant.MESSAGE);
+
+                if (!messageString_.equalsIgnoreCase(GlobalConstant.SUCCESS))
+                    GlobalUtills.showToast("Oops..!An error has been encountered..!", context_);
+
+                else
+                {
+                    GroupsFragment.allGroupsList().remove(index_);
+                    GroupsFragment.groupAdapter().notifyDataSetChanged();
+
+                    SharedPreferences sharedChatDataS = context_.getSharedPreferences("Chat", Context.MODE_PRIVATE);
+                    Editor            editSHared      = sharedChatDataS.edit();
+
+                    editSHared.remove(this.groupId_);
+                    editSHared.commit();
+
+                    GlobalUtills.showToast("Group left successfully.!", context_);
+                }
+
+                if (dialog_.isShowing())
+                    dialog_.dismiss();
+            }
+            catch (JSONException e)
+            {
+                if (dialog_.isShowing())
+                    dialog_.dismiss();
+
+                e.printStackTrace();
+            }
+
+            if (dialog_.isShowing())
+                dialog_.dismiss();
+
+            super.onPostExecute(result);
+        }
+
+        //----------------------------------------------------------------------------------------------------------------------
+        private ProgressDialog dialog_;
+        private String         responseRemoveGroup_;
+        private String         messageString_;
+        private String         groupId_             = "";
+        private int            index_;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    public MyGroupAdapter(Context context , ArrayList<ListALLGroups> allGroupList)
+    {
+        this.allGroup_ = allGroupList;
+        this.context_  = context;
+        global_        = new Global();
+        globalUtills_  = new GlobalUtills();
+
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public int getCount()
+    {
+        return allGroup_.size();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public Object getItem(int position)
+    {
+        return null;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public long getItemId(int position)
+    {
+        return 0;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public View getView(int position, View view, ViewGroup parent)
+    {
+        try
+        {
+            final int            index    = position;
+                  LayoutInflater inflater = (LayoutInflater) context_.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+            view            = inflater.inflate(R.layout.group_inflator, null);
+            groupImage_     = (com.app.util.RoundedCornersGaganImageView)
+                                               view.findViewById(R.id.world_group_image);
+            groupName_      = (TextView)       view.findViewById(R.id.group_name);
+            llChat_         = (LinearLayout)   view.findViewById(R.id.linear_layout_chat);
+            tvTotalMembers_ = (TextView)       view.findViewById(R.id.tvMembersMygroup);
+            tvTotalMsgs_    = (TextView)       view.findViewById(R.id.tvtotalmsgsMygroup);
+            tvTotalNew_     = (TextView)       view.findViewById(R.id.tvTotalnewMygroup);
+            groupType_      = (TextView)       view.findViewById(R.id.groupType);
+            badgeLayout_    = (RelativeLayout) view.findViewById(R.id.badge_indicator_group_chat);
+            GlobalUtills.badgeSenderGroupChat
+                            = new BadgeView(context_, badgeLayout_);
+
+            view.setBackgroundColor(position % 2 != 0 ? GlobalConstant.COLOR_GREY : GlobalConstant.COLOR_WHITE);
+
+            if (!(allGroup_.get(position).getUnread().equals("") || allGroup_.get(position).getUnread().equals("0")))
+            {
+                GlobalUtills.badgeSenderGroupChat.setBadgePosition(BadgeView.POSITION_TOP_RIGHT);
+                GlobalUtills.badgeSenderGroupChat.setText         (allGroup_.get(position).getUnread());
+                GlobalUtills.badgeSenderGroupChat.show            ();
+            }
+
+            llChat_.setOnClickListener(new OnClickListener()
+            {
+                @Override
+                public void onClick(View v)
+                {
+                    GlobalUtills.joinORadd_group = true;
+
+                    if (GlobalUtills.badgeGroup != null && GlobalUtills.badgeGroup.isShown())
+                    {
+                        GlobalUtills.msgCountGroup = "";
+
+                        GlobalUtills.badgeGroup.toggle();
+
+                        SharedPreferences sharedPref = context_.getSharedPreferences("login", Context.MODE_PRIVATE);
+                        Editor            editorPref = sharedPref.edit();
+
+                        editorPref.remove("notification_flag_mychat");
+                        editorPref.commit();
+                    }
+
+                    Intent gotoChatting = new Intent(context_, GroupChat.class);
+
+                    gotoChatting.putExtra("groupID",    allGroup_.get(index).getGroupId() + "");
+                    gotoChatting.putExtra("groupName",  allGroup_.get(index).getName() + "");
+                    gotoChatting.putExtra("groupImage", allGroup_.get(index).getImage() + "");
+
+                    GlobalUtills.mygroups_savelocal = true;
+
+                    context_.startActivity(gotoChatting);
+
+                    if (!(allGroup_.get(index).getUnread().equals("0")))
+                    {
+                        allGroup_.get(index).setUnread("0");
+
+                        GroupsFragment.groupAdapter().notifyDataSetChanged();
+                    }
+                }
+            });
+
+
+            llChat_.setOnLongClickListener(new OnLongClickListener()
+            {
+                @Override
+                public boolean onLongClick(View arg0)
+                {
+                    final Dialog dialog = globalUtills_.prepararDialog(context_, R.layout.dialog_three_options);
+
+                    TextView title = (TextView) dialog.findViewById(R.id.txtVmainTitle);
+
+                    title.setText("Get Groupy");
+
+                    TextView subheading = (TextView) dialog.findViewById(R.id.txtVsubheading);
+
+                    subheading.setTextSize(15);
+                    subheading.setText    ("Are you sure,you want to leave the group ?");
+
+                    Button buttonChat       = (Button)      dialog.findViewById(R.id.btnChat);
+                    Button buttonCall       = (Button)      dialog.findViewById(R.id.btncall);
+                    Button buttonGroups     = (Button)      dialog.findViewById(R.id.btngroups);
+                    ImageButton buttonClose = (ImageButton) dialog.findViewById(R.id.btnCloseDialog);
+
+                    buttonGroups.setVisibility(View.GONE);
+                    buttonClose.setVisibility(View.GONE);
+
+                    buttonCall.setText("Yes");
+                    buttonChat.setText("No");
+
+                    buttonChat.setOnClickListener(new OnClickListener()
+                    {
+                        @Override
+                        public void onClick(View v)
+                        {
+                            dialog.dismiss();
+                        }
+                    });
+
+                    buttonCall.setOnClickListener(new OnClickListener()
+                    {
+                        @Override
+                        public void onClick(View v)
+                        {
+                            new RemoveGroup(allGroup_.get(index).getGroupId(), index).execute();
+                            dialog.dismiss();
+                        }
+                    });
+
+                    dialog.show();
+
+                    return true;
+                }
+            });
+
+            groupName_.setText(allGroup_.get(position).getName());
+
+            if (allGroup_.get(position).getType().equals("P"))
+            {
+                groupType_.setText("Public");
+                groupType_.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.vault, 0);
+            }
+            else
+            {
+                groupType_.setText("Private");
+                groupType_.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.lock, 0);
+            }
+
+            tvTotalMembers_.setText("Members:" + allGroup_.get(position).getTotalmembers());
+            tvTotalMsgs_.setText("Total Msgs:" + allGroup_.get(position).getTotalmsgs());
+            tvTotalNew_.setText("Total New:" + allGroup_.get(position).getTotalnew());
+
+            if (allGroup_.get(position).getImage().equalsIgnoreCase(""))
+                groupImage_.setImageResource(R.drawable.group_image_public);
+
+            else
+            {
+                try
+                {
+                    groupImage_.setRadius  (GlobalConstant.IMAGE_CONNERS_RADIUS);
+                    groupImage_.setImageUrl(context_, allGroup_.get(position).getImage());
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                catch (OutOfMemoryError e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        catch (Error e)
+        {
+        }
+
+        return view;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    private Context                                   context_;
+    private ArrayList<ListALLGroups>                  allGroup_;
+    private Global                                    global_;
+    private GlobalUtills                              globalUtills_;
+    private com.app.util.RoundedCornersGaganImageView groupImage_;
+    private LinearLayout                              llChat_;
+    private TextView                                  groupName_;
+    private TextView                                  groupType_;
+    private TextView                                  tvTotalMembers_;
+    private TextView                                  tvTotalMsgs_;
+    private TextView                                  tvTotalNew_;
+    private RelativeLayout                            badgeLayout_;
+}

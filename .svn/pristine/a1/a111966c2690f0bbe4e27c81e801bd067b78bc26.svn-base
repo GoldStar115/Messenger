@@ -1,0 +1,408 @@
+package com.app.messenger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import com.app.model.FriendInfo;
+import com.app.util.GlobalUtills;
+import com.app.util.TransparentProgressDialog;
+import com.app.webserviceshandler.WebServiceHandler;
+
+public class Aroundme_users extends Activity
+{
+
+	Global								global;
+	public static ArrayList<FriendInfo>	list_of_around_users	= new ArrayList<FriendInfo>();
+
+	ListView							listOfnearby_users;
+	int									distance				= 1;
+
+	String								myFBid					= "";
+
+	GlobalUtills						globalUtills;
+
+	@Override
+	protected void onResume()
+	{
+		SharedPreferences sharedPref = getSharedPreferences("login", MODE_PRIVATE);
+		global.setUser_id(sharedPref.getString("UserID", ""));
+		super.onResume();
+	}
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_aroundme_users);
+
+		global = new Global();
+		globalUtills = new GlobalUtills();
+
+		listOfnearby_users = (ListView) findViewById(com.app.messenger.R.id.listVaroundusers_creategrouptab);
+
+		if( globalUtills.haveNetworkConnection(Aroundme_users.this) )
+		{
+			new getAroundUserme().execute();
+		}
+		else
+		{
+			GlobalUtills.showToast("No network connection..!", Aroundme_users.this);
+		}
+
+		SharedPreferences preferences = getSharedPreferences("CountryPreferences", Context.MODE_PRIVATE);
+
+		if( preferences.contains("km") )
+		{
+			distance = preferences.getInt("km", 2);
+		}
+		else
+		{
+			distance = 2;
+		}
+
+		SharedPreferences sharedPref = getSharedPreferences("fbID", MODE_PRIVATE);
+		myFBid = sharedPref.getString("fb", "");
+
+	}
+
+	// get user around me
+
+	class getAroundUserme extends AsyncTask<String , Void , String>
+	{
+
+		TransparentProgressDialog	pd;
+
+		String						response	= "";
+
+		@Override
+		protected void onPreExecute()
+		{
+
+			list_of_around_users.clear();
+
+			pd = new TransparentProgressDialog(Aroundme_users.this, com.app.messenger.R.drawable.loading_spinner_icon);
+			pd.show();
+			super.onPreExecute();
+		}
+
+		@Override
+		protected String doInBackground(String... params)
+		{
+
+			// messenger.amebasoftware.com/webservice/get_posts/?mtype=uaround_me&post_type=post&userId=235&longitude=76.779418&latitude=30.733315&radius=100
+
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+			param.add(new BasicNameValuePair(GlobalConstant.POST_TYPE, "post"));
+			param.add(new BasicNameValuePair("mtype", "uaround_me"));
+			param.add(new BasicNameValuePair("radius", distance + ""));
+
+			param.add(new BasicNameValuePair("latitude", com.app.util.GlobalConstant.lati + ""));
+			param.add(new BasicNameValuePair("longitude", com.app.util.GlobalConstant.longi + ""));
+			param.add(new BasicNameValuePair("userId", global.getUser_id() + ""));
+
+			WebServiceHandler web = new WebServiceHandler();
+
+			String jsonString = web.makeServiceCall(GlobalConstant.URL, WebServiceHandler.GET, param);
+			if( jsonString.equals("Error! Try Again") )
+			{
+				return jsonString;
+			}
+			else
+			{
+				try
+				{
+
+					JSONObject jobjOuter = new JSONObject(jsonString);
+					response = jobjOuter.getString("Message");
+					if( response.equalsIgnoreCase("Success") )
+					{
+						String msgsArrayString = jobjOuter.getString("userInfo");
+						JSONArray jsonArrMsgs = new JSONArray(msgsArrayString + "");
+
+						for( int g = 0; g < jsonArrMsgs.length(); g++ )
+						{
+							FriendInfo nearByUsers = new FriendInfo();
+
+							JSONObject array_object = jsonArrMsgs.getJSONObject(g);
+
+							nearByUsers.setId(array_object.getString("facebook_id") + "");
+							nearByUsers.setImage(array_object.getString("userimage") + "");
+							nearByUsers.setName(array_object.getString("username") + "");
+							// nearByUsers.setUnread_count(array_object.getString("unread_count"));
+							nearByUsers.setMobile_no(array_object.getString("user_telephone") + "");
+							nearByUsers.setUnread_count(array_object.getString("distance") + "");
+
+							if( nearByUsers.getId().equalsIgnoreCase(myFBid) )
+							{
+
+							}
+							else
+							{
+
+								list_of_around_users.add(nearByUsers);
+							}
+
+						}
+
+					}
+
+				}
+				catch(JSONException e)
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				return response;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result)
+		{
+			super.onPostExecute(result);
+			pd.dismiss();
+
+			if( result.equals("Error! Try Again") )
+			{
+				GlobalUtills.showToast("No network connection..!", Aroundme_users.this);
+			}
+			else
+			{
+
+				if( list_of_around_users.size() > 0 )
+				{
+
+					// Collections.sort(list_of_around_users,
+					// new Comparator<FriendInfo>() {
+					// @Override
+					// public int compare(FriendInfo text1,
+					// FriendInfo text2) {
+					// return text1.getName().compareToIgnoreCase(
+					// text2.getName());
+					// }
+					// });
+
+					aroundmeUser_adapter socialusers = new aroundmeUser_adapter(Aroundme_users.this, list_of_around_users, false, true);
+					listOfnearby_users.setAdapter(socialusers);
+
+				}
+				else
+				{
+					GlobalUtills.showToast("No near by Users found ..!", Aroundme_users.this);
+				}
+
+			}
+
+		}
+
+	}
+
+	// end user around me
+
+	public static ArrayList<Boolean>	radio_checkAroundME	= new ArrayList<Boolean>();
+
+	class aroundmeUser_adapter extends BaseAdapter
+	{
+
+		ArrayList<Integer>					photo		= new ArrayList<Integer>();
+		int									i			= 0;
+		Boolean								click		= true;
+		Global								global;
+		ArrayList<FriendInfo>				list_of_allfriend;
+		ArrayList<String>					list_of_ids	= new ArrayList<String>();
+		HashMap<Integer , String>			ids_map		= new HashMap<Integer , String>();
+
+		Context								context;
+
+		boolean								Single_chat	= true;
+		boolean								groupMates	= true;
+
+		Facebook_ProfilePictureView_rounded	freinds_image;
+		TextView							name, Ph_no;
+		RadioButton							check_button;
+		RelativeLayout						paddingLayout;
+		RelativeLayout						badge_layout;
+
+		FriendInfo							friendinfoCurrent;
+
+		public aroundmeUser_adapter(Context context , ArrayList<FriendInfo> list_of_allfriend , boolean chatORnot , boolean groupMates)
+		{
+			this.context = context;
+			global = new Global();
+			this.list_of_allfriend = list_of_allfriend;
+
+			if( !(radio_checkAroundME.size() > 0) )
+			{
+
+				for( int i = 0; i < list_of_allfriend.size(); i++ )
+				{
+					radio_checkAroundME.add(false);
+
+				}
+			}
+
+			this.Single_chat = chatORnot;
+			this.groupMates = groupMates;
+
+		}
+
+		@Override
+		public int getCount()
+		{
+			// TODO Auto-generated method stub
+			return list_of_allfriend.size();
+		}
+
+		@Override
+		public Object getItem(int position)
+		{
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public long getItemId(int position)
+		{
+			// TODO Auto-generated method stub
+			return position;
+		}
+
+		@Override
+		public View getView(final int arg0, View view, ViewGroup parent)
+		{
+
+			try
+			{
+
+				LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+				view = inflater.inflate(R.layout.friend_adapter, null);
+
+				friendinfoCurrent = list_of_allfriend.get(arg0);
+
+				// LayoutInflater inflater = (LayoutInflater) context
+				// .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+				// view = inflater.inflate(R.layout.friend_adapter, null);
+				// distance= (TextView) view.findViewById(R.id.txtV_distance);
+				name = (TextView) view.findViewById(R.id.Friend_name);
+				Ph_no = (TextView) view.findViewById(R.id.txtV_FBphno);
+				freinds_image = (Facebook_ProfilePictureView_rounded) view.findViewById(R.id.friends_title_image);
+				check_button = (RadioButton) view.findViewById(R.id.friend_check_box);
+				if( !groupMates )
+				{
+					check_button.setVisibility(View.GONE);
+				}
+				else
+				{
+					check_button.setVisibility(View.VISIBLE);
+					if( radio_checkAroundME.get(arg0) )
+					{
+						check_button.setChecked(true);
+					}
+					else
+					{
+						check_button.setChecked(false);
+					}
+				}
+
+				paddingLayout = (RelativeLayout) view.findViewById(R.id.top_container);
+				badge_layout = (RelativeLayout) view.findViewById(R.id.badge_indicator_single_chat);
+
+				check_button.setOnClickListener(new OnClickListener()
+				{
+					@Override
+					public void onClick(View v)
+					{
+
+						friendinfoCurrent = list_of_allfriend.get(arg0);
+
+						if( !radio_checkAroundME.get(arg0) )
+						{
+							i++;
+							((RadioButton) v).setChecked(true);
+
+							radio_checkAroundME.set(arg0, true);
+							ids_map.put(arg0, friendinfoCurrent.getId());
+
+							global.setHashMaparoundme(ids_map);
+
+						}
+						else
+						{
+
+							i--;
+							radio_checkAroundME.set(arg0, false);
+							((RadioButton) v).setChecked(false);
+
+							if( ids_map.size() > 0 )
+							{
+								ids_map.remove(arg0);
+
+								global.setHashMaparoundme(ids_map);
+
+							}
+
+							// click_array[arg0] = true;
+						}
+					}
+
+				});
+
+				name.setText(friendinfoCurrent.getName());
+				Ph_no.setText("last seen" + " " + friendinfoCurrent.getUnread_count() + " km away");
+				Ph_no.setTypeface(null, Typeface.ITALIC);
+
+				freinds_image.setProfileId(friendinfoCurrent.getId());
+
+				// distance.setVisibility(View.VISIBLE);
+				// distance.setText(friendinfoCurrent.getUnread_count()+" km away");
+
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+			catch(OutOfMemoryError e)
+			{
+				e.printStackTrace();
+			}
+
+			if( arg0 % 2 != 0 )
+			{
+				view.setBackgroundColor(Color.parseColor("#ebebeb"));
+			}
+			else
+			{
+				view.setBackgroundColor(Color.parseColor("#ffffff"));
+			}
+
+			return view;
+
+		}
+
+	}
+}

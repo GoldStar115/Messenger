@@ -1,0 +1,6 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android" android:visible="true">
+
+    <item android:drawable="@drawable/icon_sel_chat" android:state_selected="true"/>
+    <item android:drawable="@drawable/icon_chat" android:state_selected="false"/>
+
+</selector><!-- From: file:/D:/PROJECTS/Messenger/messenger/src/main/res/drawable/icon_chat_selector.xml -->

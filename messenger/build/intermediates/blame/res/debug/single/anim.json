@@ -1,0 +1,74 @@
+[
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_popup_exit.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_popup_exit.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_slide_out_bottom.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_slide_out_bottom.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\zoom_out_two.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\anim\\zoom_out_two.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_grow_fade_in_from_bottom.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_grow_fade_in_from_bottom.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_slide_in_top.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_slide_in_top.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\shake.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\anim\\shake.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\bounce.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\anim\\bounce.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_shrink_fade_out_from_bottom.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_shrink_fade_out_from_bottom.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\rotateback.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\anim\\rotateback.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\zoomin.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\anim\\zoomin.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_fade_out.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_fade_out.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\sequential.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\anim\\sequential.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\zoom_out.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\anim\\zoom_out.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\rotate.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\anim\\rotate.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_slide_in_bottom.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_slide_in_bottom.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_slide_out_top.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_slide_out_top.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_fade_in.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_fade_in.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\anim\\abc_popup_enter.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\exploded-aar\\com.android.support\\appcompat-v7\\22.2.0\\res\\anim\\abc_popup_enter.xml"
+    }
+]

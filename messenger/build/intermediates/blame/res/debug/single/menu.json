@@ -1,0 +1,22 @@
+[
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\menu\\main.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\menu\\main.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\menu\\tab_chat_fragment.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\menu\\tab_chat_fragment.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\menu\\test.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\menu\\test.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\menu\\verify_code.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\menu\\verify_code.xml"
+    },
+    {
+        "merged": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\build\\intermediates\\res\\merged\\debug\\menu\\menu_group_users.xml",
+        "source": "F:\\MyProject\\AndroidProject\\Messenger\\messenger\\src\\main\\res\\menu\\menu_group_users.xml"
+    }
+]

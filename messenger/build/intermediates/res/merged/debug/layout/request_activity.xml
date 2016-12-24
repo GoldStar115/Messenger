@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical" >
+    
+       <com.app.messenger.ActionBarCommon
+        android:id="@+id/action_bar"
+        android:layout_width="fill_parent"
+        android:layout_height="45dp" >
+    </com.app.messenger.ActionBarCommon>
+ 
+<ListView
+    android:layout_height="fill_parent"
+    android:layout_width="fill_parent" 
+    android:id="@+id/listV_requests"
+    android:divider="@android:color/white"
+    android:layout_marginTop="5dp"
+   >
+    
+</ListView>
+</LinearLayout>

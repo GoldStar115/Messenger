@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+              android:orientation="horizontal"
+    android:layout_gravity="center_horizontal"
+              android:background="@color/white"
+              android:gravity="center_vertical"
+              android:padding="8dp"
+              android:id="@+id/base_layout">
+
+    <com.app.util.RoundedCornersGaganImageView
+        android:id="@+id/mc_nativeAd_iconIV"
+        android:layout_width="@dimen/request_image_height_width"
+        android:layout_height="@dimen/request_image_height_width"
+        android:background="@drawable/group_image_public"
+        android:scaleType="fitXY" />
+
+    <LinearLayout
+        android:id="@+id/LinearLayout1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/mc_nativeAd_mainTV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:text="Title"
+            android:textColor="@color/black"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/mc_nativeAd_descriptionTV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:text="Description"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            android:maxLines="3"/>
+
+    </LinearLayout>
+
+</LinearLayout>

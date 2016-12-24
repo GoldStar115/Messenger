@@ -1,0 +1,165 @@
+package com.app.adapter;
+
+import java.util.ArrayList;
+
+import android.content.Context;
+import android.graphics.Color;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.app.messenger.Global;
+import com.app.messenger.R;
+import com.app.model.GroupInfo;
+
+public class WorldGroupAdapter extends BaseAdapter
+{
+	Context					context;
+	ArrayList<GroupInfo>	list_of_allgroup;
+	Global					global;
+
+	int						pos;
+
+	public WorldGroupAdapter(Context context , ArrayList<GroupInfo> list_of_allgroup)
+	{
+		this.context = context;
+		this.list_of_allgroup = list_of_allgroup;
+	}
+
+	@Override
+	public int getCount()
+	{
+		// TODO Auto-generated method stub
+		return list_of_allgroup.size();
+	}
+
+	@Override
+	public Object getItem(int position)
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getItemId(int position)
+	{
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public View getView(final int position, View view, ViewGroup parent)
+	{
+
+		try
+		{
+
+			LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			view = inflater.inflate(R.layout.worldgroup_infaltor, null);
+
+			// LinearLayout lay = (LinearLayout) view
+			// .findViewById(R.id.layouthideinWorld);
+			// lay.setVisibility(View.GONE);
+
+			group_image = (com.app.util.RoundedCornersGaganImageView) view.findViewById(R.id.world_group_image);
+
+			Group_name = (TextView) view.findViewById(R.id.group_name);
+
+			txt_group_type = (TextView) view.findViewById(R.id.txt_group_type);
+
+			tvtotalMembers = (TextView) view.findViewById(R.id.tvMembersMygroup);
+
+			tvTotalmsgs = (TextView) view.findViewById(R.id.tvtotalmsgsMygroup);
+			tvTotalnew = (TextView) view.findViewById(R.id.tvTotalnewMygroup);
+
+			Group_name.setText(list_of_allgroup.get(position).getgroupName());
+
+			tvtotalMembers.setText("Members(" + list_of_allgroup.get(position).getgroupTotalMembers() + ")");
+			tvTotalmsgs.setText("Total Msgs:" + list_of_allgroup.get(position).getGroupTotalmsgs());
+			tvTotalnew.setText("Total New:" + list_of_allgroup.get(position).getGroupTotalnew());
+			String temp_group_type = "";
+
+			ImageView img_private_public=(ImageView)view.findViewById(R.id.img_private_public);
+			
+			
+			if( list_of_allgroup.get(position).getGroupType().equalsIgnoreCase("P") )
+			{
+				temp_group_type = "Public";
+				// group_holder.group_image.setImageResource(R.drawable.group_image_public)
+				// ;
+				img_private_public.setBackgroundResource(R.drawable.vault);
+			}
+			else if( list_of_allgroup.get(position).getGroupType().equalsIgnoreCase("PV") )
+			{
+				temp_group_type = "Private";
+				// group_holder.group_image.setImageResource(R.drawable.group_image_private)
+				// ;
+				img_private_public.setBackgroundResource(R.drawable.lock);
+			}
+
+			txt_group_type.setText(temp_group_type);
+
+			if( !list_of_allgroup.get(position).getgroupImage().equalsIgnoreCase("") )
+			{
+
+				try
+				{
+
+					group_image.setRadius(80);
+					group_image.setImageUrl(context,list_of_allgroup.get(position).getgroupImage());
+
+				}
+				catch(Exception e)
+				{
+					e.printStackTrace();
+				}
+				catch(OutOfMemoryError e)
+				{
+					e.printStackTrace();
+				}
+
+			}
+			else
+			{
+				group_image.setImageResource(R.drawable.group_image_public);
+			}
+
+			if( position % 2 != 0 )
+			{
+				view.setBackgroundColor(Color.parseColor("#ebebeb"));
+			}
+			else
+			{
+				view.setBackgroundColor(Color.parseColor("#ffffff"));
+			}
+
+			// Log.e("Image url",""+list_of_allgroup.get(position).getImage());
+
+			/*
+			 * try { Picasso.with(context)
+			 * .load(list_of_allgroup.get(position).getImage
+			 * ()).placeholder(R.drawable.group_image)
+			 * .error(R.drawable.ic_launcher).into(group_holder.group_image); }
+			 * catch(Exception e) { e.printStackTrace(); }
+			 */
+
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}catch (Error e) {
+			// TODO: handle exception
+		}
+		return view;
+	}
+
+	com.app.util.RoundedCornersGaganImageView	group_image;
+
+	TextView									Group_name, tvtotalMembers, tvTotalmsgs, tvTotalnew, txt_group_type;
+
+	// -----------------------------JoinWorldGroup-------------------------
+
+}
